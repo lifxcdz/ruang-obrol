@@ -127,7 +127,7 @@ footer .ib,.send{border-radius:13px!important}
 .toast{border:1px solid var(--line);border-radius:13px;box-shadow:0 12px 40px rgba(0,0,0,.35)}
 /* Borderless loading indicator */
 .loading-mark{width:42px;height:42px;margin:0 auto 18px;position:relative}
-.loading-mark:before{content:"";position:absolute;inset:3px;border:3px solid transparent;border-top-color:#72a7ff;border-right-color:#397bf5;border-radius:50%;animation:spin .8s linear infinite}
+.loading-mark:before{content:"";position:absolute;inset:2px;border-radius:50%;background:conic-gradient(from 20deg,transparent 0 68%,#72a7ff 82%,#397bf5 100%);-webkit-mask:radial-gradient(farthest-side,transparent calc(100% - 3px),#000 calc(100% - 2.5px));mask:radial-gradient(farthest-side,transparent calc(100% - 3px),#000 calc(100% - 2.5px));animation:spin .8s linear infinite}
 .loading-mark:after{content:"";position:absolute;inset:13px;background:#4b8cff;border-radius:50%;filter:blur(7px);opacity:.38}
 @keyframes spin{to{transform:rotate(360deg)}}
 .load-card{border:1px solid var(--line);border-radius:22px;background:rgba(13,20,38,.88);padding:32px 28px;min-width:min(300px,88vw)}
@@ -242,7 +242,6 @@ import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, se
   sendPasswordResetEmail, onAuthStateChanged, signOut, updateProfile, setPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import { getDatabase, ref, push, set, remove, onChildAdded, onChildRemoved, onValue, serverTimestamp,
   query, limitToLast, get, update } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
-import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-functions.js";
 
 /* ====== ISI BAGIAN INI ====== */
 const firebaseConfig = {
@@ -265,7 +264,6 @@ const auth = getAuth(app);
 // Sesi disimpan di perangkat: setelah masuk sekali, otomatis login lagi saat web dibuka
 setPersistence(auth, browserLocalPersistence).catch(()=>{});
 const db = getDatabase(app);
-const functions = getFunctions(app);
 const $ = id => document.getElementById(id);
 
 /* ---- Cegah zoom ---- */
@@ -361,7 +359,19 @@ onAuthStateChanged(auth,async u=>{
 function cleanup(){ unsubs.forEach(f=>f()); unsubs=[]; entered=false; $('vProfile').classList.add('hidden'); $('vAdmin').classList.add('hidden'); $('list').innerHTML='<div class="empty" id="empty">Belum ada pesan. Mulai obrolan.</div>'; }
 
 async function enter(u){
-  if(entered) return; entered=true;
+  if(entered) return;
+  try{
+    const managedSnap=await get(ref(db,'users/'+u.uid));
+    const managedProfile=managedSnap.val()||{};
+    if(managedProfile.managed===true && managedProfile.expiresAt && Number(managedProfile.expiresAt)<=Date.now()){
+      await signOut(auth);
+      toast('Masa berlaku akun sudah habis.');
+      return;
+    }
+  }catch(error){
+    console.warn('Pemeriksaan masa berlaku akun gagal:',error);
+  }
+  entered=true;
   me=u; isAdmin=ADMIN_EMAILS.map(e=>e.toLowerCase()).includes((u.email||'').toLowerCase());
   $('whoName').textContent=u.displayName||u.email;
   $('btnAdmin').classList.toggle('hidden',!isAdmin);
@@ -489,8 +499,14 @@ $('profSave').onclick=async()=>{
 
 /* ---- Panel admin ---- */
 let admUnsub=[], admPinEnabled=localStorage.getItem('ro_admin_pin_enabled')==='1';
-const createManagedAccounts=httpsCallable(functions,'createManagedAccounts');
-const deleteManagedAccount=httpsCallable(functions,'deleteManagedAccount');
+async function adminApi(payload){
+  if(!auth.currentUser) throw new Error('Sesi login admin tidak ditemukan.');
+  const token=await auth.currentUser.getIdToken(true);
+  const response=await fetch('/api/admin-accounts',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify(payload)});
+  const data=await response.json().catch(()=>({}));
+  if(!response.ok) throw new Error(data.error||('Server error '+response.status));
+  return data;
+}
 const pinDigest=async(pin)=>{
   const bytes=new TextEncoder().encode(pin);
   const hash=await crypto.subtle.digest('SHA-256',bytes);
@@ -557,8 +573,8 @@ $('btnAdmin').onclick=async()=>{
       if(password&&password.length<6){toast('Password minimal 6 karakter.');return;}
       const btn=$('genGo');btn.disabled=true;btn.textContent='Membuat akun...';
       try{
-        const result=await createManagedAccounts({base,count,durationDays:days,password:password||null});
-        const accounts=result.data.accounts||[];
+        const result=await adminApi({action:'create',base,count,durationDays:days,password:password||null});
+        const accounts=result.accounts||[];
         out.innerHTML='<div class="credential-output" id="credentialText"></div><button id="copyCredentials" class="admin-action secondary">Salin semua akun</button>';
         $('credentialText').textContent=accounts.map(a=>`Nama: ${a.name}\nUsername: ${a.username}\nPassword: ${a.password}\nBerlaku sampai: ${new Date(a.expiresAt).toLocaleString('id-ID')}`).join('\n\n');
         $('copyCredentials').onclick=async()=>{try{await navigator.clipboard.writeText($('credentialText').textContent);toast('Data akun disalin.')}catch(e){toast('Tidak bisa menyalin otomatis.');}};
@@ -586,7 +602,7 @@ $('btnAdmin').onclick=async()=>{
         row.append(ban);
         if(u.managed){
           const del=document.createElement('button');del.className='danger';del.textContent='Hapus';
-          del.onclick=async()=>{if(!confirm('Hapus akun '+(u.name||'ini')+' secara permanen?'))return;try{await deleteManagedAccount({uid});toast('Akun dihapus.');}catch(e){toast(e.message||'Gagal menghapus akun.');}};
+          del.onclick=async()=>{if(!confirm('Hapus akun '+(u.name||'ini')+' secara permanen?'))return;try{await adminApi({action:'delete',uid});toast('Akun dihapus.');}catch(e){toast(e.message||'Gagal menghapus akun.');}};
           row.append(del);
         }
       }
