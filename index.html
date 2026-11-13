@@ -154,6 +154,26 @@ footer .ib,.send{border-radius:13px!important}
 .credential-output{white-space:pre-wrap;word-break:break-word;background:rgba(0,0,0,.24);border:1px solid var(--line);padding:12px;border-radius:12px;font-size:13px;max-height:230px;overflow:auto;margin-top:12px}
 @media(max-width:420px){.admin-grid{grid-template-columns:1fr 1fr}.overlay .body{padding:12px}}
 
+
+/* Statistik admin berbentuk lingkaran */
+.stats-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:14px}
+.stat-card{min-width:0;border:1px solid var(--line);border-radius:16px;padding:14px 8px;background:rgba(255,255,255,.025);display:flex;flex-direction:column;align-items:center;gap:9px}
+.stat-ring{--value:0;width:104px;height:104px;border-radius:50%;display:grid;place-items:center;background:conic-gradient(#5b91ff calc(var(--value)*1%),rgba(148,170,210,.13) 0);position:relative}
+.stat-ring:before{content:"";position:absolute;inset:7px;border-radius:50%;background:#0d172b;border:1px solid rgba(148,170,210,.12)}
+.stat-ring.online{background:conic-gradient(#35d39a calc(var(--value)*1%),rgba(148,170,210,.13) 0)}
+.stat-ring.blocked{background:conic-gradient(#ff7777 calc(var(--value)*1%),rgba(148,170,210,.13) 0)}
+.stat-ring.messages{background:conic-gradient(#a78bfa calc(var(--value)*1%),rgba(148,170,210,.13) 0)}
+.stat-ring-core{position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;line-height:1.2}
+.stat-ring-core strong{font-size:24px;font-weight:700;font-variant-numeric:tabular-nums}
+.stat-ring-core span{font-size:11px;color:var(--muted);margin-top:3px}
+.stat-label{font-size:12px;color:var(--muted);text-align:center}
+.online-dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:#35d39a;margin-right:4px;box-shadow:0 0 10px #35d39a}
+.stats-line{display:flex;justify-content:space-between;gap:12px;padding:11px 0;border-bottom:1px solid var(--line)}
+.stats-line:last-of-type{border-bottom:0}
+.stats-line span{font-size:13px;color:var(--muted)}
+.stats-line strong{font-size:13px;text-align:right}
+@media(max-width:360px){.stat-ring{width:88px;height:88px}.stat-ring-core strong{font-size:21px}}
+
 </style>
 </head>
 <body>
@@ -197,7 +217,7 @@ footer .ib,.send{border-radius:13px!important}
   <header>
     <h1>Ruang Obrol</h1>
     <button class="who" id="who" type="button" aria-label="Profil"><span class="profile-mark"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.5"/><path d="M5 20c.7-3.5 3.1-5.3 7-5.3s6.3 1.8 7 5.3"/></svg></span><span id="whoName"></span></button>
-    <button id="btnAdmin" class="hidden" type="button">Admin</button>
+    <button id="btnAdmin" class="hidden" type="button">Statistik</button>
     <button id="btnOut" type="button">Keluar</button>
   </header>
   <div id="list"><div class="empty" id="empty">Belum ada pesan. Mulai obrolan.</div></div>
@@ -217,7 +237,7 @@ footer .ib,.send{border-radius:13px!important}
 
 <!-- Panel admin -->
 <section id="vAdmin" class="overlay hidden">
-  <div class="top"><h2>Panel admin</h2><button id="admClose" type="button">Tutup</button></div>
+  <div class="top"><h2>Statistik Ruang Obrol</h2><button id="admClose" type="button">Tutup</button></div>
   <div class="body" id="admBody"></div>
 </section>
 
@@ -241,7 +261,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/fireba
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, sendEmailVerification,
   sendPasswordResetEmail, onAuthStateChanged, signOut, updateProfile, setPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import { getDatabase, ref, push, set, remove, onChildAdded, onChildRemoved, onValue, serverTimestamp,
-  query, limitToLast, get, update } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+  query, limitToLast, get, update, onDisconnect } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 
 /* ====== ISI BAGIAN INI ====== */
 const firebaseConfig = {
@@ -338,8 +358,9 @@ $('verifyResend').onclick=async()=>{
   try{ await sendEmailVerification(auth.currentUser); $('verifyMsg').textContent='Email verifikasi dikirim ulang. Cek juga folder spam.'; }
   catch(e){ $('verifyMsg').textContent=authMsg(e); }
 };
+async function leaveAccount(){ if(me) await remove(ref(db,'presence/'+me.uid)).catch(()=>{}); await signOut(auth); }
 $('verifyOut').onclick=()=>signOut(auth);
-$('btnOut').onclick=()=>signOut(auth);
+$('btnOut').onclick=leaveAccount;
 
 /* ---- Sesi ---- */
 let me=null, isAdmin=false, unsubs=[], entered=false; const names={};
@@ -377,6 +398,14 @@ async function enter(u){
   $('btnAdmin').classList.toggle('hidden',!isAdmin);
   show('vChat');
   try{
+    const connectedRef=ref(db,'.info/connected');
+    unsubs.push(onValue(connectedRef,async snap=>{
+      if(snap.val()===true){
+        const presenceRef=ref(db,'presence/'+u.uid);
+        await onDisconnect(presenceRef).remove().catch(()=>{});
+        await set(presenceRef,{online:true,lastSeen:Date.now()}).catch(()=>{});
+      }
+    }));
     await update(ref(db,'users/'+u.uid),{name:u.displayName||u.email.split('@')[0]});
     await update(ref(db,'private/'+u.uid),{email:u.email});
   }catch(e){ toast('Gagal menyimpan profil. Cek Rules database.'); }
@@ -497,123 +526,59 @@ $('profSave').onclick=async()=>{
   $('profSave').disabled=false;
 };
 
-/* ---- Panel admin ---- */
-let admUnsub=[], admPinEnabled=localStorage.getItem('ro_admin_pin_enabled')==='1';
-async function adminApi(payload){
-  if(!auth.currentUser) throw new Error('Sesi login admin tidak ditemukan.');
-  const token=await auth.currentUser.getIdToken(true);
-  const response=await fetch('/api/admin-accounts',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify(payload)});
-  const data=await response.json().catch(()=>({}));
-  if(!response.ok) throw new Error(data.error||('Server error '+response.status));
-  return data;
-}
-const pinDigest=async(pin)=>{
-  const bytes=new TextEncoder().encode(pin);
-  const hash=await crypto.subtle.digest('SHA-256',bytes);
-  return [...new Uint8Array(hash)].map(x=>x.toString(16).padStart(2,'0')).join('');
-};
-async function adminGate(){
-  if(!admPinEnabled) return true;
-  const saved=localStorage.getItem('ro_admin_pin_hash');
-  if(!saved){ toast('Buat PIN baru pada bagian Keamanan panel admin.'); return true; }
-  const pin=prompt('Masukkan PIN admin untuk membuka panel:');
-  if(pin===null) return false;
-  if(await pinDigest(pin)!==saved){ toast('PIN admin salah.'); return false; }
-  return true;
-}
-$('btnAdmin').onclick=async()=>{
+/* ---- Statistik admin ---- */
+let admUnsub=[];
+$('btnAdmin').onclick=()=>{
   if(!isAdmin) return;
-  if(!await adminGate()) return;
   $('vAdmin').classList.remove('hidden');
-  let users={},emails={},banned={};
-  const draw=()=>{
-    const b=$('admBody');
-    b.innerHTML=`
-      <section class="admin-section">
-        <h3>Generator akun</h3>
-        <div class="hint">Buat akun pengguna sekaligus. Nama dibuat berurutan, misalnya Alif1, Alif2, Alif3. Setiap akun mendapat username dan password.</div>
-        <div class="admin-grid">
-          <div class="field"><label>Nama dasar</label><input id="genBase" maxlength="18" placeholder="Alif"></div>
-          <div class="field"><label>Jumlah akun</label><input id="genCount" type="number" min="1" max="50" value="10"></div>
-          <div class="field"><label>Masa berlaku (hari)</label><input id="genDays" type="number" min="1" max="3650" value="30"></div>
-          <div class="field"><label>Password (opsional)</label><input id="genPass" type="text" minlength="6" placeholder="Otomatis dibuat"></div>
-        </div>
-        <button id="genGo" class="admin-action">＋ Buat akun</button>
-        <div id="genOutput"></div>
-      </section>
-      <section class="admin-section">
-        <div class="admin-pin-line"><div><h3>Keamanan panel admin</h3><div class="hint" style="margin:4px 0 0">PIN tambahan saat membuka panel di perangkat ini.</div></div><button id="pinToggle" class="admin-switch ${admPinEnabled?'on':''}" aria-label="Aktif/nonaktif PIN"></button></div>
-        <div id="pinSettings" style="margin-top:12px;${admPinEnabled?'':'display:none'}">
-          <div class="field"><label>PIN baru (minimal 4 angka)</label><input id="newAdminPin" type="password" inputmode="numeric" maxlength="12" placeholder="Masukkan PIN"></div>
-          <button id="saveAdminPin" class="admin-action secondary">Simpan PIN</button>
-        </div>
-        <div class="hint" style="margin:10px 0 0">PIN ini merupakan pengunci antarmuka lokal. Hak akses server tetap diperiksa menggunakan akun admin Firebase.</div>
-      </section>
-      <div class="admin-list-title">Daftar akun pengguna</div>
-      <div id="adminUsers"></div>`;
-    $('pinToggle').onclick=()=>{
-      admPinEnabled=!admPinEnabled;
-      localStorage.setItem('ro_admin_pin_enabled',admPinEnabled?'1':'0');
-      $('pinToggle').classList.toggle('on',admPinEnabled);
-      $('pinSettings').style.display=admPinEnabled?'block':'none';
-      if(!admPinEnabled) toast('PIN panel dinonaktifkan.');
-    };
-    $('saveAdminPin').onclick=async()=>{
-      const pin=$('newAdminPin').value.trim();
-      if(!/^\d{4,12}$/.test(pin)){toast('PIN harus 4–12 angka.');return;}
-      localStorage.setItem('ro_admin_pin_hash',await pinDigest(pin));
-      $('newAdminPin').value=''; toast('PIN admin tersimpan di perangkat ini.');
-    };
-    $('genGo').onclick=async()=>{
-      const base=$('genBase').value.trim(), count=Number($('genCount').value), days=Number($('genDays').value), password=$('genPass').value;
-      const out=$('genOutput');
-      if(!base){toast('Isi nama dasar terlebih dahulu.');return;}
-      if(!Number.isInteger(count)||count<1||count>50){toast('Jumlah akun 1 sampai 50.');return;}
-      if(!Number.isInteger(days)||days<1||days>3650){toast('Masa berlaku 1 sampai 3650 hari.');return;}
-      if(password&&password.length<6){toast('Password minimal 6 karakter.');return;}
-      const btn=$('genGo');btn.disabled=true;btn.textContent='Membuat akun...';
-      try{
-        const result=await adminApi({action:'create',base,count,durationDays:days,password:password||null});
-        const accounts=result.accounts||[];
-        out.innerHTML='<div class="credential-output" id="credentialText"></div><button id="copyCredentials" class="admin-action secondary">Salin semua akun</button>';
-        $('credentialText').textContent=accounts.map(a=>`Nama: ${a.name}\nUsername: ${a.username}\nPassword: ${a.password}\nBerlaku sampai: ${new Date(a.expiresAt).toLocaleString('id-ID')}`).join('\n\n');
-        $('copyCredentials').onclick=async()=>{try{await navigator.clipboard.writeText($('credentialText').textContent);toast('Data akun disalin.')}catch(e){toast('Tidak bisa menyalin otomatis.');}};
-        toast(`${accounts.length} akun berhasil dibuat.`);
-      }catch(e){toast(e.message||'Gagal membuat akun.');}
-      btn.disabled=false;btn.textContent='＋ Buat akun';
-    };
-    const list=$('adminUsers');
-    const ids=Object.keys(users);
-    if(!ids.length){list.innerHTML='<div class="note">Belum ada pengguna.</div>';return;}
-    ids.sort((a,b)=>(users[a].name||'').localeCompare(users[b].name||'')).forEach(uid=>{
-      const u=users[uid]||{};
-      const row=document.createElement('div');row.className='row admin-account';
-      const avatar=document.createElement('div');avatar.className='admin-avatar';
-      avatar.innerHTML='<svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.5"/><path d="M5 20c.7-3.5 3.1-5.3 7-5.3s6.3 1.8 7 5.3"/></svg>';
-      const info=document.createElement('div');info.className='info';
-      const n=document.createElement('div');n.className='n';n.textContent=(u.name||'Pengguna')+(banned[uid]?' · Diblokir':'');
-      const e=document.createElement('div');e.className='e';e.textContent=(emails[uid]&&emails[uid].email)||'';
-      info.append(n,e);
-      if(u.managed&&u.expiresAt){const expiry=document.createElement('div');expiry.className='admin-expiry';expiry.textContent='Kedaluwarsa: '+new Date(u.expiresAt).toLocaleString('id-ID');info.append(expiry);}
-      row.append(avatar,info);
-      if(uid!==me.uid){
-        const ban=document.createElement('button');ban.textContent=banned[uid]?'Buka blokir':'Blokir';
-        ban.onclick=async()=>{try{banned[uid]?await remove(ref(db,'banned/'+uid)):await set(ref(db,'banned/'+uid),true);}catch(e){toast('Gagal mengubah status blokir.');}};
-        row.append(ban);
-        if(u.managed){
-          const del=document.createElement('button');del.className='danger';del.textContent='Hapus';
-          del.onclick=async()=>{if(!confirm('Hapus akun '+(u.name||'ini')+' secara permanen?'))return;try{await adminApi({action:'delete',uid});toast('Akun dihapus.');}catch(e){toast(e.message||'Gagal menghapus akun.');}};
-          row.append(del);
-        }
-      }
-      list.append(row);
-    });
+  const b=$('admBody');
+  b.innerHTML=`
+    <section class="admin-section stats-intro">
+      <h3>Ringkasan aktivitas</h3>
+      <div class="hint">Data pengguna dan aktivitas Ruang Obrol diperbarui langsung dari Firebase.</div>
+      <div class="stats-grid">
+        <div class="stat-card"><div class="stat-ring" id="ringUsers"><div class="stat-ring-core"><strong id="statUsers">0</strong><span>Pengguna</span></div></div><div class="stat-label">Total pengguna</div></div>
+        <div class="stat-card"><div class="stat-ring online" id="ringOnline"><div class="stat-ring-core"><strong id="statOnline">0</strong><span>Online</span></div></div><div class="stat-label"><i class="online-dot"></i> Sedang online</div></div>
+        <div class="stat-card"><div class="stat-ring blocked" id="ringBlocked"><div class="stat-ring-core"><strong id="statBlocked">0</strong><span>Blokir</span></div></div><div class="stat-label">Pengguna diblokir</div></div>
+        <div class="stat-card"><div class="stat-ring messages" id="ringMessages"><div class="stat-ring-core"><strong id="statMessages">0</strong><span>Pesan</span></div></div><div class="stat-label">Total pesan</div></div>
+      </div>
+    </section>
+    <section class="admin-section stats-detail">
+      <h3>Status sistem</h3>
+      <div class="stats-line"><span>Koneksi database</span><strong id="statConnection">Memeriksa...</strong></div>
+      <div class="stats-line"><span>Terakhir diperbarui</span><strong id="statUpdated">-</strong></div>
+      <div class="stats-line"><span>Pengguna aktif</span><strong id="statActive">0%</strong></div>
+      <p class="hint" style="margin:12px 0 0">Status online menggunakan koneksi langsung perangkat. Jika aturan Firebase belum mengizinkan jalur <code>/presence</code>, jumlah online tidak dapat dihitung sampai aturan tersebut ditambahkan.</p>
+    </section>`;
+  const state={users:{},banned:{},presence:{},messages:{}};
+  const updateStats=()=>{
+    const total=Object.keys(state.users).length;
+    const online=Object.values(state.presence).filter(v=>v&&v.online===true).length;
+    const blocked=Object.values(state.banned).filter(Boolean).length;
+    const messages=Object.keys(state.messages).length;
+    const pct=total?Math.min(100,Math.round(online/total*100)):0;
+    $('statUsers').textContent=total.toLocaleString('id-ID');
+    $('statOnline').textContent=online.toLocaleString('id-ID');
+    $('statBlocked').textContent=blocked.toLocaleString('id-ID');
+    $('statMessages').textContent=messages.toLocaleString('id-ID');
+    $('statActive').textContent=pct+'%';
+    $('ringUsers').style.setProperty('--value',total?100:0);
+    $('ringOnline').style.setProperty('--value',pct);
+    $('ringBlocked').style.setProperty('--value',total?Math.round(blocked/total*100):0);
+    $('ringMessages').style.setProperty('--value',messages?100:0);
+    $('statUpdated').textContent=new Date().toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
   };
-  admUnsub.forEach(f=>f());
+  const connectionOff=onValue(ref(db,'.info/connected'),snap=>{
+    const connected=snap.val()===true;
+    $('statConnection').textContent=connected?'Terhubung':'Terputus';
+    $('statConnection').style.color=connected?'#71e0a2':'#ff9292';
+  });
   admUnsub=[
-    onValue(ref(db,'users'),s=>{users=s.val()||{};draw();}),
-    onValue(ref(db,'private'),s=>{emails=s.val()||{};draw();}),
-    onValue(ref(db,'banned'),s=>{banned=s.val()||{};draw();})
+    onValue(ref(db,'users'),snap=>{state.users=snap.val()||{};updateStats();}),
+    onValue(ref(db,'banned'),snap=>{state.banned=snap.val()||{};updateStats();}),
+    onValue(ref(db,'presence'),snap=>{state.presence=snap.val()||{};updateStats();},()=>{ $('statOnline').textContent='—'; $('statConnection').textContent='Aturan presence belum diatur';}),
+    onValue(ref(db,'messages'),snap=>{state.messages=snap.val()||{};updateStats();}),
+    connectionOff
   ];
 };
 $('admClose').onclick=()=>{$('vAdmin').classList.add('hidden');admUnsub.forEach(f=>f());admUnsub=[];};
