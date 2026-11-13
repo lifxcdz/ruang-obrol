@@ -1,2 +1,0 @@
-# ruang-obrol
-josjis
