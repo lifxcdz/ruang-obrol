@@ -1,3 +1,5 @@
-"engines": {
-  "node": "26.x"
+{
+  "engines": {
+    "node": "26.x"
+  }
 }
