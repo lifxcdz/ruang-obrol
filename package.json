@@ -1,0 +1,9 @@
+{
+  "name": "ruang-obrol-vercel",
+  "version": "1.0.0",
+  "private": true,
+  "engines": { "node": "20.x" },
+  "dependencies": {
+    "firebase-admin": "^13.0.0"
+  }
+}
