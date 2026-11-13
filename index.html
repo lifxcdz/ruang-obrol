@@ -91,12 +91,75 @@ footer .send{width:auto;padding:0 16px;height:44px;background:var(--text);color:
 .light img{max-width:100%;max-height:100%;margin:auto;display:block;border:1px solid var(--line)}
 .toast{position:fixed;left:50%;bottom:90px;transform:translateX(-50%);border:1px solid var(--line);background:var(--surface);padding:10px 14px;z-index:40;font-size:14px;max-width:88vw;text-align:center}
 @media (prefers-reduced-motion:no-preference){.toast{animation:in .2s ease}@keyframes in{from{opacity:0}to{opacity:1}}}
+
+/* Premium refresh */
+:root{--line:rgba(148,170,210,.16);--line-soft:rgba(148,170,210,.11);--surface:#0c1427;--blue:#4b8cff}
+body{background:radial-gradient(ellipse at 50% -20%,rgba(37,99,235,.16),transparent 48%),var(--bg)}
+button,input,textarea{border-radius:12px}
+button{border-color:var(--line);transition:background .18s,border-color .18s,transform .18s}
+button:active{transform:scale(.98)}
+:focus-visible{outline:2px solid rgba(75,140,255,.7);outline-offset:2px}
+.card{border:1px solid var(--line);border-radius:22px;background:linear-gradient(160deg,rgba(19,31,55,.98),rgba(10,17,32,.98));box-shadow:0 22px 70px rgba(0,0,0,.28)}
+.brand{letter-spacing:-.045em}
+.sub,.note{line-height:1.6}
+.field input,.field textarea,footer textarea{border:1px solid var(--line);border-radius:13px;background:rgba(3,8,20,.42);transition:border-color .2s,box-shadow .2s}
+.field input:focus,footer textarea:focus{border-color:rgba(75,140,255,.75);box-shadow:0 0 0 3px rgba(75,140,255,.1)}
+.btn{border:0;border-radius:13px;background:linear-gradient(135deg,#6aa2ff,#2868e8);color:white;box-shadow:0 8px 24px rgba(37,99,235,.2)}
+.btn.ghost{background:rgba(255,255,255,.045);border:1px solid var(--line);box-shadow:none}
+header{background:rgba(7,11,22,.86);backdrop-filter:blur(18px);border-color:var(--line)}
+header button{border-radius:11px}
+#who{display:flex;align-items:center;gap:7px}
+.profile-mark{width:18px;height:18px;display:inline-grid;place-items:center;flex:none;color:#8db7ff}
+.profile-mark svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+#list{gap:14px}
+.box{border:1px solid var(--line);background:linear-gradient(145deg,#111d34,#0c1528);border-radius:17px;padding:11px 14px}
+.m.me .box{border-color:rgba(93,151,255,.38);background:linear-gradient(145deg,#15356d,#10254b)}
+.meta{gap:7px}
+.badge{border-radius:20px;background:rgba(59,130,246,.12);border-color:rgba(75,140,255,.4);color:#8db7ff;padding:1px 8px}
+footer{background:rgba(7,11,22,.92);border-color:var(--line);backdrop-filter:blur(18px)}
+footer textarea{border-radius:14px}
+footer .ib,.send{border-radius:13px!important}
+.overlay{background:rgba(2,6,16,.84);backdrop-filter:blur(16px)}
+.overlay .top{border-color:var(--line);background:rgba(8,14,27,.94)}
+.overlay .top button{border-radius:10px}
+.row{border:1px solid var(--line);border-radius:15px;background:rgba(15,26,46,.7);padding:12px;margin-bottom:9px}
+.row button{border-radius:10px}
+.toast{border:1px solid var(--line);border-radius:13px;box-shadow:0 12px 40px rgba(0,0,0,.35)}
+/* Borderless loading indicator */
+.loading-mark{width:42px;height:42px;margin:0 auto 18px;position:relative}
+.loading-mark:before{content:"";position:absolute;inset:3px;border:3px solid transparent;border-top-color:#72a7ff;border-right-color:#397bf5;border-radius:50%;animation:spin .8s linear infinite}
+.loading-mark:after{content:"";position:absolute;inset:13px;background:#4b8cff;border-radius:50%;filter:blur(7px);opacity:.38}
+@keyframes spin{to{transform:rotate(360deg)}}
+.load-card{border:1px solid var(--line);border-radius:22px;background:rgba(13,20,38,.88);padding:32px 28px;min-width:min(300px,88vw)}
+.admin-section{border:1px solid var(--line);background:linear-gradient(145deg,rgba(17,29,51,.95),rgba(10,17,32,.95));border-radius:18px;padding:15px;margin-bottom:14px}
+.admin-section h3{font-size:16px;margin-bottom:5px}
+.admin-section .hint{font-size:12px;color:var(--muted);line-height:1.5;margin-bottom:13px}
+.admin-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.admin-grid .field{margin:0}
+.admin-action{padding:11px 13px;background:#2868e8;border:0;border-radius:12px;color:white;font-weight:600;width:100%;margin-top:10px}
+.admin-action.secondary{background:rgba(255,255,255,.06);border:1px solid var(--line);color:var(--text)}
+.admin-list-title{font-size:14px;color:var(--muted);margin:18px 0 9px}
+.admin-account{display:flex;gap:10px;align-items:center}
+.admin-avatar{width:38px;height:38px;flex:none;border-radius:13px;display:grid;place-items:center;background:rgba(75,140,255,.13);color:#8db7ff}
+.admin-avatar svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.admin-account .info{flex:1;min-width:0}
+.admin-account .n{font-weight:700}
+.admin-account .e,.admin-expiry{font-size:12px;color:var(--muted);overflow-wrap:anywhere}
+.admin-account .danger{border-color:rgba(255,107,107,.35);color:#ff9292}
+.admin-pin-line{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.admin-switch{width:48px;height:27px;border:0;border-radius:30px;background:#39445b;position:relative;flex:none}
+.admin-switch:after{content:"";position:absolute;top:4px;left:4px;width:19px;height:19px;background:#fff;border-radius:50%;transition:transform .2s}
+.admin-switch.on{background:#347cf2}
+.admin-switch.on:after{transform:translateX(21px)}
+.credential-output{white-space:pre-wrap;word-break:break-word;background:rgba(0,0,0,.24);border:1px solid var(--line);padding:12px;border-radius:12px;font-size:13px;max-height:230px;overflow:auto;margin-top:12px}
+@media(max-width:420px){.admin-grid{grid-template-columns:1fr 1fr}.overlay .body{padding:12px}}
+
 </style>
 </head>
 <body>
 
 <!-- Memuat -->
-<section id="vLoad" class="view auth"><div class="card" style="text-align:center"><div class="brand">Ruang Obrol</div><div class="sub" style="margin:0">Memuat...</div></div></section>
+<section id="vLoad" class="view auth"><div class="load-card" style="text-align:center"><div class="loading-mark"></div><div class="brand">Ruang Obrol</div><div class="sub" style="margin:0">Menyiapkan ruang obrol...</div></div></section>
 
 <!-- Masuk / Daftar -->
 <section id="vAuth" class="view auth hidden">
@@ -108,7 +171,7 @@ footer .send{width:auto;padding:0 16px;height:44px;background:var(--text);color:
       <button id="tabUp" type="button">Daftar</button>
     </div>
     <div class="field hidden" id="fName"><label for="iName">Nama</label><input id="iName" autocomplete="nickname" maxlength="24"></div>
-    <div class="field"><label for="iEmail">Email</label><input id="iEmail" type="email" autocomplete="email" inputmode="email"></div>
+    <div class="field"><label for="iEmail">Email</label><input id="iEmail" type="text" autocomplete="username" inputmode="email" placeholder="Email atau username"></div>
     <div class="field"><label for="iPass">Password</label><input id="iPass" type="password" autocomplete="current-password"></div>
     <div id="authErr" class="msg-err"></div>
     <button id="authGo" class="btn" type="button">Masuk</button>
@@ -133,7 +196,7 @@ footer .send{width:auto;padding:0 16px;height:44px;background:var(--text);color:
 <section id="vChat" class="view hidden">
   <header>
     <h1>Ruang Obrol</h1>
-    <button class="who" id="who" type="button" aria-label="Profil"></button>
+    <button class="who" id="who" type="button" aria-label="Profil"><span class="profile-mark"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.5"/><path d="M5 20c.7-3.5 3.1-5.3 7-5.3s6.3 1.8 7 5.3"/></svg></span><span id="whoName"></span></button>
     <button id="btnAdmin" class="hidden" type="button">Admin</button>
     <button id="btnOut" type="button">Keluar</button>
   </header>
@@ -178,7 +241,8 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/fireba
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, sendEmailVerification,
   sendPasswordResetEmail, onAuthStateChanged, signOut, updateProfile, setPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import { getDatabase, ref, push, set, remove, onChildAdded, onChildRemoved, onValue, serverTimestamp,
-  query, limitToLast } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+  query, limitToLast, get, update } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-functions.js";
 
 /* ====== ISI BAGIAN INI ====== */
 const firebaseConfig = {
@@ -201,6 +265,7 @@ const auth = getAuth(app);
 // Sesi disimpan di perangkat: setelah masuk sekali, otomatis login lagi saat web dibuka
 setPersistence(auth, browserLocalPersistence).catch(()=>{});
 const db = getDatabase(app);
+const functions = getFunctions(app);
 const $ = id => document.getElementById(id);
 
 /* ---- Cegah zoom ---- */
@@ -240,7 +305,8 @@ function setMode(m){
 $('tabIn').onclick=()=>setMode('in'); $('tabUp').onclick=()=>setMode('up');
 
 $('authGo').onclick=async()=>{
-  const email=$('iEmail').value.trim(), pass=$('iPass').value, name=$('iName').value.trim();
+  let email=$('iEmail').value.trim(), pass=$('iPass').value, name=$('iName').value.trim();
+   if(mode==='in' && !email.includes('@')) email=email.toLowerCase().replace(/[^a-z0-9._-]/g,'')+'@akun.ruang-obrol.app';
   $('authErr').textContent='';
   if(!email||!pass){ $('authErr').textContent='Isi email dan password.'; return; }
   $('authGo').disabled=true;
@@ -297,12 +363,12 @@ function cleanup(){ unsubs.forEach(f=>f()); unsubs=[]; entered=false; $('vProfil
 async function enter(u){
   if(entered) return; entered=true;
   me=u; isAdmin=ADMIN_EMAILS.map(e=>e.toLowerCase()).includes((u.email||'').toLowerCase());
-  $('who').textContent=u.displayName||u.email;
+  $('whoName').textContent=u.displayName||u.email;
   $('btnAdmin').classList.toggle('hidden',!isAdmin);
   show('vChat');
   try{
-    await set(ref(db,'users/'+u.uid),{name:u.displayName||u.email.split('@')[0]});
-    await set(ref(db,'private/'+u.uid),{email:u.email});
+    await update(ref(db,'users/'+u.uid),{name:u.displayName||u.email.split('@')[0]});
+    await update(ref(db,'private/'+u.uid),{email:u.email});
   }catch(e){ toast('Gagal menyimpan profil. Cek Rules database.'); }
 
   unsubs.push(onValue(ref(db,'banned/'+u.uid),s=>{
@@ -415,44 +481,126 @@ $('profSave').onclick=async()=>{
   $('profSave').disabled=true;
   try{
     await updateProfile(me,{displayName:n});
-    await set(ref(db,'users/'+me.uid),{name:n});
-    $('who').textContent=n; out.className='msg-ok'; out.textContent='Nama tersimpan.';
+    await update(ref(db,'users/'+me.uid),{name:n});
+    $('whoName').textContent=n; out.className='msg-ok'; out.textContent='Nama tersimpan.';
   }catch(e){ out.className='msg-err'; out.textContent='Gagal menyimpan. Cek koneksi atau Rules database.'; }
   $('profSave').disabled=false;
 };
 
 /* ---- Panel admin ---- */
-let admUnsub=[];
-$('btnAdmin').onclick=()=>{
+let admUnsub=[], admPinEnabled=localStorage.getItem('ro_admin_pin_enabled')==='1';
+const createManagedAccounts=httpsCallable(functions,'createManagedAccounts');
+const deleteManagedAccount=httpsCallable(functions,'deleteManagedAccount');
+const pinDigest=async(pin)=>{
+  const bytes=new TextEncoder().encode(pin);
+  const hash=await crypto.subtle.digest('SHA-256',bytes);
+  return [...new Uint8Array(hash)].map(x=>x.toString(16).padStart(2,'0')).join('');
+};
+async function adminGate(){
+  if(!admPinEnabled) return true;
+  const saved=localStorage.getItem('ro_admin_pin_hash');
+  if(!saved){ toast('Buat PIN baru pada bagian Keamanan panel admin.'); return true; }
+  const pin=prompt('Masukkan PIN admin untuk membuka panel:');
+  if(pin===null) return false;
+  if(await pinDigest(pin)!==saved){ toast('PIN admin salah.'); return false; }
+  return true;
+}
+$('btnAdmin').onclick=async()=>{
+  if(!isAdmin) return;
+  if(!await adminGate()) return;
   $('vAdmin').classList.remove('hidden');
   let users={},emails={},banned={};
   const draw=()=>{
-    const b=$('admBody'); b.innerHTML='';
+    const b=$('admBody');
+    b.innerHTML=`
+      <section class="admin-section">
+        <h3>Generator akun</h3>
+        <div class="hint">Buat akun pengguna sekaligus. Nama dibuat berurutan, misalnya Alif1, Alif2, Alif3. Setiap akun mendapat username dan password.</div>
+        <div class="admin-grid">
+          <div class="field"><label>Nama dasar</label><input id="genBase" maxlength="18" placeholder="Alif"></div>
+          <div class="field"><label>Jumlah akun</label><input id="genCount" type="number" min="1" max="50" value="10"></div>
+          <div class="field"><label>Masa berlaku (hari)</label><input id="genDays" type="number" min="1" max="3650" value="30"></div>
+          <div class="field"><label>Password (opsional)</label><input id="genPass" type="text" minlength="6" placeholder="Otomatis dibuat"></div>
+        </div>
+        <button id="genGo" class="admin-action">＋ Buat akun</button>
+        <div id="genOutput"></div>
+      </section>
+      <section class="admin-section">
+        <div class="admin-pin-line"><div><h3>Keamanan panel admin</h3><div class="hint" style="margin:4px 0 0">PIN tambahan saat membuka panel di perangkat ini.</div></div><button id="pinToggle" class="admin-switch ${admPinEnabled?'on':''}" aria-label="Aktif/nonaktif PIN"></button></div>
+        <div id="pinSettings" style="margin-top:12px;${admPinEnabled?'':'display:none'}">
+          <div class="field"><label>PIN baru (minimal 4 angka)</label><input id="newAdminPin" type="password" inputmode="numeric" maxlength="12" placeholder="Masukkan PIN"></div>
+          <button id="saveAdminPin" class="admin-action secondary">Simpan PIN</button>
+        </div>
+        <div class="hint" style="margin:10px 0 0">PIN ini merupakan pengunci antarmuka lokal. Hak akses server tetap diperiksa menggunakan akun admin Firebase.</div>
+      </section>
+      <div class="admin-list-title">Daftar akun pengguna</div>
+      <div id="adminUsers"></div>`;
+    $('pinToggle').onclick=()=>{
+      admPinEnabled=!admPinEnabled;
+      localStorage.setItem('ro_admin_pin_enabled',admPinEnabled?'1':'0');
+      $('pinToggle').classList.toggle('on',admPinEnabled);
+      $('pinSettings').style.display=admPinEnabled?'block':'none';
+      if(!admPinEnabled) toast('PIN panel dinonaktifkan.');
+    };
+    $('saveAdminPin').onclick=async()=>{
+      const pin=$('newAdminPin').value.trim();
+      if(!/^\d{4,12}$/.test(pin)){toast('PIN harus 4–12 angka.');return;}
+      localStorage.setItem('ro_admin_pin_hash',await pinDigest(pin));
+      $('newAdminPin').value=''; toast('PIN admin tersimpan di perangkat ini.');
+    };
+    $('genGo').onclick=async()=>{
+      const base=$('genBase').value.trim(), count=Number($('genCount').value), days=Number($('genDays').value), password=$('genPass').value;
+      const out=$('genOutput');
+      if(!base){toast('Isi nama dasar terlebih dahulu.');return;}
+      if(!Number.isInteger(count)||count<1||count>50){toast('Jumlah akun 1 sampai 50.');return;}
+      if(!Number.isInteger(days)||days<1||days>3650){toast('Masa berlaku 1 sampai 3650 hari.');return;}
+      if(password&&password.length<6){toast('Password minimal 6 karakter.');return;}
+      const btn=$('genGo');btn.disabled=true;btn.textContent='Membuat akun...';
+      try{
+        const result=await createManagedAccounts({base,count,durationDays:days,password:password||null});
+        const accounts=result.data.accounts||[];
+        out.innerHTML='<div class="credential-output" id="credentialText"></div><button id="copyCredentials" class="admin-action secondary">Salin semua akun</button>';
+        $('credentialText').textContent=accounts.map(a=>`Nama: ${a.name}\nUsername: ${a.username}\nPassword: ${a.password}\nBerlaku sampai: ${new Date(a.expiresAt).toLocaleString('id-ID')}`).join('\n\n');
+        $('copyCredentials').onclick=async()=>{try{await navigator.clipboard.writeText($('credentialText').textContent);toast('Data akun disalin.')}catch(e){toast('Tidak bisa menyalin otomatis.');}};
+        toast(`${accounts.length} akun berhasil dibuat.`);
+      }catch(e){toast(e.message||'Gagal membuat akun.');}
+      btn.disabled=false;btn.textContent='＋ Buat akun';
+    };
+    const list=$('adminUsers');
     const ids=Object.keys(users);
-    if(!ids.length){ b.textContent='Belum ada pengguna.'; return; }
-    ids.forEach(uid=>{
-      const r=document.createElement('div'); r.className='row';
-      const info=document.createElement('div'); info.className='info';
-      info.innerHTML='<div class="n"></div><div class="e"></div>';
-      info.querySelector('.n').textContent=users[uid].name+(banned[uid]?' (diblokir)':'');
-      info.querySelector('.e').textContent=(emails[uid]&&emails[uid].email)||'';
-      r.appendChild(info);
+    if(!ids.length){list.innerHTML='<div class="note">Belum ada pengguna.</div>';return;}
+    ids.sort((a,b)=>(users[a].name||'').localeCompare(users[b].name||'')).forEach(uid=>{
+      const u=users[uid]||{};
+      const row=document.createElement('div');row.className='row admin-account';
+      const avatar=document.createElement('div');avatar.className='admin-avatar';
+      avatar.innerHTML='<svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.5"/><path d="M5 20c.7-3.5 3.1-5.3 7-5.3s6.3 1.8 7 5.3"/></svg>';
+      const info=document.createElement('div');info.className='info';
+      const n=document.createElement('div');n.className='n';n.textContent=(u.name||'Pengguna')+(banned[uid]?' · Diblokir':'');
+      const e=document.createElement('div');e.className='e';e.textContent=(emails[uid]&&emails[uid].email)||'';
+      info.append(n,e);
+      if(u.managed&&u.expiresAt){const expiry=document.createElement('div');expiry.className='admin-expiry';expiry.textContent='Kedaluwarsa: '+new Date(u.expiresAt).toLocaleString('id-ID');info.append(expiry);}
+      row.append(avatar,info);
       if(uid!==me.uid){
-        const btn=document.createElement('button'); btn.textContent=banned[uid]?'Buka blokir':'Blokir';
-        btn.onclick=async()=>{ try{ banned[uid]? await remove(ref(db,'banned/'+uid)) : await set(ref(db,'banned/'+uid),true); }catch(e){ toast('Gagal. Cek Rules.'); } };
-        r.appendChild(btn);
+        const ban=document.createElement('button');ban.textContent=banned[uid]?'Buka blokir':'Blokir';
+        ban.onclick=async()=>{try{banned[uid]?await remove(ref(db,'banned/'+uid)):await set(ref(db,'banned/'+uid),true);}catch(e){toast('Gagal mengubah status blokir.');}};
+        row.append(ban);
+        if(u.managed){
+          const del=document.createElement('button');del.className='danger';del.textContent='Hapus';
+          del.onclick=async()=>{if(!confirm('Hapus akun '+(u.name||'ini')+' secara permanen?'))return;try{await deleteManagedAccount({uid});toast('Akun dihapus.');}catch(e){toast(e.message||'Gagal menghapus akun.');}};
+          row.append(del);
+        }
       }
-      b.appendChild(r);
+      list.append(row);
     });
   };
   admUnsub.forEach(f=>f());
   admUnsub=[
-    onValue(ref(db,'users'),s=>{ users=s.val()||{}; draw(); }),
-    onValue(ref(db,'private'),s=>{ emails=s.val()||{}; draw(); }),
-    onValue(ref(db,'banned'),s=>{ banned=s.val()||{}; draw(); })
+    onValue(ref(db,'users'),s=>{users=s.val()||{};draw();}),
+    onValue(ref(db,'private'),s=>{emails=s.val()||{};draw();}),
+    onValue(ref(db,'banned'),s=>{banned=s.val()||{};draw();})
   ];
 };
-$('admClose').onclick=()=>{ $('vAdmin').classList.add('hidden'); admUnsub.forEach(f=>f()); admUnsub=[]; };
+$('admClose').onclick=()=>{$('vAdmin').classList.add('hidden');admUnsub.forEach(f=>f());admUnsub=[];};
 
 setMode('in');
 </script>
