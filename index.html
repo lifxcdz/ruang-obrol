@@ -164,6 +164,23 @@ footer .ib,.send{border-radius:13px!important}
 select{background:rgba(3,8,20,.42);border:1px solid var(--line);border-radius:13px;padding:11px 12px;width:100%;color:var(--text);font:inherit;outline:none}
 select option{background:#0c1427;color:var(--text)}
 .online-dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:#4ade80;margin-right:6px}
+/* Pemutar lagu dari admin */
+.music-bar{flex:none;display:flex;align-items:center;gap:12px;padding:9px 14px;border-bottom:1px solid rgba(75,140,255,.28);background:linear-gradient(90deg,rgba(75,140,255,.16),rgba(75,140,255,.05))}
+.music-info{flex:1;min-width:0}
+.music-title{font-size:14px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.music-sub{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+.music-bar button{padding:6px 12px;font-size:13px;flex:none;border-radius:10px}
+/* Profil */
+.avatar{width:72px;height:72px;border-radius:24px;display:grid;place-items:center;font-size:30px;font-weight:700;color:#fff;margin:0 auto 14px}
+.pcolors{display:flex;gap:10px;flex-wrap:wrap}
+.pcolor{width:34px;height:34px;border-radius:12px;border:2px solid transparent;padding:0}
+.pcolor.on{border-color:#fff}
+.pinfo{display:grid;grid-template-columns:auto 1fr;gap:8px 16px;font-size:14px;margin:16px 0 4px}
+.pinfo dt{color:var(--muted)}
+.pinfo dd{word-break:break-word}
+.field textarea{padding:11px 12px;resize:none;min-height:72px}
+.psec{font-size:13px;color:var(--muted);margin:16px 0 8px}
+.nm{cursor:pointer}
 /* Jarak Turnstile: tidak ada celah sebelum muncul */
 #cfBox{display:flex;justify-content:center;margin:12px 0 4px}
 #cfBox:empty{display:none}
@@ -232,6 +249,7 @@ select option{background:#0c1427;color:var(--text)}
     <button id="btnAdmin" class="hidden" type="button">Admin</button>
     <button id="btnOut" type="button">Keluar</button>
   </header>
+  <div id="musicBar" class="music-bar hidden"><div class="music-info"><div class="music-title" id="musicTitle"></div><div class="music-sub" id="musicSub"></div></div><button id="musicMute" type="button">Bisukan</button></div>
   <div id="purgeBar" class="purge-bar hidden"><div class="purge-title" id="purgeTitle">Penghapusan pesan akan dimulai</div><div class="purge-time" id="purgeTime">00:00</div></div>
   <div id="list"><div class="empty" id="empty">Belum ada pesan. Mulai obrolan.</div></div>
   <div id="bannedBar" class="banned hidden">Akunmu sedang dibatasi. Lihat detail status moderasi.</div>
@@ -259,15 +277,30 @@ select option{background:#0c1427;color:var(--text)}
 <section id="vProfile" class="overlay hidden">
   <div class="top"><h2>Profil</h2><button id="profClose" type="button">Tutup</button></div>
   <div class="body"><div class="card" style="margin:0 auto">
+    <div class="avatar" id="pAvatar"></div>
     <div class="field"><label for="iProfName">Nama</label><input id="iProfName" maxlength="24" autocomplete="nickname"></div>
-    <div class="field"><label>Email</label><div id="profEmail" class="note" style="margin:0"></div></div>
+    <div class="field"><label for="iBio">Bio</label><textarea id="iBio" maxlength="120" placeholder="Ceritakan sedikit tentang kamu"></textarea></div>
+    <div class="field"><label for="iStatus">Status</label><input id="iStatus" maxlength="40" placeholder="Contoh: Lagi santai"></div>
+    <div class="field"><label for="iCity">Kota</label><input id="iCity" maxlength="40" autocomplete="address-level2"></div>
+    <div class="field"><label for="iHobby">Hobi</label><input id="iHobby" maxlength="60" placeholder="Contoh: musik, game, fotografi"></div>
+    <div class="field"><label for="iIg">Instagram</label><input id="iIg" maxlength="31" placeholder="username tanpa @" autocapitalize="none"></div>
+    <div class="field"><label>Warna profil</label><div class="pcolors" id="pColors"></div></div>
+    <div class="psec">Info akun</div>
+    <dl class="pinfo">
+      <dt>Email</dt><dd id="profEmail"></dd>
+      <dt>Peran</dt><dd id="profRole"></dd>
+      <dt>Bergabung</dt><dd id="profJoined"></dd>
+      <dt>Terakhir masuk</dt><dd id="profLast"></dd>
+    </dl>
     <div id="profMsg" class="msg-err"></div>
-    <button id="profSave" class="btn" type="button">Simpan nama</button>
-    <p class="note">Nama baru akan tampil di semua pesanmu, termasuk yang lama.</p>
+    <button id="profSave" class="btn" type="button">Simpan profil</button>
+    <p class="note">Nama baru akan tampil di semua pesanmu, termasuk yang lama. Bio, status, kota, hobi, dan Instagram bisa dilihat pengguna lain saat mereka mengetuk namamu di chat. Email tidak ditampilkan ke orang lain.</p>
   </div></div>
 </section>
 
 <!-- Pratinjau foto -->
+<section id="vUser" class="overlay hidden"><div class="top"><h2>Profil pengguna</h2><button id="userClose" type="button">Tutup</button></div><div class="body"><div class="card" style="margin:0 auto"><div class="avatar" id="uAvatar"></div><div class="brand" id="uName" style="font-size:22px;text-align:center"></div><dl class="pinfo" id="uInfo"></dl></div></div></section>
+
 <section id="vLight" class="overlay light hidden"><div class="top"><h2>Foto</h2><button id="lightClose" type="button">Tutup</button></div><div class="body"><img id="lightImg" alt=""></div></section>
 
 <script type="module">
@@ -286,7 +319,7 @@ const firebaseConfig = {
   appId: "1:630514464050:web:3a6b445d79ff97a6c1932b",
 };
 // Site key Cloudflare Turnstile (publik, dari dashboard Cloudflare)
-const TURNSTILE_SITE_KEY = "0x4AAAAAAGAjoHwEjnf2nYUB";
+const TURNSTILE_SITE_KEY = "ISI_SITE_KEY_TURNSTILE";
 // Email yang otomatis jadi admin (harus sama dengan email di Rules database)
 const ADMIN_EMAILS = ["lifxcdz@gmail.com"];
 /* ============================ */
@@ -399,6 +432,35 @@ $('btnOut').onclick=async()=>{ await dropPresence(); signOut(auth); };
 /* ---- Sesi ---- */
 let me=null, isAdmin=false, unsubs=[], entered=false; const names={};
 let myPres=null, srvOff=0, purgeTimer=null, purging=false;
+const usersData={};
+let musicEl=null, musicCur=null, musicMuted=false;
+function stopMusicLocal(){
+  if(musicEl){ const a=musicEl; musicEl=null; a.onloadedmetadata=a.onerror=a.onended=a.ontimeupdate=null; try{ a.pause(); a.removeAttribute('src'); a.load(); }catch(e){} }
+  $('musicBar').classList.add('hidden');
+}
+function musicFinished(){ stopMusicLocal(); musicCur=null; if(isAdmin) remove(ref(db,'broadcast/music')).catch(()=>{}); }
+function handleMusic(m){
+  if(m&&musicCur&&m.url===musicCur.url&&m.startAt===musicCur.startAt) return;
+  stopMusicLocal(); musicCur=null;
+  if(!m||!m.url) return;
+  musicCur=m;
+  $('musicTitle').textContent=m.title||'Lagu dari admin';
+  $('musicSub').textContent='Memuat...';
+  $('musicBar').classList.remove('hidden');
+  const a=new Audio(); musicEl=a; a.preload='auto'; a.muted=musicMuted;
+  a.onloadedmetadata=()=>{
+    const el=(Date.now()+srvOff-Number(m.startAt))/1000;
+    if(isFinite(a.duration)&&el>=a.duration-0.5){ musicFinished(); return; }
+    try{ if(el>1) a.currentTime=el; }catch(e){}
+    a.play().catch(()=>{ $('musicSub').textContent='Ketuk banner untuk memutar'; });
+  };
+  a.ontimeupdate=()=>{ $('musicSub').textContent=fmtCount(Math.floor(a.currentTime))+' / '+(isFinite(a.duration)?fmtCount(Math.floor(a.duration)):'--:--'); };
+  a.onended=musicFinished;
+  a.onerror=()=>{ $('musicSub').textContent='Lagu tidak bisa dimuat'; if(isAdmin) toast('Link lagu tidak bisa diputar. Pastikan link langsung ke file audio.'); };
+  a.src=m.url;
+}
+$('musicBar').onclick=()=>{ if(musicEl&&musicEl.paused&&musicCur) musicEl.play().catch(()=>{}); };
+$('musicMute').onclick=e=>{ e.stopPropagation(); musicMuted=!musicMuted; if(musicEl) musicEl.muted=musicMuted; $('musicMute').textContent=musicMuted?'Bunyikan':'Bisukan'; };
 const fmtCount=s=>{ const h=Math.floor(s/3600), m=Math.floor(s%3600/60), x=s%60, p=n=>String(n).padStart(2,'0'); return h?h+':'+p(m)+':'+p(x):p(m)+':'+p(x); };
 async function dropPresence(){ if(myPres){ const r=myPres; myPres=null; try{ await remove(r); }catch(e){} } }
 async function runPurge(){
@@ -444,7 +506,7 @@ onAuthStateChanged(auth,async u=>{
   enter(u);
 });
 
-function cleanup(){ unsubs.forEach(f=>f()); unsubs=[]; entered=false; clearInterval(purgeTimer); purgeTimer=null; $('purgeBar').classList.add('hidden'); $('vProfile').classList.add('hidden'); $('vAdmin').classList.add('hidden'); $('list').innerHTML='<div class="empty" id="empty">Belum ada pesan. Mulai obrolan.</div>'; }
+function cleanup(){ unsubs.forEach(f=>f()); unsubs=[]; entered=false; clearInterval(purgeTimer); purgeTimer=null; $('purgeBar').classList.add('hidden'); stopMusicLocal(); musicCur=null; $('vUser').classList.add('hidden'); $('vProfile').classList.add('hidden'); $('vAdmin').classList.add('hidden'); $('list').innerHTML='<div class="empty" id="empty">Belum ada pesan. Mulai obrolan.</div>'; }
 
 async function enter(u){
   if(entered) return;
@@ -465,7 +527,7 @@ async function enter(u){
   $('btnAdmin').classList.toggle('hidden',!isAdmin);
   show('vChat');
   try{
-    await update(ref(db,'users/'+u.uid),{name:u.displayName||u.email.split('@')[0]});
+    await update(ref(db,'users/'+u.uid),{name:u.displayName||u.email.split('@')[0],joinedAt:Date.parse(u.metadata.creationTime)||Date.now()});
     await update(ref(db,'private/'+u.uid),{email:u.email});
   }catch(e){ toast('Gagal menyimpan profil. Cek Rules database.'); }
 
@@ -477,6 +539,7 @@ async function enter(u){
   // Timer hapus semua pesan
   unsubs.push(onValue(ref(db,'.info/serverTimeOffset'),s=>{ srvOff=Number(s.val())||0; }));
   unsubs.push(onValue(ref(db,'broadcast/purge'),s=>handlePurge(s.val())));
+  unsubs.push(onValue(ref(db,'broadcast/music'),s=>handleMusic(s.val())));
 
   unsubs.push(onValue(ref(db,'banned/'+u.uid),s=>{
     const v=s.val(); const b=!!(v&&(!v.expiresAt||Number(v.expiresAt)>Date.now())); $('bannedBar').classList.toggle('hidden',!b); $('composer').classList.toggle('hidden',b);
@@ -485,6 +548,7 @@ async function enter(u){
 
   unsubs.push(onValue(ref(db,'users'),s=>{
     const v=s.val()||{}; for(const k in v) names[k]=v[k].name;
+    Object.keys(usersData).forEach(k=>delete usersData[k]); Object.assign(usersData,v);
     document.querySelectorAll('.nm').forEach(el=>{ if(me&&el.dataset.uid!==me.uid&&names[el.dataset.uid]) el.textContent=names[el.dataset.uid]; });
   }));
   const q=query(ref(db,'messages'),limitToLast(LOAD_LAST));
@@ -502,7 +566,7 @@ function addMsg(id,m){
   const w=document.createElement('div'); w.className='m'+(mine?' me':''); w.id='m_'+id;
 
   const meta=document.createElement('div'); meta.className='meta';
-  const nm=document.createElement('span'); nm.className='nm'; nm.dataset.uid=m.uid; nm.textContent=mine?'Kamu':(names[m.uid]||m.name||'Pengguna'); meta.appendChild(nm);
+  const nm=document.createElement('span'); nm.className='nm'; nm.dataset.uid=m.uid; nm.textContent=mine?'Kamu':(names[m.uid]||m.name||'Pengguna'); nm.onclick=()=>openUser(m.uid); meta.appendChild(nm);
   if(m.admin){ const b=document.createElement('span'); b.className='badge'; b.textContent='Admin'; meta.appendChild(b); }
   const tm=document.createElement('span'); tm.textContent=fmtTime(m.ts); meta.appendChild(tm);
   w.appendChild(meta);
@@ -593,19 +657,51 @@ $('fAny').onchange=async e=>{
 };
 
 /* ---- Profil ---- */
+const PCOLORS=['#2868e8','#8b5cf6','#ec4899','#f97316','#10b981','#06b6d4'];
+let pColor=PCOLORS[0];
+const initial=n=>(String(n||'?').trim()[0]||'?').toUpperCase();
+const fmtDate=ts=>ts?new Date(Number(ts)).toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'}):'-';
+function paintAvatar(el,name,color){ el.textContent=initial(name); el.style.background=color||PCOLORS[0]; }
+function drawColors(){
+  const box=$('pColors'); box.innerHTML='';
+  PCOLORS.forEach(c=>{
+    const b=document.createElement('button'); b.type='button'; b.className='pcolor'+(c===pColor?' on':''); b.style.background=c; b.setAttribute('aria-label','Pilih warna');
+    b.onclick=()=>{ pColor=c; drawColors(); paintAvatar($('pAvatar'),$('iProfName').value||me.displayName,pColor); };
+    box.appendChild(b);
+  });
+}
 $('who').onclick=()=>{
-  $('iProfName').value=me.displayName||''; $('profEmail').textContent=me.email;
+  const p=usersData[me.uid]||{};
+  $('iProfName').value=me.displayName||''; $('iBio').value=p.bio||''; $('iStatus').value=p.status||''; $('iCity').value=p.city||''; $('iHobby').value=p.hobby||''; $('iIg').value=p.ig||'';
+  pColor=p.color||PCOLORS[0]; drawColors(); paintAvatar($('pAvatar'),me.displayName,pColor);
+  $('profEmail').textContent=me.email;
+  $('profRole').textContent=isAdmin?'Admin':'Anggota';
+  $('profJoined').textContent=fmtDate(Date.parse((me.metadata||{}).creationTime));
+  $('profLast').textContent=(me.metadata||{}).lastSignInTime?new Date(me.metadata.lastSignInTime).toLocaleString('id-ID'):'-';
   $('profMsg').textContent=''; $('vProfile').classList.remove('hidden');
 };
+$('iProfName').addEventListener('input',()=>paintAvatar($('pAvatar'),$('iProfName').value,pColor));
 $('profClose').onclick=()=>$('vProfile').classList.add('hidden');
+function openUser(uid){
+  const p=usersData[uid]; if(!p) return;
+  paintAvatar($('uAvatar'),p.name,p.color); $('uName').textContent=p.name||'Pengguna';
+  const rows=[['Bio',p.bio],['Status',p.status],['Kota',p.city],['Hobi',p.hobby],['Instagram',p.ig?'@'+p.ig:''],['Bergabung',p.joinedAt?fmtDate(p.joinedAt):'']].filter(r=>r[1]);
+  const dl=$('uInfo'); dl.innerHTML='';
+  if(!rows.length){ const d=document.createElement('dd'); d.style.gridColumn='1 / -1'; d.style.color='var(--muted)'; d.textContent='Belum ada data profil.'; dl.append(d); }
+  rows.forEach(([k,v])=>{ const dt=document.createElement('dt'); dt.textContent=k; const dd=document.createElement('dd'); dd.textContent=v; dl.append(dt,dd); });
+  $('vUser').classList.remove('hidden');
+}
+$('userClose').onclick=()=>$('vUser').classList.add('hidden');
 $('profSave').onclick=async()=>{
   const n=$('iProfName').value.trim(), out=$('profMsg');
   if(!n){ out.className='msg-err'; out.textContent='Nama tidak boleh kosong.'; return; }
   $('profSave').disabled=true;
+  const ig=$('iIg').value.trim().replace(/^@/,'').replace(/[^A-Za-z0-9._]/g,'').slice(0,30);
+  const data={name:n,bio:$('iBio').value.trim().slice(0,120),status:$('iStatus').value.trim().slice(0,40),city:$('iCity').value.trim().slice(0,40),hobby:$('iHobby').value.trim().slice(0,60),ig,color:pColor};
   try{
     await updateProfile(me,{displayName:n});
-    await update(ref(db,'users/'+me.uid),{name:n});
-    $('whoName').textContent=n; out.className='msg-ok'; out.textContent='Nama tersimpan.';
+    await update(ref(db,'users/'+me.uid),data);
+    $('whoName').textContent=n; out.className='msg-ok'; out.textContent='Profil tersimpan.';
   }catch(e){ out.className='msg-err'; out.textContent='Gagal menyimpan. Cek koneksi atau Rules database.'; }
   $('profSave').disabled=false;
 };
@@ -621,7 +717,7 @@ async function moderationApi(payload){
 $('btnAdmin').onclick=async()=>{
  if(!isAdmin) return;
  $('vAdmin').classList.remove('hidden');
- let users={},emails={},banned={},jail={},modUsers={},logs={},presence={}; let tab='stats'; let purgeVal='30', purgeUnit='1';
+ let users={},emails={},banned={},jail={},modUsers={},logs={},presence={}; let tab='stats'; let purgeVal='30', purgeUnit='1', musicTitleVal='', musicUrlVal='';
  const esc=s=>String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
  const act=async(action,uid,extra={})=>{try{await moderationApi({action,uid,...extra});toast('Tindakan berhasil.');}catch(e){toast(e.message||'Gagal.');}};
  const makeRow=uid=>{
@@ -642,9 +738,9 @@ $('btnAdmin').onclick=async()=>{
   return row;
  };
  const draw=()=>{
-  if(document.activeElement&&document.activeElement.id==='purgeVal') return;
+  if(document.activeElement&&['purgeVal','musicTitleIn','musicUrlIn'].includes(document.activeElement.id)) return;
   const b=$('admBody'); const ids=Object.keys(users); const banIds=Object.keys(banned); const jailIds=Object.keys(jail);
-  b.innerHTML=`<nav class="admin-section" style="display:flex;gap:8px;flex-wrap:wrap"><button class="admin-action ${tab==='stats'?'':'secondary'}" data-tab="stats">Statistik</button><button class="admin-action ${tab==='users'?'':'secondary'}" data-tab="users">Pengguna</button><button class="admin-action ${tab==='banned'?'':'secondary'}" data-tab="banned">Akun diblokir (${banIds.length})</button><button class="admin-action ${tab==='jail'?'':'secondary'}" data-tab="jail">Jail (${jailIds.length})</button><button class="admin-action ${tab==='logs'?'':'secondary'}" data-tab="logs">Riwayat bot</button></nav>`;
+  b.innerHTML=`<nav class="admin-section" style="display:flex;gap:8px;flex-wrap:wrap"><button class="admin-action ${tab==='stats'?'':'secondary'}" data-tab="stats">Statistik</button><button class="admin-action ${tab==='users'?'':'secondary'}" data-tab="users">Pengguna</button><button class="admin-action ${tab==='banned'?'':'secondary'}" data-tab="banned">Akun diblokir (${banIds.length})</button><button class="admin-action ${tab==='jail'?'':'secondary'}" data-tab="jail">Jail (${jailIds.length})</button><button class="admin-action ${tab==='music'?'':'secondary'}" data-tab="music">Musik</button><button class="admin-action ${tab==='logs'?'':'secondary'}" data-tab="logs">Riwayat bot</button></nav>`;
   if(tab==='stats') b.innerHTML+=`<section class="admin-section"><h3>Ringkasan Ruang Obrol</h3><div class="admin-grid"><div class="card"><b>${ids.length}</b><div class="hint">Total akun</div></div><div class="card"><b>${banIds.length}</b><div class="hint">Akun diblokir</div></div><div class="card"><b>${jailIds.length}</b><div class="hint">Sedang di Jail</div></div><div class="card"><b>${Object.keys(logs).length}</b><div class="hint">Catatan moderasi</div></div></div><div class="hint">Bot memberi peringatan terlebih dahulu, lalu Jail sementara, dan ban sementara untuk pelanggaran berulang. Admin dikecualikan.</div></section><section class="admin-section"><h3>Akun online (<span id="onCount">0</span>)</h3><div class="hint">Akun yang sedang login dan membuka Ruang Obrol. Kamu bisa langsung Jail atau Ban dari sini.</div><div id="onlineUsers"></div></section><section class="admin-section"><h3>Hapus semua pesan</h3><div class="hint">Ketik lama hitung mundur. Semua pengguna akan melihat pemberitahuan penghapusan pesan beserta timernya. Biarkan halaman ini tetap terbuka sampai selesai.</div><div class="admin-grid"><div class="field"><input id="purgeVal" type="number" inputmode="numeric" min="5" placeholder="Waktu"></div><div class="field"><select id="purgeUnit"><option value="1">Detik</option><option value="60">Menit</option><option value="3600">Jam</option></select></div></div><button class="admin-action" id="purgeGo" type="button">Mulai hapus semua pesan</button><button class="admin-action secondary" id="purgeCancel" type="button">Batalkan timer</button></section>`;
   if(tab==='stats'){
    const on=Object.keys(presence).filter(k=>presence[k]&&Object.keys(presence[k]).length);
@@ -672,6 +768,20 @@ $('btnAdmin').onclick=async()=>{
    selected.forEach(uid=>{const u=users[uid]||{}, ban=banned[uid], j=jail[uid]; const row=document.createElement('div');row.className='row admin-account';const info=document.createElement('div');info.className='info';const name=document.createElement('div');name.className='n';name.textContent=u.name||'Pengguna';const email=document.createElement('div');email.className='e';email.textContent=(emails[uid]||{}).email||'';const status=document.createElement('div');status.className='e';status.textContent=ban?'Diblokir · '+(ban.reason||''):j?'Jail · '+(j.reason||''):'Aktif';info.append(name,email,status);row.append(info);
     if(uid!==me.uid){const btn=document.createElement('button');btn.textContent=ban?'Buka ban':j?'Lepas Jail':'Jail 10 menit';btn.onclick=()=>act(ban?'unban':j?'unjail':'jail',uid,{minutes:10,reason:'Tindakan admin'});row.append(btn);const banBtn=document.createElement('button');banBtn.className='danger';banBtn.textContent=ban?'':'Ban 24 jam';if(!ban)banBtn.onclick=()=>{const reason=prompt('Alasan ban:','Pelanggaran aturan komunitas');if(reason)act('ban',uid,{hours:24,reason});};row.append(banBtn);}
     list.append(row);});
+  }
+  if(tab==='music'){
+   b.innerHTML+=`<section class="admin-section"><h3>Putar lagu untuk semua pengguna</h3><div class="hint">Tempel link langsung ke file audio (berakhiran .mp3, .m4a, .ogg, dan sejenisnya) yang memang boleh kamu putar. Lagu terdengar di semua pengguna yang sedang membuka Ruang Obrol, dan banner otomatis hilang saat lagu habis. Link YouTube atau Spotify tidak bisa dipakai.</div><div class="field"><label>Judul</label><input id="musicTitleIn" maxlength="60" placeholder="Judul lagu"></div><div class="field"><label>Link audio (https)</label><input id="musicUrlIn" type="url" placeholder="https://contoh.com/lagu.mp3" autocapitalize="none"></div><button class="admin-action" id="musicPlay" type="button">Putar lagu</button><button class="admin-action secondary" id="musicStop" type="button">Hentikan lagu</button><div class="note" id="musicNow"></div></section>`;
+   const mt=b.querySelector('#musicTitleIn'), mu=b.querySelector('#musicUrlIn');
+   mt.value=musicTitleVal; mu.value=musicUrlVal;
+   mt.oninput=()=>{musicTitleVal=mt.value;}; mu.oninput=()=>{musicUrlVal=mu.value;};
+   b.querySelector('#musicNow').textContent=musicCur?'Sedang diputar: '+(musicCur.title||'Lagu'):'Tidak ada lagu yang diputar.';
+   b.querySelector('#musicPlay').onclick=async()=>{
+    const url=mu.value.trim();
+    if(!/^https:\/\//i.test(url)){ toast('Link harus diawali https://'); return; }
+    try{ await set(ref(db,'broadcast/music'),{url,title:mt.value.trim().slice(0,60)||'Lagu dari admin',startAt:Date.now()+srvOff,by:me.uid}); toast('Lagu diputar untuk semua pengguna.'); }
+    catch(e){ toast('Gagal memutar. Cek Rules database.'); }
+   };
+   b.querySelector('#musicStop').onclick=async()=>{ try{ await remove(ref(db,'broadcast/music')); toast('Lagu dihentikan.'); }catch(e){ toast('Gagal menghentikan.'); } };
   }
   if(tab==='logs'){b.innerHTML+=`<section class="admin-section"><h3>Riwayat moderasi terbaru</h3><div id="moderationLogs"></div></section>`;const list=b.querySelector('#moderationLogs');const entries=Object.entries(logs).sort((a,b)=>(b[1].createdAt||b[1].lastAt||0)-(a[1].createdAt||a[1].lastAt||0)).slice(0,80);list.innerHTML=entries.length?'':'<div class="note">Belum ada riwayat moderasi.</div>';entries.forEach(([key,v])=>{const item=document.createElement('div');item.className='admin-account';item.textContent=`${users[v.uid]?.name||v.uid} · ${v.action||'catatan'} · ${v.reason||''} · ${new Date(v.createdAt||v.lastAt||Date.now()).toLocaleString('id-ID')}`;list.append(item);});}
   b.querySelectorAll('[data-tab]').forEach(btn=>btn.onclick=()=>{tab=btn.dataset.tab;draw();});
