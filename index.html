@@ -451,6 +451,7 @@ async function enter(u){
 /* ---- Tampil pesan ---- */
 function addMsg(id,m){
   if($('m_'+id)) return;
+  document.querySelectorAll('[data-real="'+id+'"]').forEach(x=>x.remove());
   const list=$('list'); const e=$('empty'); if(e) e.remove();
   const near = list.scrollHeight-list.scrollTop-list.clientHeight<140;
   const mine = m.uid===me.uid;
@@ -494,11 +495,19 @@ async function sendMsg(extra){
   $('send').disabled=true;
   const draft=$('txt').value;
   if(!extra){ $('txt').value=''; autosize(); }
+  const tmpId='tmp'+Date.now();
+  addMsg(tmpId,{uid:me.uid,name:me.displayName||'',ts:Date.now(),type:payload.type,text:payload.text,data:payload.data,fname:payload.fname,size:payload.size});
+  const tmpEl=$('m_'+tmpId); if(tmpEl){ tmpEl.style.opacity='.6'; const dl=tmpEl.querySelector('.del'); if(dl) dl.remove(); }
   try{
     const result=await moderationApi({...payload,action:'send'});
     if(extra){ $('txt').value=''; autosize(); }
+    if(tmpEl){
+      if(result.id&&!$('m_'+result.id)){ tmpEl.dataset.real=result.id; setTimeout(()=>tmpEl.remove(),6000); }
+      else tmpEl.remove();
+    }
     if(result.moderation){const m=result.moderation;toast(m.action==='warning'?'Peringatan: '+m.reason:m.action==='jail'?'Akun masuk Jail sementara: '+m.reason:'Akun diblokir sementara: '+m.reason);}
   }catch(e){
+    if(tmpEl) tmpEl.remove();
     if(!extra && !$('txt').value){ $('txt').value=draft; autosize(); }
     toast(e.message||'Pesan gagal dikirim.');
   }
