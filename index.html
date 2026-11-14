@@ -268,8 +268,6 @@ select option{background:#0c1427;color:var(--text)}
 </section>
 
 <!-- Pratinjau foto -->
-<div id="check" class="check hidden"><div class="check-box"><div class="check-spin"></div><div class="check-title" id="checkTitle">Memverifikasi bahwa kamu manusia</div><div class="check-sub" id="checkSub">Memeriksa keamanan koneksi, mohon tunggu sebentar...</div></div></div>
-
 <section id="vLight" class="overlay light hidden"><div class="top"><h2>Foto</h2><button id="lightClose" type="button">Tutup</button></div><div class="body"><img id="lightImg" alt=""></div></section>
 
 <script type="module">
@@ -288,7 +286,7 @@ const firebaseConfig = {
   appId: "1:630514464050:web:3a6b445d79ff97a6c1932b",
 };
 // Site key Cloudflare Turnstile (publik, dari dashboard Cloudflare)
-const TURNSTILE_SITE_KEY = "0x4AAAAAAGAjoHwEjnf2nYUB";
+const TURNSTILE_SITE_KEY = "ISI_SITE_KEY_TURNSTILE";
 // Email yang otomatis jadi admin (harus sama dengan email di Rules database)
 const ADMIN_EMAILS = ["lifxcdz@gmail.com"];
 /* ============================ */
@@ -366,11 +364,6 @@ $('authGo').onclick=async()=>{
   if(TURNSTILE_SITE_KEY.startsWith('ISI_')){ $('authErr').textContent='Verifikasi belum dikonfigurasi (site key kosong).'; return; }
   if(!cfToken){ $('authErr').textContent='Selesaikan verifikasi Cloudflare dulu.'; return; }
   $('authGo').disabled=true;
-  $('checkTitle').textContent='Memverifikasi bahwa kamu manusia';
-  $('checkSub').textContent='Memeriksa keamanan koneksi, mohon tunggu sebentar...';
-  $('check').classList.remove('hidden');
-  const hold=new Promise(r=>setTimeout(r,1800));
-  setTimeout(()=>{ $('checkTitle').textContent=mode==='up'?'Membuat akun kamu':'Sedang masuk'; $('checkSub').textContent='Hampir selesai...'; },1100);
   try{
     const customToken=await authViaServer({mode,email,password:pass,name,cf:cfToken});
     const cred=await signInWithCustomToken(auth,customToken);
@@ -380,8 +373,6 @@ $('authGo').onclick=async()=>{
     }
   }catch(e){ $('authErr').textContent=e.apiMsg?e.message:authMsg(e); }
   resetTurnstile();
-  await hold;
-  $('check').classList.add('hidden');
   $('authGo').disabled=false;
 };
 $('forgot').onclick=async()=>{
