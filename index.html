@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#070b16">
 <title>Ruang Obrol</title>
+<script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" async defer></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,500;12..96,700&display=swap" rel="stylesheet">
@@ -188,6 +189,7 @@ select option{background:#0c1427;color:var(--text)}
     <div class="field hidden" id="fName"><label for="iName">Nama</label><input id="iName" autocomplete="nickname" maxlength="24"></div>
     <div class="field"><label for="iEmail">Email</label><input id="iEmail" type="text" autocomplete="username" inputmode="email" placeholder="Email atau username"></div>
     <div class="field"><label for="iPass">Password</label><input id="iPass" type="password" autocomplete="current-password"></div>
+    <div id="cfBox" style="margin:6px 0 4px;display:flex;justify-content:center;min-height:65px"></div>
     <div id="authErr" class="msg-err"></div>
     <button id="authGo" class="btn" type="button">Masuk</button>
     <button id="forgot" class="link" type="button">Lupa password?</button>
@@ -257,7 +259,7 @@ select option{background:#0c1427;color:var(--text)}
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, sendEmailVerification,
+import { getAuth, signInWithCustomToken, signInWithEmailAndPassword, sendEmailVerification,
   sendPasswordResetEmail, onAuthStateChanged, signOut, updateProfile, setPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import { getDatabase, ref, push, set, remove, onChildAdded, onChildRemoved, onValue, serverTimestamp,
   query, limitToLast, get, update, onDisconnect } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
@@ -270,6 +272,8 @@ const firebaseConfig = {
   projectId: "ruang-obrol",
   appId: "1:630514464050:web:3a6b445d79ff97a6c1932b",
 };
+// Site key Cloudflare Turnstile (publik, dari dashboard Cloudflare)
+const TURNSTILE_SITE_KEY = "ISI_SITE_KEY_TURNSTILE";
 // Email yang otomatis jadi admin (harus sama dengan email di Rules database)
 const ADMIN_EMAILS = ["lifxcdz@gmail.com"];
 /* ============================ */
@@ -321,27 +325,45 @@ function setMode(m){
 }
 $('tabIn').onclick=()=>setMode('in'); $('tabUp').onclick=()=>setMode('up');
 
+/* ---- Cloudflare Turnstile ---- */
+let cfWidget=null, cfToken=null;
+function mountTurnstile(){
+  if(cfWidget!==null||!window.turnstile||TURNSTILE_SITE_KEY.startsWith('ISI_')) return;
+  cfWidget=window.turnstile.render('#cfBox',{sitekey:TURNSTILE_SITE_KEY,theme:'dark',
+    callback:t=>{cfToken=t;}, 'expired-callback':()=>{cfToken=null;}, 'error-callback':()=>{cfToken=null;}});
+}
+const cfPoll=setInterval(()=>{ mountTurnstile(); if(cfWidget!==null) clearInterval(cfPoll); },300);
+function resetTurnstile(){ cfToken=null; try{ if(cfWidget!==null) window.turnstile.reset(cfWidget); }catch(e){} }
+async function authViaServer(body){
+  const r=await fetch('/api/auth',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  const d=await r.json().catch(()=>({}));
+  if(!r.ok||!d.token){ const e=new Error(d.error||'Permintaan gagal.'); e.apiMsg=true; throw e; }
+  return d.token;
+}
+
 $('authGo').onclick=async()=>{
   let email=$('iEmail').value.trim(), pass=$('iPass').value, name=$('iName').value.trim();
    if(mode==='in' && !email.includes('@')) email=email.toLowerCase().replace(/[^a-z0-9._-]/g,'')+'@akun.ruang-obrol.app';
   $('authErr').textContent='';
   if(!email||!pass){ $('authErr').textContent='Isi email dan password.'; return; }
+  if(mode==='up'&&!name){ $('authErr').textContent='Isi nama.'; return; }
+  if(TURNSTILE_SITE_KEY.startsWith('ISI_')){ $('authErr').textContent='Verifikasi belum dikonfigurasi (site key kosong).'; return; }
+  if(!cfToken){ $('authErr').textContent='Selesaikan verifikasi Cloudflare dulu.'; return; }
   $('authGo').disabled=true;
-  if(mode==='up'&&!name){ $('authErr').textContent='Isi nama.'; $('authGo').disabled=false; return; }
   $('checkTitle').textContent='Memverifikasi bahwa kamu manusia';
   $('checkSub').textContent='Memeriksa keamanan koneksi, mohon tunggu sebentar...';
   $('check').classList.remove('hidden');
   const hold=new Promise(r=>setTimeout(r,1800));
   setTimeout(()=>{ $('checkTitle').textContent=mode==='up'?'Membuat akun kamu':'Sedang masuk'; $('checkSub').textContent='Hampir selesai...'; },1100);
   try{
+    const customToken=await authViaServer({mode,email,password:pass,name,cf:cfToken});
+    const cred=await signInWithCustomToken(auth,customToken);
     if(mode==='up'){
-      const c=await createUserWithEmailAndPassword(auth,email,pass);
-      await updateProfile(c.user,{displayName:name});
-      await sendEmailVerification(c.user);
-    }else{
-      await signInWithEmailAndPassword(auth,email,pass);
+      await updateProfile(cred.user,{displayName:name});
+      await sendEmailVerification(cred.user);
     }
-  }catch(e){ $('authErr').textContent=authMsg(e); }
+  }catch(e){ $('authErr').textContent=e.apiMsg?e.message:authMsg(e); }
+  resetTurnstile();
   await hold;
   $('check').classList.add('hidden');
   $('authGo').disabled=false;
