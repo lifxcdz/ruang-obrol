@@ -71,6 +71,12 @@ module.exports = async function (req, res) {
     return reply(res, 200, { token });
   } catch (e) {
     console.error('auth api:', e);
+    const m = String((e && e.message) || '');
+    if (m.includes('TURNSTILE_SECRET_KEY')) return reply(res, 500, { error: 'Server belum dikonfigurasi: TURNSTILE_SECRET_KEY kosong.' });
+    if (m.includes('Cannot find module')) return reply(res, 500, { error: 'Server belum lengkap: file lib/firebase-admin tidak ditemukan.' });
+    if (String((e && e.code) || '').includes('auth/') || m.includes('createCustomToken') || m.includes('signBlob') || m.includes('iam')) {
+      return reply(res, 500, { error: 'Server tidak punya izin membuat token login (cek service account Firebase).' });
+    }
     return reply(res, 500, { error: 'Server gagal memproses. Coba lagi.' });
   }
 };
