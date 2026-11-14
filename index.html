@@ -154,32 +154,21 @@ footer .ib,.send{border-radius:13px!important}
 .credential-output{white-space:pre-wrap;word-break:break-word;background:rgba(0,0,0,.24);border:1px solid var(--line);padding:12px;border-radius:12px;font-size:13px;max-height:230px;overflow:auto;margin-top:12px}
 @media(max-width:420px){.admin-grid{grid-template-columns:1fr 1fr}.overlay .body{padding:12px}}
 
-
-/* Statistik admin berbentuk lingkaran */
-.stats-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:14px}
-.stat-card{min-width:0;border:1px solid var(--line);border-radius:16px;padding:14px 8px;background:rgba(255,255,255,.025);display:flex;flex-direction:column;align-items:center;gap:9px}
-.stat-ring{--value:0;width:104px;height:104px;border-radius:50%;display:grid;place-items:center;background:conic-gradient(#5b91ff calc(var(--value)*1%),rgba(148,170,210,.13) 0);position:relative}
-.stat-ring:before{content:"";position:absolute;inset:7px;border-radius:50%;background:#0d172b;border:1px solid rgba(148,170,210,.12)}
-.stat-ring.online{background:conic-gradient(#35d39a calc(var(--value)*1%),rgba(148,170,210,.13) 0)}
-.stat-ring.blocked{background:conic-gradient(#ff7777 calc(var(--value)*1%),rgba(148,170,210,.13) 0)}
-.stat-ring.messages{background:conic-gradient(#a78bfa calc(var(--value)*1%),rgba(148,170,210,.13) 0)}
-.stat-ring-core{position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;line-height:1.2}
-.stat-ring-core strong{font-size:24px;font-weight:700;font-variant-numeric:tabular-nums}
-.stat-ring-core span{font-size:11px;color:var(--muted);margin-top:3px}
-.stat-label{font-size:12px;color:var(--muted);text-align:center}
-.online-dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:#35d39a;margin-right:4px;box-shadow:0 0 10px #35d39a}
-.stats-line{display:flex;justify-content:space-between;gap:12px;padding:11px 0;border-bottom:1px solid var(--line)}
-.stats-line:last-of-type{border-bottom:0}
-.stats-line span{font-size:13px;color:var(--muted)}
-.stats-line strong{font-size:13px;text-align:right}
-@media(max-width:360px){.stat-ring{width:88px;height:88px}.stat-ring-core strong{font-size:21px}}
-
+/* Memuat: hanya teks, tanpa garis/kotak */
+.load-text{color:var(--muted);font-size:17px;letter-spacing:.01em;border:0;background:none}
+/* Pemberitahuan hapus semua pesan */
+.purge-bar{position:fixed;left:50%;top:calc(env(safe-area-inset-top) + 10px);transform:translateX(-50%);z-index:60;width:min(420px,92vw);text-align:center;padding:14px 16px;border-radius:16px;border:1px solid rgba(255,107,107,.45);background:rgba(28,12,18,.94);backdrop-filter:blur(14px);box-shadow:0 14px 44px rgba(0,0,0,.45)}
+.purge-title{font-weight:600;color:#ffb4b4}
+.purge-time{font-size:30px;font-weight:700;margin-top:4px;font-variant-numeric:tabular-nums;letter-spacing:.02em}
+select{background:rgba(3,8,20,.42);border:1px solid var(--line);border-radius:13px;padding:11px 12px;width:100%;color:var(--text);font:inherit;outline:none}
+select option{background:#0c1427;color:var(--text)}
+.online-dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:#4ade80;margin-right:6px}
 </style>
 </head>
 <body>
 
 <!-- Memuat -->
-<section id="vLoad" class="view auth"><div class="load-card" style="text-align:center"><div class="loading-mark"></div><div class="brand">Ruang Obrol</div><div class="sub" style="margin:0">Menyiapkan ruang obrol...</div></div></section>
+<section id="vLoad" class="view auth"><div class="load-text">Memuat...</div></section>
 
 <!-- Masuk / Daftar -->
 <section id="vAuth" class="view auth hidden">
@@ -217,11 +206,12 @@ footer .ib,.send{border-radius:13px!important}
   <header>
     <h1>Ruang Obrol</h1>
     <button class="who" id="who" type="button" aria-label="Profil"><span class="profile-mark"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.5"/><path d="M5 20c.7-3.5 3.1-5.3 7-5.3s6.3 1.8 7 5.3"/></svg></span><span id="whoName"></span></button>
-    <button id="btnAdmin" class="hidden" type="button">Statistik</button>
+    <button id="btnAdmin" class="hidden" type="button">Admin</button>
     <button id="btnOut" type="button">Keluar</button>
   </header>
   <div id="list"><div class="empty" id="empty">Belum ada pesan. Mulai obrolan.</div></div>
-  <div id="bannedBar" class="banned hidden">Akunmu diblokir admin. Kamu hanya bisa membaca.</div>
+  <div id="bannedBar" class="banned hidden">Akunmu sedang dibatasi. Lihat detail status moderasi.</div>
+  <div id="jailBar" class="banned hidden"></div>
   <footer id="composer">
     <div class="sheet hidden" id="sheet">
       <button id="pickImg" type="button">Foto</button>
@@ -237,7 +227,7 @@ footer .ib,.send{border-radius:13px!important}
 
 <!-- Panel admin -->
 <section id="vAdmin" class="overlay hidden">
-  <div class="top"><h2>Statistik Ruang Obrol</h2><button id="admClose" type="button">Tutup</button></div>
+  <div class="top"><h2>Panel admin</h2><button id="admClose" type="button">Tutup</button></div>
   <div class="body" id="admBody"></div>
 </section>
 
@@ -254,6 +244,8 @@ footer .ib,.send{border-radius:13px!important}
 </section>
 
 <!-- Pratinjau foto -->
+<div id="purgeBar" class="purge-bar hidden"><div class="purge-title" id="purgeTitle">Penghapusan pesan akan dimulai</div><div class="purge-time" id="purgeTime">00:00</div></div>
+
 <section id="vLight" class="overlay light hidden"><div class="top"><h2>Foto</h2><button id="lightClose" type="button">Tutup</button></div><div class="body"><img id="lightImg" alt=""></div></section>
 
 <script type="module">
@@ -358,12 +350,44 @@ $('verifyResend').onclick=async()=>{
   try{ await sendEmailVerification(auth.currentUser); $('verifyMsg').textContent='Email verifikasi dikirim ulang. Cek juga folder spam.'; }
   catch(e){ $('verifyMsg').textContent=authMsg(e); }
 };
-async function leaveAccount(){ if(me) await remove(ref(db,'presence/'+me.uid)).catch(()=>{}); await signOut(auth); }
 $('verifyOut').onclick=()=>signOut(auth);
-$('btnOut').onclick=leaveAccount;
+$('btnOut').onclick=async()=>{ await dropPresence(); signOut(auth); };
 
 /* ---- Sesi ---- */
 let me=null, isAdmin=false, unsubs=[], entered=false; const names={};
+let myPres=null, srvOff=0, purgeTimer=null, purging=false;
+const fmtCount=s=>{ const h=Math.floor(s/3600), m=Math.floor(s%3600/60), x=s%60, p=n=>String(n).padStart(2,'0'); return h?h+':'+p(m)+':'+p(x):p(m)+':'+p(x); };
+async function dropPresence(){ if(myPres){ const r=myPres; myPres=null; try{ await remove(r); }catch(e){} } }
+async function runPurge(){
+  if(purging) return; purging=true;
+  try{
+    try{ await remove(ref(db,'messages')); }
+    catch(e){ const s=await get(ref(db,'messages')); const ks=Object.keys(s.val()||{}); await Promise.all(ks.map(k=>remove(ref(db,'messages/'+k)))); }
+    await remove(ref(db,'broadcast/purge'));
+    toast('Semua pesan sudah dihapus.');
+  }catch(e){
+    try{ await remove(ref(db,'broadcast/purge')); }catch(_){}
+    toast('Gagal menghapus semua pesan. Cek Rules database.');
+  }
+  purging=false;
+}
+function handlePurge(p){
+  clearInterval(purgeTimer); purgeTimer=null;
+  const bar=$('purgeBar');
+  if(!p||!p.endAt){ bar.classList.add('hidden'); return; }
+  $('purgeTitle').textContent='Penghapusan pesan akan dimulai';
+  bar.classList.remove('hidden');
+  const tick=()=>{
+    const left=Math.max(0,Math.ceil((Number(p.endAt)-(Date.now()+srvOff))/1000));
+    $('purgeTime').textContent=fmtCount(left);
+    if(left<=0){
+      clearInterval(purgeTimer); purgeTimer=null;
+      $('purgeTitle').textContent='Menghapus semua pesan...';
+      if(isAdmin) runPurge();
+    }
+  };
+  purgeTimer=setInterval(tick,250); tick();
+}
 onAuthStateChanged(auth,async u=>{
   cleanup();
   if(!u){ show('vAuth'); return; }
@@ -377,7 +401,7 @@ onAuthStateChanged(auth,async u=>{
   enter(u);
 });
 
-function cleanup(){ unsubs.forEach(f=>f()); unsubs=[]; entered=false; $('vProfile').classList.add('hidden'); $('vAdmin').classList.add('hidden'); $('list').innerHTML='<div class="empty" id="empty">Belum ada pesan. Mulai obrolan.</div>'; }
+function cleanup(){ unsubs.forEach(f=>f()); unsubs=[]; entered=false; clearInterval(purgeTimer); purgeTimer=null; $('purgeBar').classList.add('hidden'); $('vProfile').classList.add('hidden'); $('vAdmin').classList.add('hidden'); $('list').innerHTML='<div class="empty" id="empty">Belum ada pesan. Mulai obrolan.</div>'; }
 
 async function enter(u){
   if(entered) return;
@@ -398,21 +422,23 @@ async function enter(u){
   $('btnAdmin').classList.toggle('hidden',!isAdmin);
   show('vChat');
   try{
-    const connectedRef=ref(db,'.info/connected');
-    unsubs.push(onValue(connectedRef,async snap=>{
-      if(snap.val()===true){
-        const presenceRef=ref(db,'presence/'+u.uid);
-        await onDisconnect(presenceRef).remove().catch(()=>{});
-        await set(presenceRef,{online:true,lastSeen:Date.now()}).catch(()=>{});
-      }
-    }));
     await update(ref(db,'users/'+u.uid),{name:u.displayName||u.email.split('@')[0]});
     await update(ref(db,'private/'+u.uid),{email:u.email});
   }catch(e){ toast('Gagal menyimpan profil. Cek Rules database.'); }
 
-  unsubs.push(onValue(ref(db,'banned/'+u.uid),s=>{
-    const b=s.exists(); $('bannedBar').classList.toggle('hidden',!b); $('composer').classList.toggle('hidden',b);
+  // Status online
+  myPres=push(ref(db,'presence/'+u.uid));
+  unsubs.push(onValue(ref(db,'.info/connected'),s=>{
+    if(s.val()&&myPres){ onDisconnect(myPres).remove().catch(()=>{}); set(myPres,true).catch(()=>{}); }
   }));
+  // Timer hapus semua pesan
+  unsubs.push(onValue(ref(db,'.info/serverTimeOffset'),s=>{ srvOff=Number(s.val())||0; }));
+  unsubs.push(onValue(ref(db,'broadcast/purge'),s=>handlePurge(s.val())));
+
+  unsubs.push(onValue(ref(db,'banned/'+u.uid),s=>{
+    const v=s.val(); const b=!!(v&&(!v.expiresAt||Number(v.expiresAt)>Date.now())); $('bannedBar').classList.toggle('hidden',!b); $('composer').classList.toggle('hidden',b);
+  }));
+  unsubs.push(onValue(ref(db,'jail/'+u.uid),s=>{const j=s.val();const active=!!(j&&Number(j.until)>Date.now());$('jailBar').classList.toggle('hidden',!active);$('jailBar').textContent=active?'Akun dalam Jail sampai '+new Date(j.until).toLocaleString('id-ID')+'. Alasan: '+(j.reason||'Pelanggaran aturan'):'';$('composer').classList.toggle('hidden',active||$('bannedBar').classList.contains('hidden')===false);}));
 
   unsubs.push(onValue(ref(db,'users'),s=>{
     const v=s.val()||{}; for(const k in v) names[k]=v[k].name;
@@ -420,7 +446,7 @@ async function enter(u){
   }));
   const q=query(ref(db,'messages'),limitToLast(LOAD_LAST));
   unsubs.push(onChildAdded(q,s=>addMsg(s.key,s.val()),err=>toast('Tidak bisa membaca pesan: '+err.code)));
-  unsubs.push(onChildRemoved(q,s=>{ const el=$('m_'+s.key); if(el) el.remove(); }));
+  unsubs.push(onChildRemoved(q,s=>{ const el=$('m_'+s.key); if(el) el.remove(); if(!$('list').querySelector('.m')&&!$('empty')){ const d=document.createElement('div'); d.className='empty'; d.id='empty'; d.textContent='Belum ada pesan. Mulai obrolan.'; $('list').appendChild(d); } }));
 }
 
 /* ---- Tampil pesan ---- */
@@ -465,12 +491,13 @@ async function sendMsg(extra){
   if(!me) return;
   const text=$('txt').value.trim();
   if(!extra && !text) return;
-  const payload={ uid:me.uid, name:me.displayName||me.email.split('@')[0], ts:serverTimestamp(), type:'text', text:text, admin:isAdmin, ...(extra||{}) };
+  const payload={type:extra&&extra.type||'text',text:text,...(extra||{})};
   $('send').disabled=true;
   try{
-    await set(push(ref(db,'messages')),payload);
+    const result=await moderationApi({...payload,action:'send'});
     $('txt').value=''; autosize();
-  }catch(e){ toast(e.code==='PERMISSION_DENIED'?'Ditolak. Cek Rules atau akunmu diblokir.':'Gagal kirim.'); }
+    if(result.moderation){const m=result.moderation;toast(m.action==='warning'?'Peringatan: '+m.reason:m.action==='jail'?'Akun masuk Jail sementara: '+m.reason:'Akun diblokir sementara: '+m.reason);}
+  }catch(e){toast(e.message||'Pesan gagal dikirim.');}
   $('send').disabled=false;
 }
 $('send').onclick=()=>sendMsg();
@@ -526,60 +553,73 @@ $('profSave').onclick=async()=>{
   $('profSave').disabled=false;
 };
 
-/* ---- Statistik admin ---- */
+/* ---- Panel admin & moderasi ---- */
 let admUnsub=[];
-$('btnAdmin').onclick=()=>{
-  if(!isAdmin) return;
-  $('vAdmin').classList.remove('hidden');
-  const b=$('admBody');
-  b.innerHTML=`
-    <section class="admin-section stats-intro">
-      <h3>Ringkasan aktivitas</h3>
-      <div class="hint">Data pengguna dan aktivitas Ruang Obrol diperbarui langsung dari Firebase.</div>
-      <div class="stats-grid">
-        <div class="stat-card"><div class="stat-ring" id="ringUsers"><div class="stat-ring-core"><strong id="statUsers">0</strong><span>Pengguna</span></div></div><div class="stat-label">Total pengguna</div></div>
-        <div class="stat-card"><div class="stat-ring online" id="ringOnline"><div class="stat-ring-core"><strong id="statOnline">0</strong><span>Online</span></div></div><div class="stat-label"><i class="online-dot"></i> Sedang online</div></div>
-        <div class="stat-card"><div class="stat-ring blocked" id="ringBlocked"><div class="stat-ring-core"><strong id="statBlocked">0</strong><span>Blokir</span></div></div><div class="stat-label">Pengguna diblokir</div></div>
-        <div class="stat-card"><div class="stat-ring messages" id="ringMessages"><div class="stat-ring-core"><strong id="statMessages">0</strong><span>Pesan</span></div></div><div class="stat-label">Total pesan</div></div>
-      </div>
-    </section>
-    <section class="admin-section stats-detail">
-      <h3>Status sistem</h3>
-      <div class="stats-line"><span>Koneksi database</span><strong id="statConnection">Memeriksa...</strong></div>
-      <div class="stats-line"><span>Terakhir diperbarui</span><strong id="statUpdated">-</strong></div>
-      <div class="stats-line"><span>Pengguna aktif</span><strong id="statActive">0%</strong></div>
-      <p class="hint" style="margin:12px 0 0">Status online menggunakan koneksi langsung perangkat. Jika aturan Firebase belum mengizinkan jalur <code>/presence</code>, jumlah online tidak dapat dihitung sampai aturan tersebut ditambahkan.</p>
-    </section>`;
-  const state={users:{},banned:{},presence:{},messages:{}};
-  const updateStats=()=>{
-    const total=Object.keys(state.users).length;
-    const online=Object.values(state.presence).filter(v=>v&&v.online===true).length;
-    const blocked=Object.values(state.banned).filter(Boolean).length;
-    const messages=Object.keys(state.messages).length;
-    const pct=total?Math.min(100,Math.round(online/total*100)):0;
-    $('statUsers').textContent=total.toLocaleString('id-ID');
-    $('statOnline').textContent=online.toLocaleString('id-ID');
-    $('statBlocked').textContent=blocked.toLocaleString('id-ID');
-    $('statMessages').textContent=messages.toLocaleString('id-ID');
-    $('statActive').textContent=pct+'%';
-    $('ringUsers').style.setProperty('--value',total?100:0);
-    $('ringOnline').style.setProperty('--value',pct);
-    $('ringBlocked').style.setProperty('--value',total?Math.round(blocked/total*100):0);
-    $('ringMessages').style.setProperty('--value',messages?100:0);
-    $('statUpdated').textContent=new Date().toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
-  };
-  const connectionOff=onValue(ref(db,'.info/connected'),snap=>{
-    const connected=snap.val()===true;
-    $('statConnection').textContent=connected?'Terhubung':'Terputus';
-    $('statConnection').style.color=connected?'#71e0a2':'#ff9292';
-  });
-  admUnsub=[
-    onValue(ref(db,'users'),snap=>{state.users=snap.val()||{};updateStats();}),
-    onValue(ref(db,'banned'),snap=>{state.banned=snap.val()||{};updateStats();}),
-    onValue(ref(db,'presence'),snap=>{state.presence=snap.val()||{};updateStats();},()=>{ $('statOnline').textContent='—'; $('statConnection').textContent='Aturan presence belum diatur';}),
-    onValue(ref(db,'messages'),snap=>{state.messages=snap.val()||{};updateStats();}),
-    connectionOff
-  ];
+async function moderationApi(payload){
+ if(!auth.currentUser) throw new Error('Sesi login tidak ditemukan.');
+ const token=await auth.currentUser.getIdToken(true);
+ const response=await fetch('/api/moderation',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify(payload)});
+ const data=await response.json().catch(()=>({})); if(!response.ok) throw new Error(data.error||'Permintaan gagal.'); return data;
+}
+$('btnAdmin').onclick=async()=>{
+ if(!isAdmin) return;
+ $('vAdmin').classList.remove('hidden');
+ let users={},emails={},banned={},jail={},modUsers={},logs={},presence={}; let tab='stats'; let purgeVal='30', purgeUnit='1';
+ const esc=s=>String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+ const act=async(action,uid,extra={})=>{try{await moderationApi({action,uid,...extra});toast('Tindakan berhasil.');}catch(e){toast(e.message||'Gagal.');}};
+ const makeRow=uid=>{
+  const u=users[uid]||{}, ban=banned[uid], j=jail[uid];
+  const row=document.createElement('div'); row.className='row admin-account';
+  const info=document.createElement('div'); info.className='info';
+  const n=document.createElement('div'); n.className='n'; n.textContent=u.name||'Pengguna';
+  const e=document.createElement('div'); e.className='e'; e.textContent=(emails[uid]||{}).email||'';
+  const st=document.createElement('div'); st.className='e'; st.textContent=ban?'Diblokir · '+(ban.reason||''):j?'Jail · '+(j.reason||''):'Aktif';
+  info.append(n,e,st); row.append(info);
+  if(uid!==me.uid){
+   if(ban){ const ub=document.createElement('button'); ub.textContent='Buka ban'; ub.onclick=()=>act('unban',uid); row.append(ub); }
+   else{
+    const jb=document.createElement('button'); jb.textContent=j?'Lepas Jail':'Jail 10 menit'; jb.onclick=()=>act(j?'unjail':'jail',uid,{minutes:10,reason:'Tindakan admin'}); row.append(jb);
+    const bb=document.createElement('button'); bb.className='danger'; bb.textContent='Ban 24 jam'; bb.onclick=()=>{ const reason=prompt('Alasan ban:','Pelanggaran aturan komunitas'); if(reason) act('ban',uid,{hours:24,reason}); }; row.append(bb);
+   }
+  }
+  return row;
+ };
+ const draw=()=>{
+  if(document.activeElement&&document.activeElement.id==='purgeVal') return;
+  const b=$('admBody'); const ids=Object.keys(users); const banIds=Object.keys(banned); const jailIds=Object.keys(jail);
+  b.innerHTML=`<nav class="admin-section" style="display:flex;gap:8px;flex-wrap:wrap"><button class="admin-action ${tab==='stats'?'':'secondary'}" data-tab="stats">Statistik</button><button class="admin-action ${tab==='users'?'':'secondary'}" data-tab="users">Pengguna</button><button class="admin-action ${tab==='banned'?'':'secondary'}" data-tab="banned">Akun diblokir (${banIds.length})</button><button class="admin-action ${tab==='jail'?'':'secondary'}" data-tab="jail">Jail (${jailIds.length})</button><button class="admin-action ${tab==='logs'?'':'secondary'}" data-tab="logs">Riwayat bot</button></nav>`;
+  if(tab==='stats') b.innerHTML+=`<section class="admin-section"><h3>Ringkasan Ruang Obrol</h3><div class="admin-grid"><div class="card"><b>${ids.length}</b><div class="hint">Total akun</div></div><div class="card"><b>${banIds.length}</b><div class="hint">Akun diblokir</div></div><div class="card"><b>${jailIds.length}</b><div class="hint">Sedang di Jail</div></div><div class="card"><b>${Object.keys(logs).length}</b><div class="hint">Catatan moderasi</div></div></div><div class="hint">Bot memberi peringatan terlebih dahulu, lalu Jail sementara, dan ban sementara untuk pelanggaran berulang. Admin dikecualikan.</div></section><section class="admin-section"><h3>Akun online (<span id="onCount">0</span>)</h3><div class="hint">Akun yang sedang login dan membuka Ruang Obrol. Kamu bisa langsung Jail atau Ban dari sini.</div><div id="onlineUsers"></div></section><section class="admin-section"><h3>Hapus semua pesan</h3><div class="hint">Ketik lama hitung mundur. Semua pengguna akan melihat pemberitahuan penghapusan pesan beserta timernya. Biarkan halaman ini tetap terbuka sampai selesai.</div><div class="admin-grid"><div class="field"><input id="purgeVal" type="number" inputmode="numeric" min="5" placeholder="Waktu"></div><div class="field"><select id="purgeUnit"><option value="1">Detik</option><option value="60">Menit</option><option value="3600">Jam</option></select></div></div><button class="admin-action" id="purgeGo" type="button">Mulai hapus semua pesan</button><button class="admin-action secondary" id="purgeCancel" type="button">Batalkan timer</button></section>`;
+  if(tab==='stats'){
+   const on=Object.keys(presence).filter(k=>presence[k]&&Object.keys(presence[k]).length);
+   b.querySelector('#onCount').textContent=on.length;
+   const ol=b.querySelector('#onlineUsers');
+   if(!on.length) ol.innerHTML='<div class="note">Belum ada akun online.</div>';
+   else on.forEach(uid=>ol.append(makeRow(uid)));
+   const pv=b.querySelector('#purgeVal'), pu=b.querySelector('#purgeUnit');
+   pv.value=purgeVal; pu.value=purgeUnit;
+   pv.oninput=()=>{purgeVal=pv.value;}; pu.onchange=()=>{purgeUnit=pu.value;};
+   b.querySelector('#purgeGo').onclick=async()=>{
+    const sec=Math.floor(Number(pv.value)*Number(pu.value));
+    if(!(sec>=5)){ toast('Minimal 5 detik.'); return; }
+    if(!confirm('Hapus SEMUA pesan setelah hitung mundur '+fmtCount(sec)+'?')) return;
+    try{ await set(ref(db,'broadcast/purge'),{endAt:Date.now()+srvOff+sec*1000,by:me.uid,seconds:sec}); toast('Timer dimulai.'); }
+    catch(e){ toast('Gagal memulai. Cek Rules database.'); }
+   };
+   b.querySelector('#purgeCancel').onclick=async()=>{ try{ await remove(ref(db,'broadcast/purge')); toast('Timer dibatalkan.'); }catch(e){ toast('Gagal membatalkan.'); } };
+  }
+  if(tab==='users'||tab==='banned'||tab==='jail'){
+   const selected=tab==='banned'?banIds:tab==='jail'?jailIds:ids;
+   b.innerHTML+=`<section class="admin-section"><h3>${tab==='users'?'Daftar pengguna':tab==='banned'?'Akun diblokir':'Pengguna dalam Jail'}</h3><div id="moderationUsers"></div></section>`;
+   const list=b.querySelector('#moderationUsers');
+   if(!selected.length){list.innerHTML='<div class="note">Belum ada data.</div>';}
+   selected.forEach(uid=>{const u=users[uid]||{}, ban=banned[uid], j=jail[uid]; const row=document.createElement('div');row.className='row admin-account';const info=document.createElement('div');info.className='info';const name=document.createElement('div');name.className='n';name.textContent=u.name||'Pengguna';const email=document.createElement('div');email.className='e';email.textContent=(emails[uid]||{}).email||'';const status=document.createElement('div');status.className='e';status.textContent=ban?'Diblokir · '+(ban.reason||''):j?'Jail · '+(j.reason||''):'Aktif';info.append(name,email,status);row.append(info);
+    if(uid!==me.uid){const btn=document.createElement('button');btn.textContent=ban?'Buka ban':j?'Lepas Jail':'Jail 10 menit';btn.onclick=()=>act(ban?'unban':j?'unjail':'jail',uid,{minutes:10,reason:'Tindakan admin'});row.append(btn);const banBtn=document.createElement('button');banBtn.className='danger';banBtn.textContent=ban?'':'Ban 24 jam';if(!ban)banBtn.onclick=()=>{const reason=prompt('Alasan ban:','Pelanggaran aturan komunitas');if(reason)act('ban',uid,{hours:24,reason});};row.append(banBtn);}
+    list.append(row);});
+  }
+  if(tab==='logs'){b.innerHTML+=`<section class="admin-section"><h3>Riwayat moderasi terbaru</h3><div id="moderationLogs"></div></section>`;const list=b.querySelector('#moderationLogs');const entries=Object.entries(logs).sort((a,b)=>(b[1].createdAt||b[1].lastAt||0)-(a[1].createdAt||a[1].lastAt||0)).slice(0,80);list.innerHTML=entries.length?'':'<div class="note">Belum ada riwayat moderasi.</div>';entries.forEach(([key,v])=>{const item=document.createElement('div');item.className='admin-account';item.textContent=`${users[v.uid]?.name||v.uid} · ${v.action||'catatan'} · ${v.reason||''} · ${new Date(v.createdAt||v.lastAt||Date.now()).toLocaleString('id-ID')}`;list.append(item);});}
+  b.querySelectorAll('[data-tab]').forEach(btn=>btn.onclick=()=>{tab=btn.dataset.tab;draw();});
+ };
+ admUnsub.forEach(f=>f()); admUnsub=[onValue(ref(db,'users'),s=>{users=s.val()||{};draw();}),onValue(ref(db,'private'),s=>{emails=s.val()||{};draw();}),onValue(ref(db,'banned'),s=>{banned=s.val()||{};draw();}),onValue(ref(db,'jail'),s=>{jail=s.val()||{};draw();}),onValue(ref(db,'moderation/users'),s=>{modUsers=s.val()||{};draw();}),onValue(ref(db,'moderation/logs'),s=>{logs=s.val()||{};draw();}),onValue(ref(db,'presence'),s=>{presence=s.val()||{};draw();})];
 };
 $('admClose').onclick=()=>{$('vAdmin').classList.add('hidden');admUnsub.forEach(f=>f());admUnsub=[];};
 
