@@ -255,11 +255,18 @@ select option{background:#0c1427;color:var(--text)}
     <button id="btnAdmin" class="hidden" type="button">Admin</button>
     <button id="btnOut" type="button">Keluar</button>
   </header>
+  <div id="subbar" class="subbar"><button id="sbSearch" type="button">Cari</button><button id="sbDm" type="button">Pribadi<span class="dot hidden" id="dmDot"></span></button><button id="sbTheme" type="button">Tema</button><button id="sbNotif" type="button">Notif: mati</button></div>
+  <div id="searchRow" class="searchrow hidden"><input id="searchIn" placeholder="Cari di pesan yang tampil" autocomplete="off"></div>
   <div id="musicBar" class="music-bar hidden"><div id="ytBox" class="yt-box hidden"></div><div class="music-info"><div class="music-title" id="musicTitle"></div><div class="music-sub" id="musicSub"></div></div><button id="musicMute" type="button">Bisukan</button></div>
   <div id="purgeBar" class="purge-bar hidden"><div class="purge-title" id="purgeTitle">Penghapusan pesan akan dimulai</div><div class="purge-time" id="purgeTime">00:00</div></div>
+  <div id="annBar" class="note-bar hidden"><div class="nb-text" id="annText"></div><button id="annClose" type="button">Tutup</button></div>
+  <div id="pinBar" class="note-bar pin hidden"><div class="nb-text" id="pinText"></div><button id="pinOff" class="hidden" type="button">Lepas</button></div>
   <div id="list"><div class="empty" id="empty">Belum ada pesan. Mulai obrolan.</div></div>
   <div id="bannedBar" class="banned hidden">Akunmu sedang dibatasi. Lihat detail status moderasi.</div>
   <div id="jailBar" class="banned hidden"></div>
+  <div id="lockBar" class="banned hidden">Chat sedang dikunci admin. Hanya admin yang bisa mengirim pesan.</div>
+  <div id="typingLine" class="typing hidden"></div>
+  <div id="replyBar" class="replybar hidden"><div class="rb-text" id="replyText"></div><button id="replyX" type="button">Batal</button></div>
   <footer id="composer">
     <div class="sheet hidden" id="sheet">
       <button id="pickImg" type="button">Foto</button>
@@ -305,16 +312,22 @@ select option{background:#0c1427;color:var(--text)}
 </section>
 
 <!-- Pratinjau foto -->
-<section id="vUser" class="overlay hidden"><div class="top"><h2>Profil pengguna</h2><button id="userClose" type="button">Tutup</button></div><div class="body"><div class="card" style="margin:0 auto"><div class="avatar" id="uAvatar"></div><div class="brand" id="uName" style="font-size:22px;text-align:center"></div><dl class="pinfo" id="uInfo"></dl></div></div></section>
+<section id="vUser" class="overlay hidden"><div class="top"><h2>Profil pengguna</h2><button id="userClose" type="button">Tutup</button></div><div class="body"><div class="card" style="margin:0 auto"><div class="avatar" id="uAvatar"></div><div class="brand" id="uName" style="font-size:22px;text-align:center"></div><dl class="pinfo" id="uInfo"></dl><div class="uactions" id="uActions"></div></div></div></section>
+
+<div id="actWrap" class="actwrap hidden"><div class="actsheet" id="actSheet"></div></div>
+
+<section id="vDmList" class="overlay hidden"><div class="top"><h2>Pesan pribadi</h2><button id="dmListClose" type="button">Tutup</button></div><div class="body" id="dmListBody"></div></section>
+<section id="vDm" class="overlay hidden"><div class="top"><h2 id="dmTitle">Pesan pribadi</h2><button id="dmClose" type="button">Tutup</button></div><div class="dm-msgs" id="dmMsgs"></div><div class="dm-comp"><textarea id="dmTxt" rows="1" maxlength="1000" placeholder="Tulis pesan pribadi"></textarea><button class="send" id="dmSend" type="button">Kirim</button></div></section>
 
 <section id="vLight" class="overlay light hidden"><div class="top"><h2>Foto</h2><button id="lightClose" type="button">Tutup</button></div><div class="body"><img id="lightImg" alt=""></div></section>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getAuth, signInWithCustomToken, signInWithEmailAndPassword, sendEmailVerification,
-  sendPasswordResetEmail, onAuthStateChanged, signOut, updateProfile, setPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import { getDatabase, ref, push, set, remove, onChildAdded, onChildRemoved, onValue, serverTimestamp,
-  query, limitToLast, get, update, onDisconnect } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+  sendPasswordResetEmail, onAuthStateChanged, signOut, updateProfile, setPersistence, browserLocalPersistence,
+  updatePassword, reauthenticateWithCredential, EmailAuthProvider, deleteUser } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { getDatabase, ref, push, set, remove, onChildAdded, onChildRemoved, onChildChanged, onValue, serverTimestamp,
+  query, limitToLast, limitToFirst, get, update, onDisconnect } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 
 /* ====== ISI BAGIAN INI ====== */
 const firebaseConfig = {
@@ -325,7 +338,7 @@ const firebaseConfig = {
   appId: "1:630514464050:web:3a6b445d79ff97a6c1932b",
 };
 // Site key Cloudflare Turnstile (publik, dari dashboard Cloudflare)
-const TURNSTILE_SITE_KEY = "0x4AAAAAAGAjoHwEjnf2nYUB";
+const TURNSTILE_SITE_KEY = "ISI_SITE_KEY_TURNSTILE";
 // Email yang otomatis jadi admin (harus sama dengan email di Rules database)
 const ADMIN_EMAILS = ["lifxcdz@gmail.com"];
 /* ============================ */
