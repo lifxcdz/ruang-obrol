@@ -157,9 +157,9 @@ footer .ib,.send{border-radius:13px!important}
 /* Memuat: hanya teks, tanpa garis/kotak */
 .load-text{color:var(--muted);font-size:17px;letter-spacing:.01em;border:0;background:none}
 /* Pemberitahuan hapus semua pesan */
-.purge-bar{position:fixed;left:50%;top:calc(env(safe-area-inset-top) + 10px);transform:translateX(-50%);z-index:60;width:min(420px,92vw);text-align:center;padding:14px 16px;border-radius:16px;border:1px solid rgba(255,107,107,.45);background:rgba(28,12,18,.94);backdrop-filter:blur(14px);box-shadow:0 14px 44px rgba(0,0,0,.45)}
-.purge-title{font-weight:600;color:#ffb4b4}
-.purge-time{font-size:30px;font-weight:700;margin-top:4px;font-variant-numeric:tabular-nums;letter-spacing:.02em}
+.purge-bar{flex:none;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:9px 14px;border-bottom:1px solid rgba(255,107,107,.28);background:linear-gradient(90deg,rgba(255,107,107,.14),rgba(255,107,107,.05))}
+.purge-title{font-size:14px;font-weight:500;color:#ffb4b4;line-height:1.3}
+.purge-time{font-size:18px;font-weight:700;font-variant-numeric:tabular-nums;color:#fff;background:rgba(255,107,107,.18);border-radius:10px;padding:3px 10px;flex:none}
 select{background:rgba(3,8,20,.42);border:1px solid var(--line);border-radius:13px;padding:11px 12px;width:100%;color:var(--text);font:inherit;outline:none}
 select option{background:#0c1427;color:var(--text)}
 .online-dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:#4ade80;margin-right:6px}
@@ -209,6 +209,7 @@ select option{background:#0c1427;color:var(--text)}
     <button id="btnAdmin" class="hidden" type="button">Admin</button>
     <button id="btnOut" type="button">Keluar</button>
   </header>
+  <div id="purgeBar" class="purge-bar hidden"><div class="purge-title" id="purgeTitle">Penghapusan pesan akan dimulai</div><div class="purge-time" id="purgeTime">00:00</div></div>
   <div id="list"><div class="empty" id="empty">Belum ada pesan. Mulai obrolan.</div></div>
   <div id="bannedBar" class="banned hidden">Akunmu sedang dibatasi. Lihat detail status moderasi.</div>
   <div id="jailBar" class="banned hidden"></div>
@@ -244,8 +245,6 @@ select option{background:#0c1427;color:var(--text)}
 </section>
 
 <!-- Pratinjau foto -->
-<div id="purgeBar" class="purge-bar hidden"><div class="purge-title" id="purgeTitle">Penghapusan pesan akan dimulai</div><div class="purge-time" id="purgeTime">00:00</div></div>
-
 <section id="vLight" class="overlay light hidden"><div class="top"><h2>Foto</h2><button id="lightClose" type="button">Tutup</button></div><div class="body"><img id="lightImg" alt=""></div></section>
 
 <script type="module">
@@ -493,11 +492,16 @@ async function sendMsg(extra){
   if(!extra && !text) return;
   const payload={type:extra&&extra.type||'text',text:text,...(extra||{})};
   $('send').disabled=true;
+  const draft=$('txt').value;
+  if(!extra){ $('txt').value=''; autosize(); }
   try{
     const result=await moderationApi({...payload,action:'send'});
-    $('txt').value=''; autosize();
+    if(extra){ $('txt').value=''; autosize(); }
     if(result.moderation){const m=result.moderation;toast(m.action==='warning'?'Peringatan: '+m.reason:m.action==='jail'?'Akun masuk Jail sementara: '+m.reason:'Akun diblokir sementara: '+m.reason);}
-  }catch(e){toast(e.message||'Pesan gagal dikirim.');}
+  }catch(e){
+    if(!extra && !$('txt').value){ $('txt').value=draft; autosize(); }
+    toast(e.message||'Pesan gagal dikirim.');
+  }
   $('send').disabled=false;
 }
 $('send').onclick=()=>sendMsg();
@@ -557,7 +561,7 @@ $('profSave').onclick=async()=>{
 let admUnsub=[];
 async function moderationApi(payload){
  if(!auth.currentUser) throw new Error('Sesi login tidak ditemukan.');
- const token=await auth.currentUser.getIdToken(true);
+ const token=await auth.currentUser.getIdToken();
  const response=await fetch('/api/moderation',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify(payload)});
  const data=await response.json().catch(()=>({})); if(!response.ok) throw new Error(data.error||'Permintaan gagal.'); return data;
 }
