@@ -170,6 +170,12 @@ select option{background:#0c1427;color:var(--text)}
 .music-title{font-size:14px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .music-sub{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
 .music-bar button{padding:6px 12px;font-size:13px;flex:none;border-radius:10px}
+.yt-box{width:200px;height:113px;border-radius:10px;overflow:hidden;background:#000;flex:none}
+.yt-box iframe{width:100%;height:100%;display:block;border:0}
+.music-bar.yt{display:grid;grid-template-columns:200px 1fr;grid-template-rows:1fr auto;gap:8px 12px;align-items:start}
+.music-bar.yt .yt-box{grid-row:1 / span 2}
+.music-bar.yt .music-title{white-space:normal;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical}
+.music-bar.yt button{justify-self:start;align-self:end}
 /* Profil */
 .avatar{width:72px;height:72px;border-radius:24px;display:grid;place-items:center;font-size:30px;font-weight:700;color:#fff;margin:0 auto 14px}
 .pcolors{display:flex;gap:10px;flex-wrap:wrap}
@@ -249,7 +255,7 @@ select option{background:#0c1427;color:var(--text)}
     <button id="btnAdmin" class="hidden" type="button">Admin</button>
     <button id="btnOut" type="button">Keluar</button>
   </header>
-  <div id="musicBar" class="music-bar hidden"><div class="music-info"><div class="music-title" id="musicTitle"></div><div class="music-sub" id="musicSub"></div></div><button id="musicMute" type="button">Bisukan</button></div>
+  <div id="musicBar" class="music-bar hidden"><div id="ytBox" class="yt-box hidden"></div><div class="music-info"><div class="music-title" id="musicTitle"></div><div class="music-sub" id="musicSub"></div></div><button id="musicMute" type="button">Bisukan</button></div>
   <div id="purgeBar" class="purge-bar hidden"><div class="purge-title" id="purgeTitle">Penghapusan pesan akan dimulai</div><div class="purge-time" id="purgeTime">00:00</div></div>
   <div id="list"><div class="empty" id="empty">Belum ada pesan. Mulai obrolan.</div></div>
   <div id="bannedBar" class="banned hidden">Akunmu sedang dibatasi. Lihat detail status moderasi.</div>
@@ -433,9 +439,12 @@ $('btnOut').onclick=async()=>{ await dropPresence(); signOut(auth); };
 let me=null, isAdmin=false, unsubs=[], entered=false; const names={};
 let myPres=null, srvOff=0, purgeTimer=null, purging=false;
 const usersData={};
-let musicEl=null, musicCur=null, musicMuted=false;
+let musicEl=null, musicCur=null, musicMuted=false, ytPlayer=null, ytTimer=null, ytChecked=false, ytLoading=null;
 function stopMusicLocal(){
   if(musicEl){ const a=musicEl; musicEl=null; a.onloadedmetadata=a.onerror=a.onended=a.ontimeupdate=null; try{ a.pause(); a.removeAttribute('src'); a.load(); }catch(e){} }
+  clearInterval(ytTimer); ytTimer=null; ytChecked=false;
+  if(ytPlayer){ try{ ytPlayer.destroy(); }catch(e){} ytPlayer=null; }
+  $('ytBox').classList.add('hidden'); $('ytBox').innerHTML=''; $('musicBar').classList.remove('yt');
   $('musicBar').classList.add('hidden');
 }
 function musicFinished(){ stopMusicLocal(); musicCur=null; if(isAdmin) remove(ref(db,'broadcast/music')).catch(()=>{}); }
@@ -447,6 +456,8 @@ function handleMusic(m){
   $('musicTitle').textContent=m.title||'Lagu dari admin';
   $('musicSub').textContent='Memuat...';
   $('musicBar').classList.remove('hidden');
+  const vid=ytId(m.url);
+  if(vid&&/^[\w-]{11}$/.test(vid)){ playYT(m,vid); return; }
   const a=new Audio(); musicEl=a; a.preload='auto'; a.muted=musicMuted;
   a.onloadedmetadata=()=>{
     const el=(Date.now()+srvOff-Number(m.startAt))/1000;
@@ -459,8 +470,59 @@ function handleMusic(m){
   a.onerror=()=>{ $('musicSub').textContent='Lagu tidak bisa dimuat'; if(isAdmin) toast('Link lagu tidak bisa diputar. Pastikan link langsung ke file audio.'); };
   a.src=m.url;
 }
-$('musicBar').onclick=()=>{ if(musicEl&&musicEl.paused&&musicCur) musicEl.play().catch(()=>{}); };
-$('musicMute').onclick=e=>{ e.stopPropagation(); musicMuted=!musicMuted; if(musicEl) musicEl.muted=musicMuted; $('musicMute').textContent=musicMuted?'Bunyikan':'Bisukan'; };
+function ytId(u){
+  try{
+    const x=new URL(u); const h=x.hostname.replace(/^(www|m|music)\./,'');
+    if(h==='youtu.be') return x.pathname.slice(1).split('/')[0];
+    if(h==='youtube.com'||h==='youtube-nocookie.com'){
+      if(x.pathname==='/watch') return x.searchParams.get('v');
+      const m=x.pathname.match(/^\/(shorts|embed|live)\/([\w-]{11})/); if(m) return m[2];
+    }
+  }catch(e){}
+  return null;
+}
+function loadYT(){
+  if(window.YT&&window.YT.Player) return Promise.resolve();
+  if(ytLoading) return ytLoading;
+  ytLoading=new Promise(res=>{
+    const prev=window.onYouTubeIframeAPIReady;
+    window.onYouTubeIframeAPIReady=()=>{ if(prev) prev(); res(); };
+    const s=document.createElement('script'); s.src='https://www.youtube.com/iframe_api'; document.head.appendChild(s);
+  });
+  return ytLoading;
+}
+async function playYT(m,vid){
+  $('musicBar').classList.add('yt'); $('ytBox').classList.remove('hidden'); $('ytBox').innerHTML='<div id="ytHost"></div>';
+  await loadYT();
+  if(musicCur!==m) return;
+  const elapsed=()=>(Date.now()+srvOff-Number(m.startAt))/1000;
+  ytPlayer=new window.YT.Player('ytHost',{width:200,height:113,videoId:vid,
+    playerVars:{autoplay:1,playsinline:1,controls:1,rel:0,modestbranding:1},
+    events:{
+      onReady:e=>{
+        if(musicMuted) e.target.mute();
+        const el=elapsed(); if(el>1) e.target.seekTo(el,true);
+        e.target.playVideo();
+        ytTimer=setInterval(()=>{ try{ const c=ytPlayer.getCurrentTime(), d=ytPlayer.getDuration(); $('musicSub').textContent=fmtCount(Math.floor(c))+' / '+(d?fmtCount(Math.floor(d)):'--:--'); }catch(_){} },500);
+      },
+      onStateChange:e=>{
+        if(e.data===1&&!ytChecked){ ytChecked=true; const d=e.target.getDuration(); if(d>0&&elapsed()>=d-1){ musicFinished(); return; } }
+        if(e.data===0) musicFinished();
+      },
+      onError:()=>{ $('musicSub').textContent='Video ini tidak bisa diputar di sini'; if(isAdmin) toast('Video tidak mengizinkan disematkan. Coba video lain.'); }
+    }});
+}
+$('musicBar').onclick=()=>{
+  if(!musicCur) return;
+  if(musicEl&&musicEl.paused) musicEl.play().catch(()=>{});
+  if(ytPlayer&&ytPlayer.getPlayerState&&ytPlayer.getPlayerState()!==1) try{ ytPlayer.playVideo(); }catch(e){}
+};
+$('musicMute').onclick=e=>{
+  e.stopPropagation(); musicMuted=!musicMuted;
+  if(musicEl) musicEl.muted=musicMuted;
+  if(ytPlayer) try{ musicMuted?ytPlayer.mute():ytPlayer.unMute(); }catch(_){}
+  $('musicMute').textContent=musicMuted?'Bunyikan':'Bisukan';
+};
 const fmtCount=s=>{ const h=Math.floor(s/3600), m=Math.floor(s%3600/60), x=s%60, p=n=>String(n).padStart(2,'0'); return h?h+':'+p(m)+':'+p(x):p(m)+':'+p(x); };
 async function dropPresence(){ if(myPres){ const r=myPres; myPres=null; try{ await remove(r); }catch(e){} } }
 async function runPurge(){
@@ -770,7 +832,7 @@ $('btnAdmin').onclick=async()=>{
     list.append(row);});
   }
   if(tab==='music'){
-   b.innerHTML+=`<section class="admin-section"><h3>Putar lagu untuk semua pengguna</h3><div class="hint">Tempel link langsung ke file audio (berakhiran .mp3, .m4a, .ogg, dan sejenisnya) yang memang boleh kamu putar. Lagu terdengar di semua pengguna yang sedang membuka Ruang Obrol, dan banner otomatis hilang saat lagu habis. Link YouTube atau Spotify tidak bisa dipakai.</div><div class="field"><label>Judul</label><input id="musicTitleIn" maxlength="60" placeholder="Judul lagu"></div><div class="field"><label>Link audio (https)</label><input id="musicUrlIn" type="url" placeholder="https://contoh.com/lagu.mp3" autocapitalize="none"></div><button class="admin-action" id="musicPlay" type="button">Putar lagu</button><button class="admin-action secondary" id="musicStop" type="button">Hentikan lagu</button><div class="note" id="musicNow"></div></section>`;
+   b.innerHTML+=`<section class="admin-section"><h3>Putar lagu untuk semua pengguna</h3><div class="hint">Tempel link YouTube atau link langsung ke file audio (.mp3, .m4a, .ogg, dan sejenisnya). Lagu terdengar di semua pengguna yang sedang membuka Ruang Obrol, dan banner otomatis hilang saat lagu habis. Untuk YouTube, video tampil kecil di banner dan hanya bisa video yang mengizinkan disematkan.</div><div class="field"><label>Judul</label><input id="musicTitleIn" maxlength="60" placeholder="Judul lagu"></div><div class="field"><label>Link YouTube atau file audio (https)</label><input id="musicUrlIn" type="url" placeholder="https://youtu.be/... atau https://.../lagu.mp3" autocapitalize="none"></div><button class="admin-action" id="musicPlay" type="button">Putar lagu</button><button class="admin-action secondary" id="musicStop" type="button">Hentikan lagu</button><div class="note" id="musicNow"></div></section>`;
    const mt=b.querySelector('#musicTitleIn'), mu=b.querySelector('#musicUrlIn');
    mt.value=musicTitleVal; mu.value=musicUrlVal;
    mt.oninput=()=>{musicTitleVal=mt.value;}; mu.oninput=()=>{musicUrlVal=mu.value;};
