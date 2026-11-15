@@ -8,6 +8,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <link rel="manifest" href="/manifest.webmanifest">
 <link rel="apple-touch-icon" href="/icon-192.png">
+<link rel="icon" type="image/png" href="/icon-192.png">
 <title>Ruang Obrol</title>
 <script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" async defer></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -266,6 +267,10 @@ select option{background:#0c1427;color:var(--text)}
 .check-spin{width:34px;height:34px;margin:0 auto 18px;border-radius:50%;border:3px solid rgba(148,170,210,.2);border-top-color:#6aa2ff;animation:spin .8s linear infinite}
 .check-title{font-weight:600;font-size:17px;margin-bottom:6px}
 .check-sub{font-size:13px;color:var(--muted);line-height:1.5}
+/* Background menu login */
+#vAuth{background:linear-gradient(rgba(7,11,22,.25),rgba(7,11,22,.45)),url('/bg-login.jpg') center/cover no-repeat}
+/* Title VIP */
+.badge.vip{background:linear-gradient(135deg,#f6d365,#f59e0b);color:#2a1a00;border-color:transparent;font-weight:700}
 </style>
 </head>
 <body>
@@ -417,6 +422,8 @@ const ADMIN_EMAILS = ["lifxcdz@gmail.com"];
 const MAX_IMG_SIDE = 1000;       // sisi terpanjang foto setelah dikompres
 const MAX_FILE_BYTES = 700*1024; // batas file (disimpan di database)
 const LOAD_LAST = 60;
+// Daftar harga VIP (1k per minggu)
+const VIP_PRICES = [{d:7,p:'Rp1.000'},{d:14,p:'Rp2.000'},{d:21,p:'Rp3.000'},{d:30,p:'Rp4.300'}];
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
@@ -517,12 +524,20 @@ $('verifyResend').onclick=async()=>{
   catch(e){ $('verifyMsg').textContent=authMsg(e); }
 };
 $('verifyOut').onclick=()=>signOut(auth);
-$('btnOut').onclick=async()=>{ await dropPresence(); signOut(auth); };
+// Keluar: harus mengetik "keluar" dulu
+$('btnOut').onclick=async()=>{
+  const t=prompt('Ketik "keluar" untuk keluar dari akun:');
+  if(t==null) return;
+  if(t.trim().toLowerCase()!=='keluar'){ toast('Konfirmasi salah. Ketik: keluar'); return; }
+  await dropPresence(); signOut(auth);
+};
 
 /* ---- Sesi ---- */
 let me=null, isAdmin=false, unsubs=[], entered=false; const names={};
 let myPres=null, srvOff=0, purgeTimer=null, purging=false;
 const usersData={};
+let vipData={};
+const isVip=uid=>{ const v=vipData[uid]; return !!(v&&Number(v.until)>Date.now()+srvOff); };
 let musicEl=null, musicCur=null, musicMuted=false, ytPlayer=null, ytTimer=null, ytChecked=false, ytLoading=null;
 function stopMusicLocal(){
   if(musicEl){ const a=musicEl; musicEl=null; a.onloadedmetadata=a.onerror=a.onended=a.ontimeupdate=null; try{ a.pause(); a.removeAttribute('src'); a.load(); }catch(e){} }
@@ -720,6 +735,10 @@ async function enter(u){
   live.on=false; setTimeout(()=>{ live.on=true; },2500);
   unsubs.push(()=>{ Object.keys(rxUnsubs).forEach(k=>{ try{ rxUnsubs[k](); }catch(e){} delete rxUnsubs[k]; }); closeDm(); setTyping(false); });
 
+  // Title VIP (otomatis hilang saat 'until' lewat)
+  unsubs.push(onValue(ref(db,'vip'),s=>{ vipData=s.val()||{}; refreshVipBadges(); }));
+  const vipTick=setInterval(refreshVipBadges,60000); unsubs.push(()=>clearInterval(vipTick));
+
   unsubs.push(onValue(ref(db,'users'),s=>{
     const v=s.val()||{}; for(const k in v) names[k]=v[k].name;
     Object.keys(usersData).forEach(k=>delete usersData[k]); Object.assign(usersData,v);
@@ -729,6 +748,16 @@ async function enter(u){
   unsubs.push(onChildAdded(q,s=>addMsg(s.key,s.val()),err=>toast('Tidak bisa membaca pesan: '+err.code)));
   unsubs.push(onChildChanged(q,s=>updateMsg(s.key,s.val())));
   unsubs.push(onChildRemoved(q,s=>{ if(rxUnsubs[s.key]){ try{ rxUnsubs[s.key](); }catch(e){} delete rxUnsubs[s.key]; } delete msgData[s.key]; const el=$('m_'+s.key); if(el) el.remove(); if(!$('list').querySelector('.m')&&!$('empty')){ const d=document.createElement('div'); d.className='empty'; d.id='empty'; d.textContent='Belum ada pesan. Mulai obrolan.'; $('list').appendChild(d); } }));
+}
+
+/* ---- Badge VIP ---- */
+function refreshVipBadges(){
+  document.querySelectorAll('#list .m .meta').forEach(mt=>{
+    const w=mt.closest('.m'); if(!w) return;
+    const o=mt.querySelector('.badge.vip'), on=isVip(w.dataset.uid);
+    if(on&&!o){ const b=document.createElement('span'); b.className='badge vip'; b.textContent='VIP'; const nm=mt.querySelector('.nm'); if(nm) nm.after(b); }
+    else if(!on&&o) o.remove();
+  });
 }
 
 /* ---- Tampil pesan ---- */
@@ -764,6 +793,7 @@ function addMsg(id,m){
   const meta=document.createElement('div'); meta.className='meta';
   const nm=document.createElement('span'); nm.className='nm'; nm.dataset.uid=m.uid; nm.textContent=mine?'Kamu':(names[m.uid]||m.name||'Pengguna'); nm.onclick=()=>openUser(m.uid); meta.appendChild(nm);
   if(m.admin){ const b=document.createElement('span'); b.className='badge'; b.textContent='Admin'; meta.appendChild(b); }
+  if(isVip(m.uid)){ const b=document.createElement('span'); b.className='badge vip'; b.textContent='VIP'; meta.appendChild(b); }
   const tm=document.createElement('span'); tm.textContent=fmtTime(m.ts); meta.appendChild(tm);
   const ed=document.createElement('span'); ed.className='ed'; ed.textContent=m.edited?'(diedit)':''; meta.appendChild(ed);
   if(!tmp){ const more=document.createElement('button'); more.className='more'; more.type='button'; more.textContent='···'; more.setAttribute('aria-label','Aksi pesan'); more.onclick=()=>openActions(id); meta.appendChild(more); }
@@ -885,7 +915,7 @@ $('who').onclick=()=>{
   $('iProfName').value=me.displayName||''; $('iBio').value=p.bio||''; $('iStatus').value=p.status||''; $('iCity').value=p.city||''; $('iHobby').value=p.hobby||''; $('iIg').value=p.ig||'';
   pColor=p.color||PCOLORS[0]; drawColors(); paintAvatar($('pAvatar'),me.displayName,pColor);
   $('profEmail').textContent=me.email;
-  $('profRole').textContent=isAdmin?'Admin':'Anggota';
+  $('profRole').textContent=isAdmin?'Admin':(isVip(me.uid)?'Anggota VIP (sampai '+fmtDate(vipData[me.uid].until)+')':'Anggota');
   $('profJoined').textContent=fmtDate(Date.parse((me.metadata||{}).creationTime));
   $('profLast').textContent=(me.metadata||{}).lastSignInTime?new Date(me.metadata.lastSignInTime).toLocaleString('id-ID'):'-';
   $('profMsg').textContent=''; $('pwMsg').textContent=''; $('iOldPw').value=''; $('iNewPw').value='';
@@ -895,7 +925,7 @@ $('iProfName').addEventListener('input',()=>paintAvatar($('pAvatar'),$('iProfNam
 $('profClose').onclick=()=>$('vProfile').classList.add('hidden');
 function openUser(uid){
   const p=usersData[uid]; if(!p) return;
-  paintAvatar($('uAvatar'),p.name,p.color); $('uName').textContent=p.name||'Pengguna';
+  paintAvatar($('uAvatar'),p.name,p.color); $('uName').textContent=(p.name||'Pengguna')+(isVip(uid)?' · VIP':'');
   const rows=[['Bio',p.bio],['Status',p.status],['Kota',p.city],['Hobi',p.hobby],['Instagram',p.ig?'@'+p.ig:''],['Bergabung',p.joinedAt?fmtDate(p.joinedAt):'']].filter(r=>r[1]);
   const dl=$('uInfo'); dl.innerHTML='';
   if(!rows.length){ const d=document.createElement('dd'); d.style.gridColumn='1 / -1'; d.style.color='var(--muted)'; d.textContent='Belum ada data profil.'; dl.append(d); }
@@ -1207,7 +1237,7 @@ async function moderationApi(payload){
 $('btnAdmin').onclick=async()=>{
  if(!isAdmin) return;
  $('vAdmin').classList.remove('hidden');
- let users={},emails={},banned={},jail={},modUsers={},logs={},presence={}; let settingsD={},reportsD={},queueD={},annD=null; let tab='stats'; let purgeVal='30', purgeUnit='1', musicTitleVal='', musicUrlVal='', annVal='', badVal='', badTouched=false;
+ let users={},emails={},banned={},jail={},modUsers={},logs={},presence={}; let settingsD={},reportsD={},queueD={},annD=null,vipD={}; let tab='stats'; let purgeVal='30', purgeUnit='1', musicTitleVal='', musicUrlVal='', annVal='', badVal='', badTouched=false, vipDays='7', vipUid='';
  const esc=s=>String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
  const act=async(action,uid,extra={})=>{try{await moderationApi({action,uid,...extra});toast('Tindakan berhasil.');}catch(e){toast(e.message||'Gagal.');}};
  const makeRow=uid=>{
@@ -1228,9 +1258,9 @@ $('btnAdmin').onclick=async()=>{
   return row;
  };
  const draw=()=>{
-  if(document.activeElement&&['purgeVal','musicTitleIn','musicUrlIn','annIn','badIn'].includes(document.activeElement.id)) return;
+  if(document.activeElement&&['purgeVal','musicTitleIn','musicUrlIn','annIn','badIn','vipDays','vipUser'].includes(document.activeElement.id)) return;
   const b=$('admBody'); const ids=Object.keys(users); const banIds=Object.keys(banned); const jailIds=Object.keys(jail);
-  b.innerHTML=`<nav class="admin-section" style="display:flex;gap:8px;flex-wrap:wrap"><button class="admin-action ${tab==='stats'?'':'secondary'}" data-tab="stats">Statistik</button><button class="admin-action ${tab==='users'?'':'secondary'}" data-tab="users">Pengguna</button><button class="admin-action ${tab==='banned'?'':'secondary'}" data-tab="banned">Akun diblokir (${banIds.length})</button><button class="admin-action ${tab==='jail'?'':'secondary'}" data-tab="jail">Jail (${jailIds.length})</button><button class="admin-action ${tab==='ann'?'':'secondary'}" data-tab="ann">Pengumuman</button><button class="admin-action ${tab==='reports'?'':'secondary'}" data-tab="reports">Laporan (${Object.keys(reportsD).length})</button><button class="admin-action ${tab==='settings'?'':'secondary'}" data-tab="settings">Pengaturan</button><button class="admin-action ${tab==='music'?'':'secondary'}" data-tab="music">Musik</button><button class="admin-action ${tab==='logs'?'':'secondary'}" data-tab="logs">Riwayat bot</button></nav>`;
+  b.innerHTML=`<nav class="admin-section" style="display:flex;gap:8px;flex-wrap:wrap"><button class="admin-action ${tab==='stats'?'':'secondary'}" data-tab="stats">Statistik</button><button class="admin-action ${tab==='users'?'':'secondary'}" data-tab="users">Pengguna</button><button class="admin-action ${tab==='vip'?'':'secondary'}" data-tab="vip">VIP</button><button class="admin-action ${tab==='banned'?'':'secondary'}" data-tab="banned">Akun diblokir (${banIds.length})</button><button class="admin-action ${tab==='jail'?'':'secondary'}" data-tab="jail">Jail (${jailIds.length})</button><button class="admin-action ${tab==='ann'?'':'secondary'}" data-tab="ann">Pengumuman</button><button class="admin-action ${tab==='reports'?'':'secondary'}" data-tab="reports">Laporan (${Object.keys(reportsD).length})</button><button class="admin-action ${tab==='settings'?'':'secondary'}" data-tab="settings">Pengaturan</button><button class="admin-action ${tab==='music'?'':'secondary'}" data-tab="music">Musik</button><button class="admin-action ${tab==='logs'?'':'secondary'}" data-tab="logs">Riwayat bot</button></nav>`;
   if(tab==='stats') b.innerHTML+=`<section class="admin-section"><h3>Ringkasan Ruang Obrol</h3><div class="admin-grid"><div class="card"><b>${ids.length}</b><div class="hint">Total akun</div></div><div class="card"><b>${banIds.length}</b><div class="hint">Akun diblokir</div></div><div class="card"><b>${jailIds.length}</b><div class="hint">Sedang di Jail</div></div><div class="card"><b>${Object.keys(logs).length}</b><div class="hint">Catatan moderasi</div></div></div><div class="hint">Bot memberi peringatan terlebih dahulu, lalu Jail sementara, dan ban sementara untuk pelanggaran berulang. Admin dikecualikan.</div></section><section class="admin-section"><h3>Akun online (<span id="onCount">0</span>)</h3><div class="hint">Akun yang sedang login dan membuka Ruang Obrol. Kamu bisa langsung Jail atau Ban dari sini.</div><div id="onlineUsers"></div></section><section class="admin-section"><h3>Hapus semua pesan</h3><div class="hint">Ketik lama hitung mundur. Semua pengguna akan melihat pemberitahuan penghapusan pesan beserta timernya. Biarkan halaman ini tetap terbuka sampai selesai.</div><div class="admin-grid"><div class="field"><input id="purgeVal" type="number" inputmode="numeric" min="5" placeholder="Waktu"></div><div class="field"><select id="purgeUnit"><option value="1">Detik</option><option value="60">Menit</option><option value="3600">Jam</option></select></div></div><button class="admin-action" id="purgeGo" type="button">Mulai hapus semua pesan</button><button class="admin-action secondary" id="purgeCancel" type="button">Batalkan timer</button></section>`;
   if(tab==='stats'){
    const on=Object.keys(presence).filter(k=>presence[k]&&Object.keys(presence[k]).length);
@@ -1255,9 +1285,36 @@ $('btnAdmin').onclick=async()=>{
    b.innerHTML+=`<section class="admin-section"><h3>${tab==='users'?'Daftar pengguna':tab==='banned'?'Akun diblokir':'Pengguna dalam Jail'}</h3><div id="moderationUsers"></div></section>`;
    const list=b.querySelector('#moderationUsers');
    if(!selected.length){list.innerHTML='<div class="note">Belum ada data.</div>';}
-   selected.forEach(uid=>{const u=users[uid]||{}, ban=banned[uid], j=jail[uid]; const row=document.createElement('div');row.className='row admin-account';const info=document.createElement('div');info.className='info';const name=document.createElement('div');name.className='n';name.textContent=u.name||'Pengguna';const email=document.createElement('div');email.className='e';email.textContent=(emails[uid]||{}).email||'';const status=document.createElement('div');status.className='e';status.textContent=ban?'Diblokir · '+(ban.reason||''):j?'Jail · '+(j.reason||''):'Aktif';info.append(name,email,status);row.append(info);
+   selected.forEach(uid=>{const u=users[uid]||{}, ban=banned[uid], j=jail[uid]; const row=document.createElement('div');row.className='row admin-account';const info=document.createElement('div');info.className='info';const name=document.createElement('div');name.className='n';name.textContent=(u.name||'Pengguna')+(vipD[uid]&&Number(vipD[uid].until)>Date.now()+srvOff?' · VIP':'');const email=document.createElement('div');email.className='e';email.textContent=(emails[uid]||{}).email||'';const status=document.createElement('div');status.className='e';status.textContent=ban?'Diblokir · '+(ban.reason||''):j?'Jail · '+(j.reason||''):'Aktif';info.append(name,email,status);row.append(info);
     if(uid!==me.uid){const btn=document.createElement('button');btn.textContent=ban?'Buka ban':j?'Lepas Jail':'Jail 10 menit';btn.onclick=()=>act(ban?'unban':j?'unjail':'jail',uid,{minutes:10,reason:'Tindakan admin'});row.append(btn);const banBtn=document.createElement('button');banBtn.className='danger';banBtn.textContent=ban?'':'Ban 24 jam';if(!ban)banBtn.onclick=()=>{const reason=prompt('Alasan ban:','Pelanggaran aturan komunitas');if(reason)act('ban',uid,{hours:24,reason});};row.append(banBtn);}
     list.append(row);});
+  }
+  if(tab==='vip'){
+   b.innerHTML+=`<section class="admin-section"><h3>Daftar harga VIP</h3><div class="hint">${VIP_PRICES.map(x=>x.d+' hari = '+x.p).join('<br>')}<br>Dasar harga: Rp1.000 per minggu. Title VIP hilang otomatis saat masa berlaku habis.</div></section><section class="admin-section"><h3>Beri title VIP</h3><div class="field"><label>Pengguna</label><select id="vipUser"><option value="">Pilih pengguna</option>${Object.keys(users).map(k=>`<option value="${k}">${esc(users[k].name)} · ${esc((emails[k]||{}).email)}</option>`).join('')}</select></div><div class="field"><label>Durasi (hari)</label><input id="vipDays" type="number" inputmode="numeric" min="1" placeholder="Contoh: 7"></div><div class="hint" id="vipQuote"></div><button class="admin-action" id="vipGive" type="button">Beri / perpanjang VIP</button></section><section class="admin-section"><h3>VIP aktif</h3><div id="vipList"></div></section>`;
+   const vu=b.querySelector('#vipUser'), vd=b.querySelector('#vipDays'), vq=b.querySelector('#vipQuote');
+   vu.value=vipUid; vd.value=vipDays;
+   const quote=()=>{ const d=Math.floor(Number(vd.value)); vq.textContent=d>=1?'Tagihan: Rp'+(Math.ceil(d/7)*1000).toLocaleString('id-ID')+' ('+d+' hari)':''; };
+   quote();
+   vu.onchange=()=>{vipUid=vu.value;}; vd.oninput=()=>{vipDays=vd.value;quote();};
+   b.querySelector('#vipGive').onclick=async()=>{
+    const d=Math.floor(Number(vd.value));
+    if(!vu.value||!(d>=1)){ toast('Pilih pengguna dan isi jumlah hari.'); return; }
+    const now=Date.now()+srvOff, cur=vipD[vu.value], base=cur&&Number(cur.until)>now?Number(cur.until):now;
+    try{ await set(ref(db,'vip/'+vu.value),{until:base+d*86400000,days:d,by:me.uid,at:now}); toast('Title VIP diberikan.'); }
+    catch(e){ toast('Gagal. Cek Rules database.'); }
+   };
+   const vl=b.querySelector('#vipList'); const act2=Object.keys(vipD).filter(k=>Number(vipD[k].until)>Date.now()+srvOff);
+   if(!act2.length) vl.innerHTML='<div class="note">Belum ada VIP aktif.</div>';
+   act2.forEach(k=>{
+    const row=document.createElement('div'); row.className='row admin-account';
+    const info=document.createElement('div'); info.className='info';
+    const n=document.createElement('div'); n.className='n'; n.textContent=(users[k]||{}).name||'Pengguna';
+    const e=document.createElement('div'); e.className='e'; const left=Math.ceil((Number(vipD[k].until)-Date.now()-srvOff)/86400000);
+    e.textContent='Sisa '+left+' hari · sampai '+new Date(Number(vipD[k].until)).toLocaleDateString('id-ID');
+    info.append(n,e);
+    const rm=document.createElement('button'); rm.className='danger'; rm.textContent='Cabut'; rm.onclick=()=>remove(ref(db,'vip/'+k)).then(()=>toast('VIP dicabut.')).catch(()=>toast('Gagal mencabut.'));
+    row.append(info,rm); vl.append(row);
+   });
   }
   if(tab==='ann'){
    b.innerHTML+=`<section class="admin-section"><h3>Pengumuman untuk semua pengguna</h3><div class="hint">Tampil sebagai banner di atas chat. Pengguna bisa menutupnya di perangkat masing-masing.</div><div class="field"><textarea id="annIn" maxlength="200" placeholder="Tulis pengumuman"></textarea></div><button class="admin-action" id="annSend" type="button">Kirim pengumuman</button><button class="admin-action secondary" id="annClear" type="button">Hapus pengumuman</button><div class="note" id="annNow"></div></section>`;
@@ -1322,7 +1379,7 @@ $('btnAdmin').onclick=async()=>{
   if(tab==='logs'){b.innerHTML+=`<section class="admin-section"><h3>Riwayat moderasi terbaru</h3><div id="moderationLogs"></div></section>`;const list=b.querySelector('#moderationLogs');const entries=Object.entries(logs).sort((a,b)=>(b[1].createdAt||b[1].lastAt||0)-(a[1].createdAt||a[1].lastAt||0)).slice(0,80);list.innerHTML=entries.length?'':'<div class="note">Belum ada riwayat moderasi.</div>';entries.forEach(([key,v])=>{const item=document.createElement('div');item.className='admin-account';item.textContent=`${users[v.uid]?.name||v.uid} · ${v.action||'catatan'} · ${v.reason||''} · ${new Date(v.createdAt||v.lastAt||Date.now()).toLocaleString('id-ID')}`;list.append(item);});}
   b.querySelectorAll('[data-tab]').forEach(btn=>btn.onclick=()=>{tab=btn.dataset.tab;draw();});
  };
- admUnsub.forEach(f=>f()); admUnsub=[onValue(ref(db,'users'),s=>{users=s.val()||{};draw();}),onValue(ref(db,'private'),s=>{emails=s.val()||{};draw();}),onValue(ref(db,'banned'),s=>{banned=s.val()||{};draw();}),onValue(ref(db,'jail'),s=>{jail=s.val()||{};draw();}),onValue(ref(db,'moderation/users'),s=>{modUsers=s.val()||{};draw();}),onValue(ref(db,'moderation/logs'),s=>{logs=s.val()||{};draw();}),onValue(ref(db,'presence'),s=>{presence=s.val()||{};draw();}),onValue(ref(db,'settings'),s=>{settingsD=s.val()||{}; if(!badTouched) badVal=String(settingsD.badwords||''); draw();}),onValue(ref(db,'reports'),s=>{reportsD=s.val()||{};draw();}),onValue(ref(db,'broadcast/queue'),s=>{queueD=s.val()||{};draw();}),onValue(ref(db,'broadcast/announce'),s=>{annD=s.val();draw();})];
+ admUnsub.forEach(f=>f()); admUnsub=[onValue(ref(db,'users'),s=>{users=s.val()||{};draw();}),onValue(ref(db,'private'),s=>{emails=s.val()||{};draw();}),onValue(ref(db,'banned'),s=>{banned=s.val()||{};draw();}),onValue(ref(db,'jail'),s=>{jail=s.val()||{};draw();}),onValue(ref(db,'moderation/users'),s=>{modUsers=s.val()||{};draw();}),onValue(ref(db,'moderation/logs'),s=>{logs=s.val()||{};draw();}),onValue(ref(db,'presence'),s=>{presence=s.val()||{};draw();}),onValue(ref(db,'settings'),s=>{settingsD=s.val()||{}; if(!badTouched) badVal=String(settingsD.badwords||''); draw();}),onValue(ref(db,'reports'),s=>{reportsD=s.val()||{};draw();}),onValue(ref(db,'broadcast/queue'),s=>{queueD=s.val()||{};draw();}),onValue(ref(db,'broadcast/announce'),s=>{annD=s.val();draw();}),onValue(ref(db,'vip'),s=>{vipD=s.val()||{};draw();})];
 };
 $('admClose').onclick=()=>{$('vAdmin').classList.add('hidden');admUnsub.forEach(f=>f());admUnsub=[];};
 
