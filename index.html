@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#070b16">
 <meta name="referrer" content="strict-origin-when-cross-origin">
+<script>try{if(localStorage.getItem('ro_theme')==='light')document.documentElement.setAttribute('data-theme','light');}catch(e){}</script>
 <title>Ruang Obrol</title>
 <script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" async defer></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -59,7 +60,7 @@ header button{padding:6px 12px;font-size:14px}
 .m{display:flex;flex-direction:column;max-width:82%;align-self:flex-start}
 .m.me{align-self:flex-end;align-items:flex-end}
 .meta{font-size:12px;color:var(--muted);margin-bottom:3px;display:flex;gap:8px;align-items:center}
-.badge{border-radius:6px;border:1px solid var(--blue);color:var(--blue);padding:0 5px;font-size:11px}
+.badge{border:0;background:none;padding:0;font-size:inherit;line-height:inherit;font-weight:500;color:#8db7ff}
 .box{border:1px solid var(--line);background:var(--surface);border-radius:16px;padding:9px 12px;word-break:break-word;white-space:pre-wrap;user-select:text;-webkit-user-select:text}
 .m.me .box{border-color:#fff}
 .box img{display:block;border-radius:10px;max-width:100%;max-height:300px;margin:-2px 0 6px;cursor:pointer}
@@ -116,8 +117,8 @@ header button{border-radius:11px}
 .box{border:1px solid var(--line);background:linear-gradient(145deg,#111d34,#0c1528);border-radius:17px;padding:11px 14px}
 .m.me .box{border-color:rgba(93,151,255,.38);background:linear-gradient(145deg,#15356d,#10254b)}
 .meta{gap:7px}
-.badge{border-radius:20px;background:rgba(59,130,246,.12);border-color:rgba(75,140,255,.4);color:#8db7ff;padding:1px 8px}
-.badge.mod{background:rgba(16,185,129,.12);border-color:rgba(16,185,129,.45);color:#6ee7b7}
+.badge{border:0;background:none;padding:0;font-size:inherit;color:#8db7ff}
+.badge.mod{color:#6ee7b7}
 footer{background:rgba(7,11,22,.92);border-color:var(--line);backdrop-filter:blur(18px)}
 footer textarea{border-radius:14px}
 footer .ib,.send{border-radius:13px!important}
@@ -218,6 +219,31 @@ select option{background:#0c1427;color:var(--text)}
 .check-spin{width:34px;height:34px;margin:0 auto 18px;border-radius:50%;border:3px solid rgba(148,170,210,.2);border-top-color:#6aa2ff;animation:spin .8s linear infinite}
 .check-title{font-weight:600;font-size:17px;margin-bottom:6px}
 .check-sub{font-size:13px;color:var(--muted);line-height:1.5}
+/* Aksi pesan, bar kunci chat */
+.macts{display:flex;gap:12px}
+.lockbar{padding:12px;text-align:center;border-top:1px solid var(--line);color:var(--muted);font-size:14px}
+.admin-section textarea{width:100%;padding:11px 12px;min-height:110px;resize:vertical}
+/* Tema terang */
+:root[data-theme="light"]{--bg:#eef2fa;--surface:#ffffff;--line:rgba(30,55,100,.18);--line-soft:rgba(30,55,100,.1);--text:#0f1a2e;--muted:#5b6784;--blue:#2868e8;--danger:#d63a3a}
+:root[data-theme="light"] body{background:radial-gradient(ellipse at 50% -20%,rgba(37,99,235,.1),transparent 48%),var(--bg)}
+:root[data-theme="light"] .card,:root[data-theme="light"] .check-box,:root[data-theme="light"] .load-card,:root[data-theme="light"] .admin-section,:root[data-theme="light"] .row,:root[data-theme="light"] .sheet,:root[data-theme="light"] .box{background:#fff;box-shadow:none}
+:root[data-theme="light"] .card{box-shadow:0 10px 40px rgba(30,55,100,.12)}
+:root[data-theme="light"] .m.me .box{background:#dfeaff;border-color:rgba(40,104,232,.35)}
+:root[data-theme="light"] header,:root[data-theme="light"] footer{background:rgba(255,255,255,.94)}
+:root[data-theme="light"] .overlay{background:rgba(238,242,250,.92)}
+:root[data-theme="light"] .overlay .top{background:rgba(255,255,255,.97)}
+:root[data-theme="light"] .field input,:root[data-theme="light"] .field textarea,:root[data-theme="light"] footer textarea,:root[data-theme="light"] select,:root[data-theme="light"] .admin-section textarea{background:#f4f7fd;color:var(--text)}
+:root[data-theme="light"] select option{background:#fff;color:#0f1a2e}
+:root[data-theme="light"] .btn.ghost,:root[data-theme="light"] .admin-action.secondary,:root[data-theme="light"] .social-btn{background:#eef2fa;color:var(--text)}
+:root[data-theme="light"] .tabs button.on{background:#0f1a2e;color:#fff}
+:root[data-theme="light"] .badge{color:#2868e8}
+:root[data-theme="light"] .badge.mod{color:#0f8f68}
+:root[data-theme="light"] .purge-title{color:#b02a2a}
+:root[data-theme="light"] .purge-time{color:#7a1d1d;background:rgba(214,58,58,.12)}
+:root[data-theme="light"] .music-bar{background:rgba(75,140,255,.1)}
+:root[data-theme="light"] .pcolor.on{border-color:#0f1a2e}
+:root[data-theme="light"] .toast{color:#33415f;text-shadow:0 1px 6px #fff}
+:root[data-theme="light"] .credential-output{background:#f4f7fd}
 </style>
 </head>
 <body>
@@ -278,6 +304,7 @@ select option{background:#0c1427;color:var(--text)}
   <div id="list"><div class="empty" id="empty">Belum ada pesan. Mulai obrolan.</div></div>
   <div id="bannedBar" class="banned hidden">Akunmu sedang dibatasi. Lihat detail status moderasi.</div>
   <div id="jailBar" class="banned hidden"></div>
+  <div id="lockBar" class="lockbar hidden">Chat sedang dikunci admin. Kamu masih bisa membaca pesan.</div>
   <footer id="composer">
     <div class="sheet hidden" id="sheet">
       <button id="pickImg" type="button">Foto</button>
@@ -309,6 +336,7 @@ select option{background:#0c1427;color:var(--text)}
     <div class="field"><label for="iHobby">Hobi</label><input id="iHobby" maxlength="60" placeholder="Contoh: musik, game, fotografi"></div>
     <div class="field"><label for="iIg">Instagram</label><input id="iIg" maxlength="31" placeholder="username tanpa @" autocapitalize="none"></div>
     <div class="field"><label>Warna profil</label><div class="pcolors" id="pColors"></div></div>
+    <div class="field"><label for="iTheme">Tema</label><select id="iTheme"><option value="dark">Gelap</option><option value="light">Terang</option></select></div>
     <div class="psec">Info akun</div>
     <dl class="pinfo">
       <dt>Email</dt><dd id="profEmail"></dd>
@@ -521,7 +549,7 @@ $('btnOut').onclick=async()=>{ await dropPresence(); signOut(auth); };
 /* ---- Sesi & peran ---- */
 // isOwner: email di ADMIN_EMAILS. myRole: 'admin' | 'moderator' dari database (roles/{uid}).
 let me=null, isOwner=false, myRole=null, isAdmin=false, isMod=false, isStaff=false, unsubs=[], entered=false; const names={};
-let myPres=null, srvOff=0, purgeTimer=null, purging=false, banState=false, jailState=false;
+let myPres=null, srvOff=0, purgeTimer=null, purging=false, banState=false, jailState=false, lockState=false;
 const usersData={};
 function applyRole(){
   isAdmin=isOwner||myRole==='admin';
@@ -530,8 +558,13 @@ function applyRole(){
   $('btnAdmin').classList.toggle('hidden',!isStaff);
   if(me) $('profRole').textContent=isOwner?'Pemilik':isAdmin?'Admin':isMod?'Moderator':'Anggota';
   if(!isStaff) $('vAdmin').classList.add('hidden');
+  updateComposer();
 }
-function updateComposer(){ $('composer').classList.toggle('hidden',banState||jailState); }
+function updateComposer(){
+  const lockedOut=lockState&&!isStaff;
+  $('composer').classList.toggle('hidden',banState||jailState||lockedOut);
+  $('lockBar').classList.toggle('hidden',!lockedOut);
+}
 let musicEl=null, musicCur=null, musicMuted=false, ytPlayer=null, ytTimer=null, ytChecked=false, ytLoading=null;
 function stopMusicLocal(){
   if(musicEl){ const a=musicEl; musicEl=null; a.onloadedmetadata=a.onerror=a.onended=a.ontimeupdate=null; try{ a.pause(); a.removeAttribute('src'); a.load(); }catch(e){} }
@@ -664,8 +697,8 @@ onAuthStateChanged(auth,async u=>{
 function cleanup(){
   unsubs.forEach(f=>f()); unsubs=[]; entered=false; clearInterval(purgeTimer); purgeTimer=null;
   $('purgeBar').classList.add('hidden'); stopMusicLocal(); musicCur=null;
-  banState=false; jailState=false; myRole=null; isOwner=false; isAdmin=false; isMod=false; isStaff=false;
-  $('bannedBar').classList.add('hidden'); $('jailBar').classList.add('hidden'); $('composer').classList.remove('hidden');
+  banState=false; jailState=false; lockState=false; myRole=null; isOwner=false; isAdmin=false; isMod=false; isStaff=false;
+  $('bannedBar').classList.add('hidden'); $('jailBar').classList.add('hidden'); $('lockBar').classList.add('hidden'); $('composer').classList.remove('hidden');
   $('btnAdmin').classList.add('hidden');
   $('vUser').classList.add('hidden'); $('vProfile').classList.add('hidden'); $('vAdmin').classList.add('hidden');
   $('list').innerHTML='<div class="empty" id="empty">Belum ada pesan. Mulai obrolan.</div>';
@@ -719,6 +752,8 @@ async function enter(u){
     updateComposer();
   }));
 
+  unsubs.push(onValue(ref(db,'settings/locked'),s=>{ lockState=s.val()===true; updateComposer(); }));
+
   unsubs.push(onValue(ref(db,'users'),s=>{
     const v=s.val()||{}; for(const k in v) names[k]=v[k].name;
     Object.keys(usersData).forEach(k=>delete usersData[k]); Object.assign(usersData,v);
@@ -758,10 +793,18 @@ function addMsg(id,m){
   if(m.text){ const t=document.createElement('div'); t.className='cap'; t.textContent=m.text; box.appendChild(t); }
   w.appendChild(box);
 
-  if(mine||isStaff){
-    const d=document.createElement('button'); d.className='del'; d.textContent='Hapus';
-    d.onclick=async()=>{ if(!confirm('Hapus pesan ini?')) return; try{ await remove(ref(db,'messages/'+id)); }catch(e){ toast('Gagal menghapus.'); } };
-    w.appendChild(d);
+  if(!id.startsWith('tmp')){
+    const acts=document.createElement('div'); acts.className='macts';
+    if(!mine){
+      const rp=document.createElement('button'); rp.className='del'; rp.textContent='Lapor';
+      rp.onclick=()=>reportMsg(id,m); acts.appendChild(rp);
+    }
+    if(mine||isStaff){
+      const d=document.createElement('button'); d.className='del'; d.textContent='Hapus';
+      d.onclick=async()=>{ if(!confirm('Hapus pesan ini?')) return; try{ await remove(ref(db,'messages/'+id)); }catch(e){ toast('Gagal menghapus.'); } };
+      acts.appendChild(d);
+    }
+    if(acts.childNodes.length) w.appendChild(acts);
   }
   list.appendChild(w);
   if(near||mine) list.scrollTop=list.scrollHeight;
@@ -830,6 +873,23 @@ $('fAny').onchange=async e=>{
   catch(err){ toast('File tidak bisa dibaca.'); }
 };
 
+/* ---- Laporan pesan ---- */
+async function reportMsg(id,m){
+  const raw=prompt('Alasan laporan (maks 120 karakter):','Pelanggaran aturan');
+  const reason=String(raw||'').trim().slice(0,120); if(!reason) return;
+  const snip=m.type==='image'?'Foto':m.type==='file'?'File: '+String(m.fname||'').slice(0,60):String(m.text||'').slice(0,80);
+  try{ await set(ref(db,'reports/'+id+'_'+me.uid),{msgId:id,by:me.uid,uid:m.uid,reason,ts:Date.now(),snip}); toast('Laporan terkirim ke staf.'); }
+  catch(e){ toast('Kamu sudah melaporkan pesan ini, atau laporan tidak diizinkan.'); }
+}
+
+/* ---- Tema ---- */
+function applyTheme(t){
+  if(t==='light') document.documentElement.setAttribute('data-theme','light'); else document.documentElement.removeAttribute('data-theme');
+  try{ localStorage.setItem('ro_theme',t==='light'?'light':'dark'); }catch(e){}
+  const mt=document.querySelector('meta[name="theme-color"]'); if(mt) mt.setAttribute('content',t==='light'?'#eef2fa':'#070b16');
+}
+$('iTheme').onchange=()=>applyTheme($('iTheme').value);
+
 /* ---- Profil ---- */
 const PCOLORS=['#2868e8','#8b5cf6','#ec4899','#f97316','#10b981','#06b6d4'];
 let pColor=PCOLORS[0];
@@ -848,6 +908,7 @@ $('who').onclick=()=>{
   const p=usersData[me.uid]||{};
   $('iProfName').value=me.displayName||''; $('iBio').value=p.bio||''; $('iStatus').value=p.status||''; $('iCity').value=p.city||''; $('iHobby').value=p.hobby||''; $('iIg').value=p.ig||'';
   pColor=p.color||PCOLORS[0]; drawColors(); paintAvatar($('pAvatar'),me.displayName,pColor);
+  $('iTheme').value=document.documentElement.getAttribute('data-theme')==='light'?'light':'dark';
   $('profEmail').textContent=me.email;
   $('profRole').textContent=isOwner?'Pemilik':isAdmin?'Admin':isMod?'Moderator':'Anggota';
   $('profJoined').textContent=fmtDate(Date.parse((me.metadata||{}).creationTime));
@@ -881,6 +942,18 @@ $('profSave').onclick=async()=>{
 };
 
 /* ---- Panel admin & moderasi ---- */
+// Riwayat lagu disimpan di settings/musicHistory (tidak perlu Rules baru)
+function songKey(url){ let h=5381; for(let i=0;i<url.length;i++) h=((h<<5)+h+url.charCodeAt(i))|0; return 'm'+(h>>>0).toString(36)+url.length.toString(36); }
+async function playSong(url,title){
+  title=String(title||'').trim().slice(0,60)||'Lagu dari admin';
+  await set(ref(db,'broadcast/music'),{url,title,startAt:Date.now()+srvOff,by:me.uid});
+  try{
+    const k='settings/musicHistory/'+songKey(url);
+    const s=await get(ref(db,k)); const c=(s.val()&&s.val().count)||0;
+    await set(ref(db,k),{url,title,lastAt:Date.now(),count:c+1});
+  }catch(e){}
+  toast('Lagu diputar untuk semua pengguna.');
+}
 let admUnsub=[];
 async function moderationApi(payload){
  if(!auth.currentUser) throw new Error('Sesi login tidak ditemukan.');
@@ -892,7 +965,7 @@ $('btnAdmin').onclick=async()=>{
  if(!isStaff) return;
  $('vAdmin').classList.remove('hidden');
  $('admTitle').textContent=isAdmin?'Panel admin':'Panel moderator';
- let users={},emails={},banned={},jail={},modUsers={},logs={},presence={},roles={}; let tab='stats'; let purgeVal='30', purgeUnit='1', musicTitleVal='', musicUrlVal='', staffQ='';
+ let users={},emails={},banned={},jail={},modUsers={},logs={},presence={},roles={},reports={},settings={}; let tab='stats'; let purgeVal='30', purgeUnit='1', musicTitleVal='', musicUrlVal='', staffQ='', wordsVal=null;
  const act=async(action,uid,extra={})=>{try{await moderationApi({action,uid,...extra});toast('Tindakan berhasil.');}catch(e){toast(e.message||'Gagal.');}};
  const isOwnerUid=uid=>ADMIN_EMAILS.map(x=>x.toLowerCase()).includes(String((emails[uid]||{}).email||'').toLowerCase());
  const roleOf=uid=>isOwnerUid(uid)?'owner':(roles[uid]||'');
@@ -919,9 +992,10 @@ $('btnAdmin').onclick=async()=>{
   return row;
  };
  const draw=()=>{
-  if(document.activeElement&&['purgeVal','musicTitleIn','musicUrlIn','staffSearch'].includes(document.activeElement.id)) return;
+  if(document.activeElement&&['purgeVal','musicTitleIn','musicUrlIn','staffSearch','wordsIn'].includes(document.activeElement.id)) return;
   const b=$('admBody'); const ids=Object.keys(users); const banIds=Object.keys(banned); const jailIds=Object.keys(jail);
   const tabs=[['stats','Statistik'],['users','Pengguna'],['banned','Akun diblokir ('+banIds.length+')'],['jail','Jail ('+jailIds.length+')']];
+  tabs.push(['reports','Laporan ('+Object.keys(reports).length+')']);
   if(isAdmin) tabs.push(['staff','Staf']);
   if(isAdmin) tabs.push(['music','Musik']);
   tabs.push(['logs','Riwayat bot']);
