@@ -35,7 +35,18 @@ module.exports = async function handler(req, res) {
     });
 
     await Promise.all(jobs);
-    return res.status(200).json({ success: true, deleted, checkedAt: now });
+
+    // Bersihkan catatan pembatas percobaan login yang sudah kedaluwarsa
+    const limits = await db.ref('ratelimit').get();
+    const stale = {};
+    limits.forEach(child => {
+      const start = Number((child.val() || {}).start) || 0;
+      if (now - start > 15 * 60 * 1000) stale[child.key] = null;
+    });
+    const cleared = Object.keys(stale).length;
+    if (cleared) await db.ref('ratelimit').update(stale);
+
+    return res.status(200).json({ success: true, deleted, ratelimitCleared: cleared, checkedAt: now });
   } catch (error) {
     console.error('cleanup-expired failed:', error);
     return res.status(500).json({ error: 'Pembersihan akun kedaluwarsa gagal.' });
