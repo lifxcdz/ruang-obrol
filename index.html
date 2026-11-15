@@ -432,6 +432,29 @@ select option{background:#0c1427;color:var(--text)}
 
 <div id="dlgWrap" class="dlgwrap hidden"><div class="dlg" role="dialog" aria-modal="true"><div class="dlg-title" id="dlgTitle"></div><div class="dlg-text" id="dlgText"></div><input id="dlgIn" class="hidden" maxlength="200" autocomplete="off"><textarea id="dlgTa" class="hidden" maxlength="2000"></textarea><div class="dlg-btns"><button id="dlgNo" type="button">Batal</button><button id="dlgOk" type="button">OK</button></div></div></div>
 
+<script>
+/* Penjaga layar memuat: tampilkan penyebab kalau macet */
+(function(){
+  var errs=[];
+  function note(m){ errs.push(String(m)); }
+  window.addEventListener('error',function(e){ note((e.message||'Error')+(e.filename?' @ '+e.filename.split('/').pop()+':'+e.lineno:'')); });
+  window.addEventListener('unhandledrejection',function(e){ note('Promise: '+((e.reason&&e.reason.message)||e.reason)); });
+  setTimeout(function(){
+    var v=document.getElementById('vLoad');
+    if(!v||v.classList.contains('hidden')) return;
+    var box=v.querySelector('.load-text');
+    box.style.textAlign='center'; box.style.maxWidth='320px';
+    box.innerHTML='';
+    var t=document.createElement('div'); t.textContent='Gagal memuat. Periksa koneksi internet, lalu muat ulang.'; box.appendChild(t);
+    if(errs.length){ var d=document.createElement('div'); d.style.cssText='font-size:12px;margin-top:10px;word-break:break-word'; d.textContent='Detail: '+errs.slice(0,2).join(' | '); box.appendChild(d); }
+    var b=document.createElement('button'); b.textContent='Muat ulang'; b.style.cssText='margin-top:14px;padding:10px 18px'; b.onclick=function(){
+      var p=navigator.serviceWorker&&navigator.serviceWorker.getRegistrations?navigator.serviceWorker.getRegistrations():Promise.resolve([]);
+      p.then(function(rs){ return Promise.all(rs.map(function(r){return r.unregister();})); }).then(function(){ return window.caches?caches.keys().then(function(k){return Promise.all(k.map(function(x){return caches.delete(x);}));}):0; }).then(function(){ location.reload(); },function(){ location.reload(); });
+    };
+    box.appendChild(b);
+  },10000);
+})();
+</script>
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getAuth, signInWithCustomToken, signInWithEmailAndPassword, sendEmailVerification,
@@ -1383,20 +1406,4 @@ $('btnAdmin').onclick=async()=>{
    const ai=b.querySelector('#annIn'); ai.value=annVal; ai.oninput=()=>{annVal=ai.value;};
    b.querySelector('#annNow').textContent=annD&&annD.text?'Sedang tampil: '+annD.text:'Tidak ada pengumuman.';
    b.querySelector('#annSend').onclick=async()=>{ const t=ai.value.trim(); if(!t){ toast('Tulis pengumuman dulu.'); return; } try{ await set(ref(db,'broadcast/announce'),{id:String(Date.now()),text:t.slice(0,200),by:me.uid}); annVal=''; toast('Pengumuman dikirim.'); }catch(e){ toast('Gagal mengirim. Cek Rules database.'); } };
-   b.querySelector('#annClear').onclick=async()=>{ try{ await remove(ref(db,'broadcast/announce')); toast('Pengumuman dihapus.'); }catch(e){ toast('Gagal menghapus.'); } };
-  }
-  if(tab==='reports'){
-   b.innerHTML+=`<section class="admin-section"><h3>Laporan pesan</h3><div id="reportList"></div></section>`;
-   const list=b.querySelector('#reportList'); const ids=Object.keys(reportsD).sort((x,y)=>(reportsD[y].ts||0)-(reportsD[x].ts||0));
-   if(!ids.length) list.innerHTML='<div class="note">Belum ada laporan.</div>';
-   ids.forEach(id=>{
-    const r=reportsD[id]; const row=document.createElement('div'); row.className='row admin-account';
-    const info=document.createElement('div'); info.className='info';
-    const n=document.createElement('div'); n.className='n'; n.textContent=(r.msgName||'Pengguna')+' · dilaporkan oleh '+(r.byName||'pengguna');
-    const e=document.createElement('div'); e.className='e'; e.textContent=r.msgText||'';
-    const st=document.createElement('div'); st.className='e'; st.textContent='Alasan: '+(r.reason||'-');
-    info.append(n,e,st); row.append(info);
-    const del=document.createElement('button'); del.textContent='Hapus pesan'; del.onclick=async()=>{ try{ await moderationApi({action:'delete-report-message',reportId:id}); toast('Pesan dan laporan dihapus.'); }catch(err){ toast(err.message||'Gagal menghapus.'); } };
-    const jb=document.createElement('button'); jb.textContent='Jail 10 menit'; jb.onclick=()=>act('jail',r.msgUid,{minutes:10,reason:r.reason||'Dilaporkan pengguna'});
-    const ig=document.createElement('button'); ig.textContent='Abaikan'; ig.onclick=async()=>{ try{ await moderationApi({action:'dismiss-report',reportId:id}); }catch(err){ toast(err.message||'Gagal.'); } };
-    row.append(del,jb
+   b.querySelector('#annClear').onclick=async()=>{ try{ await remove(ref(db,'broadcast/announce')); toast('P
