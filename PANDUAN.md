@@ -1,66 +1,54 @@
-# Panduan memasang Ruang Obrol
+# Panduan memasang Ruang Obrol (Vercel + Firebase)
 
 ## Isi folder
 | File | Fungsi |
 |---|---|
-| `index.html` | Website chat (satu file, siap dipakai) |
-| `firebase-rules.json` | Aturan keamanan database |
-| `firebase.json` | Pengaturan untuk upload lewat Firebase Hosting |
-| `preview.html` | Contoh tampilan tanpa Firebase (opsional, boleh dihapus) |
-| `PANDUAN.md` | Panduan ini |
+| `index.html` | Website chat (satu file) |
+| `sw.js`, `manifest.webmanifest`, `icon-192.png`, `icon-512.png` | Agar bisa dipasang di layar utama dan menampilkan notifikasi |
+| `api/auth.js` | Masuk dan daftar (cek Cloudflare Turnstile, batas percobaan) |
+| `api/moderation.js` | Kirim, edit, hapus, lapor pesan, dan semua aksi admin |
+| `api/admin-accounts.js` | Membuat dan menghapus akun sementara (belum dipanggil dari tampilan, hanya lewat permintaan API dari admin) |
+| `api/cleanup-expired.js` | Tugas harian: hapus akun sementara yang habis masa berlakunya dan bersihkan catatan batas percobaan |
+| `lib/firebase-admin.js` | Penghubung server ke Firebase (bukan endpoint) |
+| `vercel.json` | Jadwal tugas harian dan header keamanan |
 
-## 1. Buat project Firebase
-1. Buka https://console.firebase.google.com lalu klik **Add project**. Nama bebas, Google Analytics boleh dimatikan.
-2. Di halaman project, klik ikon **</>** (Web) untuk menambah aplikasi web. Beri nama, tidak perlu centang Hosting dulu.
-3. Firebase menampilkan blok `firebaseConfig`. Salin isinya.
+Rules database tidak ada di folder ini. Tempel langsung di Firebase Console (langkah 4).
 
-## 2. Isi konfigurasi di index.html
-Buka `index.html`, cari bagian `ISI BAGIAN INI`, lalu:
-- Ganti isi `firebaseConfig` dengan yang kamu salin. Pastikan ada `databaseURL`. Kalau tidak muncul, buat dulu Realtime Database (langkah 4), lalu ambil URL-nya.
-- Ganti `ADMIN_EMAILS` dengan email adminmu, contoh: `["emailkamu@gmail.com"]`.
+## 1. Firebase
+1. Buat project di https://console.firebase.google.com, tambahkan aplikasi web, salin `firebaseConfig`.
+2. Authentication → Sign-in method → aktifkan **Email/Password**.
+3. Realtime Database → Create Database (lokasi Singapore) → **locked mode**.
+4. Realtime Database → tab **Rules** → tempel Rules milikmu → **Publish**. Ganti email admin di Rules dengan emailmu.
+5. Project settings → **Service accounts** → **Generate new private key**. Isi file JSON itu dipakai di langkah 3.
 
-## 3. Aktifkan login email
-Firebase Console → **Authentication** → **Get started** → tab **Sign-in method** → **Email/Password** → aktifkan → **Save**.
+## 2. Isi `index.html`
+Cari bagian `ISI BAGIAN INI`, isi `firebaseConfig`, `TURNSTILE_SITE_KEY`, dan `ADMIN_EMAILS`.
 
-## 4. Buat database
-Firebase Console → **Realtime Database** → **Create Database**. Pilih lokasi terdekat (misalnya Singapore), pilih **locked mode**.
+## 3. Deploy ke Vercel
+Upload folder ini ke GitHub lalu impor di Vercel. Tambahkan Environment Variables:
 
-## 5. Pasang Rules
-1. Buka `firebase-rules.json`, ganti **semua** `emailadminkamu@gmail.com` dengan email adminmu (harus sama persis dengan di `ADMIN_EMAILS`).
-2. Di Realtime Database buka tab **Rules**, hapus isinya, tempel isi file tadi, lalu klik **Publish**.
+| Nama | Isi | Wajib |
+|---|---|---|
+| `FIREBASE_SERVICE_ACCOUNT` | Seluruh isi file JSON service account | Ya |
+| `TURNSTILE_SECRET_KEY` | Secret key Cloudflare Turnstile | Ya |
+| `CRON_SECRET` | Teks acak panjang, dipakai Vercel untuk tugas harian | Ya |
+| `ADMIN_EMAILS` | Email admin dipisah koma (harus sama dengan di `index.html` dan Rules) | Disarankan |
+| `FIREBASE_DATABASE_URL` | URL Realtime Database, kalau berbeda dari bawaan | Tidak |
+| `FIREBASE_API_KEY` | Web API key Firebase, kalau berbeda dari bawaan | Tidak |
+| `MANAGED_ACCOUNT_EMAIL_DOMAIN` | Domain email akun sementara, bawaan `akun.ruang-obrol.app` | Tidak |
 
-## 6. Upload website
-Website harus dibuka lewat alamat `https://`, tidak bisa lewat file yang diklik langsung dari HP atau komputer.
+Setelah mengubah Environment Variables, lakukan Redeploy. Di Firebase Console → Authentication → Settings → **Authorized domains**, tambahkan domain Vercel-mu.
 
-**Cara A: Firebase Hosting**
-```
-npm install -g firebase-tools
-firebase login
-firebase use --add        # pilih project-mu
-firebase deploy
-```
-Selesai, Firebase memberi alamat `https://NAMA-PROJECT.web.app`.
-
-**Cara B: hosting lain** (Netlify, GitHub Pages, domain sendiri)
-Upload `index.html` saja. Lalu di Firebase Console → Authentication → **Settings** → **Authorized domains** → **Add domain**, tambahkan domain hosting itu. Kalau lupa, login akan gagal.
-
-## 7. Cara pakai pertama kali
-1. Buka website, tekan **Daftar**, pakai email adminmu (email asli).
-2. Buka email, klik link verifikasi (cek folder spam), lalu kembali dan tekan **Saya sudah verifikasi**.
-3. Tombol **Admin** akan muncul di atas. Pengguna lain mendaftar dengan cara yang sama.
-4. Setelah masuk sekali, website otomatis login lagi setiap dibuka, selama kamu tidak menekan **Keluar**.
-
-## Fitur
-- Chat realtime: teks, foto (dikompres otomatis), file maksimal sekitar 700 KB.
-- Ubah nama: tekan namamu di pojok atas. Nama baru tampil di semua pesan lama juga.
-- Admin: hapus pesan siapa pun, lihat daftar pengguna, blokir dan buka blokir.
+## 4. Pemakaian pertama
+1. Buka website, tekan **Daftar** dengan email adminmu, lalu verifikasi lewat email.
+2. Tombol **Admin** muncul di atas. Pengguna lain mendaftar dengan cara yang sama.
 
 ## Kalau ada masalah
 | Gejala | Penyebab dan solusi |
 |---|---|
-| "Izin ditolak" saat kirim chat | Rules belum dipublish, email admin di Rules tidak sama dengan di `index.html`, atau email belum terverifikasi. Keluar lalu masuk lagi setelah verifikasi. |
-| Tombol Admin tidak muncul | Email yang daftar tidak sama persis dengan isi `ADMIN_EMAILS`. |
-| Login gagal di domain sendiri | Domain belum ada di Authorized domains (langkah 6B). |
-| Email verifikasi tidak datang | Cek spam, atau tekan **Kirim ulang email**. |
-| Halaman kosong | Dibuka lewat file langsung. Buka lewat alamat `https://`. |
-| Foto atau file gagal terkirim | Ukuran terlalu besar. Untuk file lebih besar perlu Firebase Storage. |
+| "Server belum dikonfigurasi" | `TURNSTILE_SECRET_KEY` atau `FIREBASE_SERVICE_ACCOUNT` belum diisi, atau belum Redeploy. |
+| "Server tidak punya izin membuat token login" | Service account salah, atau API IAM Service Account Credentials belum aktif di Google Cloud. |
+| "Izin ditolak" saat membaca data | Rules belum dipublish, atau email admin di Rules tidak sama dengan `ADMIN_EMAILS`. |
+| Tombol Admin tidak muncul | Email daftar tidak sama persis dengan `ADMIN_EMAILS`. |
+| Login gagal di domain sendiri | Domain belum ada di Authorized domains. |
+| Tugas harian tidak jalan | `CRON_SECRET` belum diisi. |
