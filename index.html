@@ -271,6 +271,39 @@ select option{background:#0c1427;color:var(--text)}
 #vAuth{background:linear-gradient(rgba(7,11,22,.25),rgba(7,11,22,.45)),url('/bg-login.jpg') center/cover no-repeat}
 /* Title VIP */
 .badge.vip{background:linear-gradient(135deg,#f6d365,#f59e0b);color:#2a1a00;border-color:transparent;font-weight:700}
+.nm.vip{color:#f6c453;font-weight:700}
+.m.vip .box{border-color:rgba(246,196,83,.55);box-shadow:0 0 0 1px rgba(246,196,83,.12),0 4px 18px rgba(245,158,11,.14)}
+.m.vip:not(.me) .box{background:linear-gradient(145deg,#2b2311,#171208)}
+.m.vip.me .box{background:linear-gradient(145deg,#3d3113,#211909)}
+:root[data-theme=light] .m.vip .box{background:#fff6dc}
+:root[data-theme=light] .nm.vip{color:#b7791f}
+.avatar.vip{box-shadow:0 0 0 3px #f6c453,0 0 24px rgba(246,196,83,.35)}
+.emojirow{flex-wrap:wrap}
+.vipnote{width:100%;font-size:12px;color:var(--muted)}
+/* Badge sejajar dan seukuran dengan nama */
+.meta{align-items:center}
+.meta .nm{font-size:12px;line-height:1.45;font-weight:500}
+.meta .badge{font-size:12px;line-height:1.45;padding:0 8px;display:inline-flex;align-items:center;font-weight:500}
+.meta .badge.vip,.meta .nm.vip{font-weight:700}
+/* Kilatan bubble VIP */
+.m.vip .box{position:relative;overflow:hidden;animation:vipGlow 3.6s ease-in-out infinite}
+.m.vip .box::after{content:"";position:absolute;top:0;left:-60%;width:40%;height:100%;background:linear-gradient(100deg,transparent,rgba(255,236,170,.38),transparent);transform:skewX(-18deg);animation:vipSheen 3.6s ease-in-out infinite;pointer-events:none}
+@keyframes vipSheen{0%,55%{left:-60%}100%{left:140%}}
+@keyframes vipGlow{0%,100%{box-shadow:0 0 0 1px rgba(246,196,83,.15),0 4px 16px rgba(245,158,11,.12)}50%{box-shadow:0 0 0 1px rgba(246,196,83,.5),0 4px 24px rgba(245,158,11,.32)}}
+@media (prefers-reduced-motion:reduce){.m.vip .box,.m.vip .box::after{animation:none}.m.vip .box::after{display:none}}
+/* Dialog kustom */
+.dlgwrap{position:fixed;inset:0;z-index:90;display:flex;align-items:center;justify-content:center;padding:24px;background:rgba(2,6,16,.66);backdrop-filter:blur(8px)}
+.dlg{width:100%;max-width:340px;border:1px solid var(--line);border-radius:20px;background:linear-gradient(160deg,rgba(19,31,55,.99),rgba(10,17,32,.99));padding:22px 20px 16px;box-shadow:0 22px 70px rgba(0,0,0,.45)}
+:root[data-theme=light] .dlg{background:#fff}
+.dlg-title{font-size:18px;font-weight:700;letter-spacing:-.02em;margin-bottom:6px}
+.dlg-text{font-size:14px;color:var(--muted);line-height:1.5;margin-bottom:12px;white-space:pre-wrap}
+.dlg input,.dlg textarea{padding:11px 12px;border:1px solid var(--line);border-radius:13px;background:rgba(3,8,20,.42);margin-bottom:12px;resize:none}
+:root[data-theme=light] .dlg input,:root[data-theme=light] .dlg textarea{background:#fff}
+.dlg textarea{min-height:90px}
+.dlg-btns{display:flex;gap:10px}
+.dlg-btns button{flex:1;padding:11px;border-radius:13px;font-weight:600}
+.dlg-btns #dlgOk{background:linear-gradient(135deg,#6aa2ff,#2868e8);border:0;color:#fff}
+.dlg-btns #dlgOk.danger{background:linear-gradient(135deg,#ff8a8a,#e04848)}
 </style>
 </head>
 <body>
@@ -397,6 +430,8 @@ select option{background:#0c1427;color:var(--text)}
 
 <section id="vLight" class="overlay light hidden"><div class="top"><h2>Foto</h2><button id="lightClose" type="button">Tutup</button></div><div class="body"><img id="lightImg" alt=""></div></section>
 
+<div id="dlgWrap" class="dlgwrap hidden"><div class="dlg" role="dialog" aria-modal="true"><div class="dlg-title" id="dlgTitle"></div><div class="dlg-text" id="dlgText"></div><input id="dlgIn" class="hidden" maxlength="200" autocomplete="off"><textarea id="dlgTa" class="hidden" maxlength="2000"></textarea><div class="dlg-btns"><button id="dlgNo" type="button">Batal</button><button id="dlgOk" type="button">OK</button></div></div></div>
+
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getAuth, signInWithCustomToken, signInWithEmailAndPassword, sendEmailVerification,
@@ -423,6 +458,8 @@ const MAX_IMG_SIDE = 1000;       // sisi terpanjang foto setelah dikompres
 const MAX_FILE_BYTES = 700*1024; // batas file (disimpan di database)
 const LOAD_LAST = 60;
 // Daftar harga VIP (1k per minggu)
+const VIP_EMOJIS=['🔥','👑','💎','🎉'];
+const VIP_COLORS=['linear-gradient(135deg,#f6d365,#f59e0b)','linear-gradient(135deg,#a855f7,#ec4899)','linear-gradient(135deg,#06b6d4,#3b82f6)','linear-gradient(135deg,#34d399,#facc15)'];
 const VIP_PRICES = [{d:7,p:'Rp1.000'},{d:14,p:'Rp2.000'},{d:21,p:'Rp3.000'},{d:30,p:'Rp4.300'}];
 
 const app = initializeApp(firebaseConfig);
@@ -443,6 +480,25 @@ document.addEventListener('touchend',ev=>{ const n=Date.now(); if(n-lastTouch<30
 /* ---- Util ---- */
 function show(id){ ['vLoad','vAuth','vVerify','vChat'].forEach(v=>$(v).classList.toggle('hidden',v!==id)); }
 function toast(t){ const d=document.createElement('div'); d.className='toast'; d.textContent=t; document.body.appendChild(d); setTimeout(()=>d.remove(),2800); }
+function dlg(o){
+  return new Promise(res=>{
+    const w=$('dlgWrap'), inp=$('dlgIn'), ta=$('dlgTa'), ok=$('dlgOk'), no=$('dlgNo'), tx=$('dlgText');
+    $('dlgTitle').textContent=o.title||''; tx.textContent=o.text||''; tx.classList.toggle('hidden',!o.text);
+    inp.classList.add('hidden'); ta.classList.add('hidden');
+    const field=o.input?(o.multiline?ta:inp):null;
+    if(field){ field.classList.remove('hidden'); field.value=o.def||''; field.placeholder=o.ph||''; }
+    ok.textContent=o.ok||'OK'; no.textContent=o.cancel||'Batal'; ok.classList.toggle('danger',!!o.danger);
+    w.classList.remove('hidden'); if(field) setTimeout(()=>field.focus(),60);
+    const key=e=>{ if(e.key==='Escape') done(field?null:false); else if(e.key==='Enter'&&field===inp){ e.preventDefault(); done(inp.value); } };
+    const done=v=>{ w.classList.add('hidden'); ok.onclick=no.onclick=w.onclick=null; document.removeEventListener('keydown',key,true); res(v); };
+    document.addEventListener('keydown',key,true);
+    ok.onclick=()=>done(field?field.value:true);
+    no.onclick=()=>done(field?null:false);
+    w.onclick=e=>{ if(e.target===w) done(field?null:false); };
+  });
+}
+const askConfirm=(title,text,o={})=>dlg({title,text,...o});
+const askPrompt=(title,text,def,o={})=>dlg({title,text,def,input:true,...o});
 function authMsg(e){
   const c=(e&&e.code)||'';
   if(c.includes('email-already-in-use')) return 'Email sudah terdaftar. Silakan masuk.';
@@ -526,7 +582,7 @@ $('verifyResend').onclick=async()=>{
 $('verifyOut').onclick=()=>signOut(auth);
 // Keluar: harus mengetik "keluar" dulu
 $('btnOut').onclick=async()=>{
-  const t=prompt('Ketik "keluar" untuk keluar dari akun:');
+  const t=await askPrompt('Keluar dari akun','Ketik "keluar" untuk konfirmasi.','',{ok:'Keluar',ph:'keluar'});
   if(t==null) return;
   if(t.trim().toLowerCase()!=='keluar'){ toast('Konfirmasi salah. Ketik: keluar'); return; }
   await dropPresence(); signOut(auth);
@@ -755,6 +811,7 @@ function refreshVipBadges(){
   document.querySelectorAll('#list .m .meta').forEach(mt=>{
     const w=mt.closest('.m'); if(!w) return;
     const o=mt.querySelector('.badge.vip'), on=isVip(w.dataset.uid);
+    w.classList.toggle('vip',on); const nmEl=mt.querySelector('.nm'); if(nmEl) nmEl.classList.toggle('vip',on);
     if(on&&!o){ const b=document.createElement('span'); b.className='badge vip'; b.textContent='VIP'; const nm=mt.querySelector('.nm'); if(nm) nm.after(b); }
     else if(!on&&o) o.remove();
   });
@@ -793,7 +850,7 @@ function addMsg(id,m){
   const meta=document.createElement('div'); meta.className='meta';
   const nm=document.createElement('span'); nm.className='nm'; nm.dataset.uid=m.uid; nm.textContent=mine?'Kamu':(names[m.uid]||m.name||'Pengguna'); nm.onclick=()=>openUser(m.uid); meta.appendChild(nm);
   if(m.admin){ const b=document.createElement('span'); b.className='badge'; b.textContent='Admin'; meta.appendChild(b); }
-  if(isVip(m.uid)){ const b=document.createElement('span'); b.className='badge vip'; b.textContent='VIP'; meta.appendChild(b); }
+  if(isVip(m.uid)){ const b=document.createElement('span'); b.className='badge vip'; b.textContent='VIP'; meta.appendChild(b); w.classList.add('vip'); nm.classList.add('vip'); }
   const tm=document.createElement('span'); tm.textContent=fmtTime(m.ts); meta.appendChild(tm);
   const ed=document.createElement('span'); ed.className='ed'; ed.textContent=m.edited?'(diedit)':''; meta.appendChild(ed);
   if(!tmp){ const more=document.createElement('button'); more.className='more'; more.type='button'; more.textContent='···'; more.setAttribute('aria-label','Aksi pesan'); more.onclick=()=>openActions(id); meta.appendChild(more); }
@@ -904,16 +961,18 @@ const fmtDate=ts=>ts?new Date(Number(ts)).toLocaleDateString('id-ID',{day:'numer
 function paintAvatar(el,name,color){ el.textContent=initial(name); el.style.background=color||PCOLORS[0]; }
 function drawColors(){
   const box=$('pColors'); box.innerHTML='';
-  PCOLORS.forEach(c=>{
+  const vipOn=isVip(me.uid);
+  PCOLORS.concat(vipOn?VIP_COLORS:[]).forEach(c=>{
     const b=document.createElement('button'); b.type='button'; b.className='pcolor'+(c===pColor?' on':''); b.style.background=c; b.setAttribute('aria-label','Pilih warna');
     b.onclick=()=>{ pColor=c; drawColors(); paintAvatar($('pAvatar'),$('iProfName').value||me.displayName,pColor); };
     box.appendChild(b);
   });
+  if(!vipOn){ const n=document.createElement('div'); n.className='vipnote'; n.textContent='Warna emas dan gradasi khusus VIP.'; box.appendChild(n); }
 }
 $('who').onclick=()=>{
   const p=usersData[me.uid]||{};
   $('iProfName').value=me.displayName||''; $('iBio').value=p.bio||''; $('iStatus').value=p.status||''; $('iCity').value=p.city||''; $('iHobby').value=p.hobby||''; $('iIg').value=p.ig||'';
-  pColor=p.color||PCOLORS[0]; drawColors(); paintAvatar($('pAvatar'),me.displayName,pColor);
+  pColor=p.color||PCOLORS[0]; drawColors(); paintAvatar($('pAvatar'),me.displayName,pColor); $('pAvatar').classList.toggle('vip',isVip(me.uid));
   $('profEmail').textContent=me.email;
   $('profRole').textContent=isAdmin?'Admin':(isVip(me.uid)?'Anggota VIP (sampai '+fmtDate(vipData[me.uid].until)+')':'Anggota');
   $('profJoined').textContent=fmtDate(Date.parse((me.metadata||{}).creationTime));
@@ -923,10 +982,13 @@ $('who').onclick=()=>{
 };
 $('iProfName').addEventListener('input',()=>paintAvatar($('pAvatar'),$('iProfName').value,pColor));
 $('profClose').onclick=()=>$('vProfile').classList.add('hidden');
+const isAdminUid=uid=>me&&uid===me.uid?isAdmin:Object.values(msgData).some(x=>x.uid===uid&&x.admin);
 function openUser(uid){
   const p=usersData[uid]; if(!p) return;
-  paintAvatar($('uAvatar'),p.name,p.color); $('uName').textContent=(p.name||'Pengguna')+(isVip(uid)?' · VIP':'');
-  const rows=[['Bio',p.bio],['Status',p.status],['Kota',p.city],['Hobi',p.hobby],['Instagram',p.ig?'@'+p.ig:''],['Bergabung',p.joinedAt?fmtDate(p.joinedAt):'']].filter(r=>r[1]);
+  paintAvatar($('uAvatar'),p.name,p.color); $('uAvatar').classList.toggle('vip',isVip(uid)); $('uName').textContent=(p.name||'Pengguna')+(isVip(uid)?' · VIP':'');
+  const rows=[['Peran',isAdminUid(uid)?'Admin':(isVip(uid)?'VIP':'Anggota')],['Bio',p.bio],['Status',p.status],['Kota',p.city],['Hobi',p.hobby],['Instagram',p.ig?'@'+p.ig:''],['Bergabung',p.joinedAt?fmtDate(p.joinedAt):'']];
+  if(isVip(uid)) rows.push(['VIP sampai',fmtDate(vipData[uid].until)]);
+  rows.splice(0,rows.length,...rows.filter(r=>r[1]));
   const dl=$('uInfo'); dl.innerHTML='';
   if(!rows.length){ const d=document.createElement('dd'); d.style.gridColumn='1 / -1'; d.style.color='var(--muted)'; d.textContent='Belum ada data profil.'; dl.append(d); }
   rows.forEach(([k,v])=>{ const dt=document.createElement('dt'); dt.textContent=k; const dd=document.createElement('dd'); dd.textContent=v; dl.append(dt,dd); });
@@ -1075,7 +1137,7 @@ function openSheet(items,emojiFor){
   const s=$('actSheet'); s.innerHTML='';
   if(emojiFor){
     const row=document.createElement('div'); row.className='emojirow';
-    EMOJIS.forEach(e=>{ const b=document.createElement('button'); b.type='button'; b.textContent=e; b.onclick=()=>{ closeActs(); reactTo(emojiFor,e); }; row.append(b); });
+    EMOJIS.concat(isVip(me.uid)?VIP_EMOJIS:[]).forEach(e=>{ const b=document.createElement('button'); b.type='button'; b.textContent=e; b.onclick=()=>{ closeActs(); reactTo(emojiFor,e); }; row.append(b); });
     s.append(row);
   }
   items.forEach(it=>{ const b=document.createElement('button'); b.type='button'; b.textContent=it.label; if(it.danger) b.className='danger'; b.onclick=()=>{ closeActs(); it.fn(); }; s.append(b); });
@@ -1095,11 +1157,11 @@ function openActions(id){
 }
 async function editMsg(id){
   const m=msgData[id]; if(!m) return;
-  const t=prompt('Edit pesan:',m.text||''); if(t==null) return;
+  const t=await askPrompt('Edit pesan','',m.text||'',{multiline:true,ok:'Simpan'}); if(t==null) return;
   const v=t.trim(); if(!v||v===m.text) return;
   try{ await moderationApi({action:'edit',id,text:v}); }catch(e){ toast(e.message||'Gagal mengedit.'); }
 }
-async function delMsg(id){ if(!confirm('Hapus pesan ini?')) return; try{ await moderationApi({action:'delete',id}); toast('Pesan dihapus.'); }catch(e){ toast(e.message||'Gagal menghapus.'); } }
+async function delMsg(id){ if(!await askConfirm('Hapus pesan ini?','Tindakan ini tidak bisa dibatalkan.',{ok:'Hapus',danger:true})) return; try{ await moderationApi({action:'delete',id}); toast('Pesan dihapus.'); }catch(e){ toast(e.message||'Gagal menghapus.'); } }
 async function pinMsg(id){
   const m=msgData[id]; if(!m) return;
   try{ await set(ref(db,'pinned'),{id,name:names[m.uid]||m.name||'Pengguna',text:snippet(m,120),by:me.uid,ts:Date.now()+srvOff}); toast('Pesan disematkan.'); }
@@ -1107,7 +1169,7 @@ async function pinMsg(id){
 }
 async function reportMsg(id){
   const m=msgData[id]; if(!m) return;
-  const reason=prompt('Alasan laporan (contoh: kasar, spam, tidak pantas):'); if(!reason||!reason.trim()) return;
+  const reason=await askPrompt('Laporkan pesan','Tulis alasan laporan, misalnya kasar, spam, atau tidak pantas.','',{ok:'Kirim',ph:'Alasan laporan'}); if(!reason||!reason.trim()) return;
   try{ await moderationApi({action:'report',id,reason:reason.trim().slice(0,120)}); toast('Laporan terkirim ke admin.'); }
   catch(e){ toast(e.message||'Gagal mengirim laporan.'); }
 }
@@ -1175,7 +1237,7 @@ function addDm(id,m){
   const w=document.createElement('div'); w.className='m'+(mine?' me':''); w.id='d_'+id;
   const meta=document.createElement('div'); meta.className='meta'; const tm=document.createElement('span'); tm.textContent=fmtTime(m.ts); meta.append(tm); w.append(meta);
   const box=document.createElement('div'); box.className='box'; const t=document.createElement('div'); t.className='cap'; renderText(t,m.text||''); box.append(t); w.append(box);
-  if(mine){ const d=document.createElement('button'); d.className='del'; d.type='button'; d.textContent='Hapus'; d.onclick=async()=>{ if(!confirm('Hapus pesan ini?')) return; try{ await remove(ref(db,'dm/'+dmCur.key+'/'+id)); }catch(e){ toast('Gagal menghapus.'); } }; w.append(d); }
+  if(mine){ const d=document.createElement('button'); d.className='del'; d.type='button'; d.textContent='Hapus'; d.onclick=async()=>{ if(!await askConfirm('Hapus pesan ini?','Tindakan ini tidak bisa dibatalkan.',{ok:'Hapus',danger:true})) return; try{ await remove(ref(db,'dm/'+dmCur.key+'/'+id)); }catch(e){ toast('Gagal menghapus.'); } }; w.append(d); }
   list.append(w); list.scrollTop=list.scrollHeight;
   if(!mine&&dmCur&&dmIdx[dmCur.other]&&dmIdx[dmCur.other].unread) update(ref(db,'dmIndex/'+me.uid+'/'+dmCur.other),{unread:false}).catch(()=>{});
 }
@@ -1212,7 +1274,7 @@ $('delAcc').onclick=async()=>{
   const out=$('pwMsg'), oldP=$('iOldPw').value;
   if(isAdmin){ out.className='msg-err'; out.textContent='Akun admin tidak bisa dihapus dari sini.'; return; }
   if(!oldP){ out.className='msg-err'; out.textContent='Isi password saat ini dulu untuk menghapus akun.'; return; }
-  if(!confirm('Hapus akun secara permanen? Ini tidak bisa dibatalkan.')) return;
+  if(!await askConfirm('Hapus akun?','Akunmu dihapus permanen dan tidak bisa dikembalikan.',{ok:'Hapus akun',danger:true})) return;
   try{
     await reauthenticateWithCredential(me,EmailAuthProvider.credential(me.email,oldP));
     const uid=me.uid;
@@ -1252,7 +1314,7 @@ $('btnAdmin').onclick=async()=>{
    if(ban){ const ub=document.createElement('button'); ub.textContent='Buka ban'; ub.onclick=()=>act('unban',uid); row.append(ub); }
    else{
     const jb=document.createElement('button'); jb.textContent=j?'Lepas Jail':'Jail 10 menit'; jb.onclick=()=>act(j?'unjail':'jail',uid,{minutes:10,reason:'Tindakan admin'}); row.append(jb);
-    const bb=document.createElement('button'); bb.className='danger'; bb.textContent='Ban 24 jam'; bb.onclick=()=>{ const reason=prompt('Alasan ban:','Pelanggaran aturan komunitas'); if(reason) act('ban',uid,{hours:24,reason}); }; row.append(bb);
+    const bb=document.createElement('button'); bb.className='danger'; bb.textContent='Ban 24 jam'; bb.onclick=async()=>{ const reason=await askPrompt('Ban 24 jam','Alasan ban:','Pelanggaran aturan komunitas',{ok:'Ban',danger:true}); if(reason) act('ban',uid,{hours:24,reason}); }; row.append(bb);
    }
   }
   return row;
@@ -1274,7 +1336,7 @@ $('btnAdmin').onclick=async()=>{
    b.querySelector('#purgeGo').onclick=async()=>{
     const sec=Math.floor(Number(pv.value)*Number(pu.value));
     if(!(sec>=5)){ toast('Minimal 5 detik.'); return; }
-    if(!confirm('Hapus SEMUA pesan setelah hitung mundur '+fmtCount(sec)+'?')) return;
+    if(!await askConfirm('Hapus semua pesan?','Semua pesan dihapus setelah hitung mundur '+fmtCount(sec)+'.',{ok:'Mulai',danger:true})) return;
     try{ await set(ref(db,'broadcast/purge'),{endAt:Date.now()+srvOff+sec*1000,by:me.uid,seconds:sec}); toast('Timer dimulai.'); }
     catch(e){ toast('Gagal memulai. Cek Rules database.'); }
    };
@@ -1286,11 +1348,11 @@ $('btnAdmin').onclick=async()=>{
    const list=b.querySelector('#moderationUsers');
    if(!selected.length){list.innerHTML='<div class="note">Belum ada data.</div>';}
    selected.forEach(uid=>{const u=users[uid]||{}, ban=banned[uid], j=jail[uid]; const row=document.createElement('div');row.className='row admin-account';const info=document.createElement('div');info.className='info';const name=document.createElement('div');name.className='n';name.textContent=(u.name||'Pengguna')+(vipD[uid]&&Number(vipD[uid].until)>Date.now()+srvOff?' · VIP':'');const email=document.createElement('div');email.className='e';email.textContent=(emails[uid]||{}).email||'';const status=document.createElement('div');status.className='e';status.textContent=ban?'Diblokir · '+(ban.reason||''):j?'Jail · '+(j.reason||''):'Aktif';info.append(name,email,status);row.append(info);
-    if(uid!==me.uid){const btn=document.createElement('button');btn.textContent=ban?'Buka ban':j?'Lepas Jail':'Jail 10 menit';btn.onclick=()=>act(ban?'unban':j?'unjail':'jail',uid,{minutes:10,reason:'Tindakan admin'});row.append(btn);const banBtn=document.createElement('button');banBtn.className='danger';banBtn.textContent=ban?'':'Ban 24 jam';if(!ban)banBtn.onclick=()=>{const reason=prompt('Alasan ban:','Pelanggaran aturan komunitas');if(reason)act('ban',uid,{hours:24,reason});};row.append(banBtn);}
+    if(uid!==me.uid){const btn=document.createElement('button');btn.textContent=ban?'Buka ban':j?'Lepas Jail':'Jail 10 menit';btn.onclick=()=>act(ban?'unban':j?'unjail':'jail',uid,{minutes:10,reason:'Tindakan admin'});row.append(btn);const banBtn=document.createElement('button');banBtn.className='danger';banBtn.textContent=ban?'':'Ban 24 jam';if(!ban)banBtn.onclick=async()=>{const reason=await askPrompt('Ban 24 jam','Alasan ban:','Pelanggaran aturan komunitas',{ok:'Ban',danger:true});if(reason)act('ban',uid,{hours:24,reason});};row.append(banBtn);}
     list.append(row);});
   }
   if(tab==='vip'){
-   b.innerHTML+=`<section class="admin-section"><h3>Daftar harga VIP</h3><div class="hint">${VIP_PRICES.map(x=>x.d+' hari = '+x.p).join('<br>')}<br>Dasar harga: Rp1.000 per minggu. Title VIP hilang otomatis saat masa berlaku habis.</div></section><section class="admin-section"><h3>Beri title VIP</h3><div class="field"><label>Pengguna</label><select id="vipUser"><option value="">Pilih pengguna</option>${Object.keys(users).map(k=>`<option value="${k}">${esc(users[k].name)} · ${esc((emails[k]||{}).email)}</option>`).join('')}</select></div><div class="field"><label>Durasi (hari)</label><input id="vipDays" type="number" inputmode="numeric" min="1" placeholder="Contoh: 7"></div><div class="hint" id="vipQuote"></div><button class="admin-action" id="vipGive" type="button">Beri / perpanjang VIP</button></section><section class="admin-section"><h3>VIP aktif</h3><div id="vipList"></div></section>`;
+   b.innerHTML+=`<section class="admin-section"><h3>Daftar harga VIP</h3><div class="hint">${VIP_PRICES.map(x=>x.d+' hari = '+x.p).join('<br>')}<br>Dasar harga: Rp1.000 per minggu. Title VIP hilang otomatis saat masa berlaku habis.<br><br>Keuntungan VIP: badge emas, nama emas, bubble chat emas, warna profil eksklusif, bingkai emas di avatar, dan 4 reaksi emoji tambahan.</div></section><section class="admin-section"><h3>Beri title VIP</h3><div class="field"><label>Pengguna</label><select id="vipUser"><option value="">Pilih pengguna</option>${Object.keys(users).map(k=>`<option value="${k}">${esc(users[k].name)} · ${esc((emails[k]||{}).email)}</option>`).join('')}</select></div><div class="field"><label>Durasi (hari)</label><input id="vipDays" type="number" inputmode="numeric" min="1" placeholder="Contoh: 7"></div><div class="hint" id="vipQuote"></div><button class="admin-action" id="vipGive" type="button">Beri / perpanjang VIP</button></section><section class="admin-section"><h3>VIP aktif</h3><div id="vipList"></div></section>`;
    const vu=b.querySelector('#vipUser'), vd=b.querySelector('#vipDays'), vq=b.querySelector('#vipQuote');
    vu.value=vipUid; vd.value=vipDays;
    const quote=()=>{ const d=Math.floor(Number(vd.value)); vq.textContent=d>=1?'Tagihan: Rp'+(Math.ceil(d/7)*1000).toLocaleString('id-ID')+' ('+d+' hari)':''; };
@@ -1337,53 +1399,4 @@ $('btnAdmin').onclick=async()=>{
     const del=document.createElement('button'); del.textContent='Hapus pesan'; del.onclick=async()=>{ try{ await moderationApi({action:'delete-report-message',reportId:id}); toast('Pesan dan laporan dihapus.'); }catch(err){ toast(err.message||'Gagal menghapus.'); } };
     const jb=document.createElement('button'); jb.textContent='Jail 10 menit'; jb.onclick=()=>act('jail',r.msgUid,{minutes:10,reason:r.reason||'Dilaporkan pengguna'});
     const ig=document.createElement('button'); ig.textContent='Abaikan'; ig.onclick=async()=>{ try{ await moderationApi({action:'dismiss-report',reportId:id}); }catch(err){ toast(err.message||'Gagal.'); } };
-    row.append(del,jb,ig); list.append(row);
-   });
-  }
-  if(tab==='settings'){
-   const locked=!!settingsD.locked;
-   b.innerHTML+=`<section class="admin-section"><h3>Kunci chat</h3><div class="hint">Saat dikunci, hanya admin yang bisa mengirim pesan.</div><div class="admin-pin-line"><span>${locked?'Chat dikunci':'Chat terbuka'}</span><button class="admin-switch ${locked?'on':''}" id="lockSw" type="button" aria-label="Kunci chat"></button></div></section><section class="admin-section"><h3>Filter kata</h3><div class="hint">Pisahkan dengan koma. Pesan yang memuat kata ini dihitung sebagai pelanggaran oleh bot moderasi (peringatan, lalu Jail, lalu ban).</div><div class="field"><textarea id="badIn" placeholder="kata1, kata2, kata3"></textarea></div><button class="admin-action" id="badSave" type="button">Simpan filter</button></section>`;
-   const bi=b.querySelector('#badIn'); bi.value=badVal; bi.oninput=()=>{ badVal=bi.value; badTouched=true; };
-   b.querySelector('#lockSw').onclick=async()=>{ try{ await set(ref(db,'settings/locked'),!locked); toast(!locked?'Chat dikunci.':'Chat dibuka.'); }catch(e){ toast('Gagal. Cek Rules database.'); } };
-   b.querySelector('#badSave').onclick=async()=>{ const list=bi.value.split(',').map(x=>x.trim().toLowerCase()).filter(Boolean).slice(0,200).join(', '); try{ await set(ref(db,'settings/badwords'),list); badTouched=false; badVal=list; toast('Filter disimpan.'); }catch(e){ toast('Gagal menyimpan. Cek Rules database.'); } };
-  }
-  if(tab==='music'){
-   b.innerHTML+=`<section class="admin-section"><h3>Putar lagu untuk semua pengguna</h3><div class="hint">Tempel link YouTube atau link langsung ke file audio (.mp3, .m4a, .ogg, dan sejenisnya). Lagu terdengar di semua pengguna yang sedang membuka Ruang Obrol, dan banner otomatis hilang saat lagu habis. Untuk YouTube, video tampil kecil di banner dan hanya bisa video yang mengizinkan disematkan.</div><div class="field"><label>Judul</label><input id="musicTitleIn" maxlength="60" placeholder="Judul lagu"></div><div class="field"><label>Link YouTube atau file audio (https)</label><input id="musicUrlIn" type="url" placeholder="https://youtu.be/... atau https://.../lagu.mp3" autocapitalize="none"></div><button class="admin-action" id="musicPlay" type="button">Putar lagu</button><button class="admin-action secondary" id="musicStop" type="button">Hentikan lagu</button><button class="admin-action secondary" id="musicNext" type="button">Lewati ke lagu berikutnya</button><button class="admin-action secondary" id="musicQueueAdd" type="button">Tambah ke antrean</button><div class="note" id="musicNow"></div></section><section class="admin-section"><h3>Antrean lagu (${Object.keys(queueD).length})</h3><div class="hint">Lagu di antrean diputar otomatis satu per satu setelah lagu sebelumnya selesai. Biarkan halaman admin terbuka agar antrean berjalan.</div><div id="queueList"></div></section>`;
-   const mt=b.querySelector('#musicTitleIn'), mu=b.querySelector('#musicUrlIn');
-   mt.value=musicTitleVal; mu.value=musicUrlVal;
-   mt.oninput=()=>{musicTitleVal=mt.value;}; mu.oninput=()=>{musicUrlVal=mu.value;};
-   b.querySelector('#musicNow').textContent=musicCur?'Sedang diputar: '+(musicCur.title||'Lagu'):'Tidak ada lagu yang diputar.';
-   b.querySelector('#musicPlay').onclick=async()=>{
-    const url=mu.value.trim();
-    if(!/^https:\/\//i.test(url)){ toast('Link harus diawali https://'); return; }
-    try{ await set(ref(db,'broadcast/music'),{url,title:mt.value.trim().slice(0,60)||'Lagu dari admin',startAt:Date.now()+srvOff,by:me.uid}); toast('Lagu diputar untuk semua pengguna.'); }
-    catch(e){ toast('Gagal memutar. Cek Rules database.'); }
-   };
-   b.querySelector('#musicStop').onclick=async()=>{ try{ await remove(ref(db,'broadcast/music')); toast('Lagu dihentikan.'); }catch(e){ toast('Gagal menghentikan.'); } };
-   b.querySelector('#musicNext').onclick=()=>{ musicFinished(); };
-   b.querySelector('#musicQueueAdd').onclick=async()=>{
-    const url=mu.value.trim();
-    if(!/^https:\/\//i.test(url)){ toast('Link harus diawali https://'); return; }
-    try{ await push(ref(db,'broadcast/queue'),{url,title:mt.value.trim().slice(0,60)||'Lagu dari admin',by:me.uid}); musicTitleVal=''; musicUrlVal=''; toast('Ditambahkan ke antrean.'); draw(); }
-    catch(e){ toast('Gagal menambah antrean. Cek Rules database.'); }
-   };
-   const ql=b.querySelector('#queueList'); const qids=Object.keys(queueD);
-   if(!qids.length) ql.innerHTML='<div class="note">Antrean kosong.</div>';
-   qids.forEach((id,i)=>{
-    const it=queueD[id]; const row=document.createElement('div'); row.className='row admin-account';
-    const info=document.createElement('div'); info.className='info'; const n=document.createElement('div'); n.className='n'; n.textContent=(i+1)+'. '+(it.title||'Lagu'); const e=document.createElement('div'); e.className='e'; e.textContent=it.url||''; info.append(n,e);
-    const rm=document.createElement('button'); rm.textContent='Hapus'; rm.onclick=()=>remove(ref(db,'broadcast/queue/'+id)).catch(()=>toast('Gagal menghapus.'));
-    row.append(info,rm); ql.append(row);
-   });
-  }
-  if(tab==='logs'){b.innerHTML+=`<section class="admin-section"><h3>Riwayat moderasi terbaru</h3><div id="moderationLogs"></div></section>`;const list=b.querySelector('#moderationLogs');const entries=Object.entries(logs).sort((a,b)=>(b[1].createdAt||b[1].lastAt||0)-(a[1].createdAt||a[1].lastAt||0)).slice(0,80);list.innerHTML=entries.length?'':'<div class="note">Belum ada riwayat moderasi.</div>';entries.forEach(([key,v])=>{const item=document.createElement('div');item.className='admin-account';item.textContent=`${users[v.uid]?.name||v.uid} · ${v.action||'catatan'} · ${v.reason||''} · ${new Date(v.createdAt||v.lastAt||Date.now()).toLocaleString('id-ID')}`;list.append(item);});}
-  b.querySelectorAll('[data-tab]').forEach(btn=>btn.onclick=()=>{tab=btn.dataset.tab;draw();});
- };
- admUnsub.forEach(f=>f()); admUnsub=[onValue(ref(db,'users'),s=>{users=s.val()||{};draw();}),onValue(ref(db,'private'),s=>{emails=s.val()||{};draw();}),onValue(ref(db,'banned'),s=>{banned=s.val()||{};draw();}),onValue(ref(db,'jail'),s=>{jail=s.val()||{};draw();}),onValue(ref(db,'moderation/users'),s=>{modUsers=s.val()||{};draw();}),onValue(ref(db,'moderation/logs'),s=>{logs=s.val()||{};draw();}),onValue(ref(db,'presence'),s=>{presence=s.val()||{};draw();}),onValue(ref(db,'settings'),s=>{settingsD=s.val()||{}; if(!badTouched) badVal=String(settingsD.badwords||''); draw();}),onValue(ref(db,'reports'),s=>{reportsD=s.val()||{};draw();}),onValue(ref(db,'broadcast/queue'),s=>{queueD=s.val()||{};draw();}),onValue(ref(db,'broadcast/announce'),s=>{annD=s.val();draw();}),onValue(ref(db,'vip'),s=>{vipD=s.val()||{};draw();})];
-};
-$('admClose').onclick=()=>{$('vAdmin').classList.add('hidden');admUnsub.forEach(f=>f());admUnsub=[];};
-
-setMode('in');
-</script>
-</body>
-</html>
+    row.append(del,jb
