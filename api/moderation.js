@@ -1,9 +1,10 @@
-// Simpan sebagai: api/moderation.js
+// Simpan sebagai: api/moderation.js  (ganti file lama sepenuhnya)
 const { getAdminServices } = require('../lib/firebase-admin');
 const ADMIN_EMAILS = (process.env.ADMIN_EMAILS || 'lifxcdz@gmail.com').split(',').map(x=>x.trim().toLowerCase()).filter(Boolean);
 const DAY = 86400000;
 const EDIT_WINDOW = 15 * 60 * 1000;
-function isAdmin(user){ return !!user.email && ADMIN_EMAILS.includes(user.email.toLowerCase()); }
+const ROLES = ['admin','moderator'];
+function isOwnerEmail(email){ return !!email && ADMIN_EMAILS.includes(String(email).toLowerCase()); }
 function cleanText(v){ return String(v || '').replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g,'').trim().slice(0,2000); }
 function scan(text, extraWords){
   const t=text.toLowerCase().normalize('NFKC');
@@ -24,8 +25,15 @@ module.exports=async function(req,res){
   const {auth,db}=getAdminServices();
   const header=req.headers.authorization||''; const token=(header.match(/^Bearer\s+(.+)$/i)||[])[1];
   if(!token) return reply(res,401,{error:'Sesi login tidak ditemukan.'});
-  const user=await auth.verifyIdToken(token,true); const uid=user.uid; const admin=isAdmin(user);
+  const user=await auth.verifyIdToken(token,true); const uid=user.uid;
   const body=req.body||{}; const action=String(body.action||'send'); const now=Date.now();
+
+  // Peran pemanggil: pemilik (dari ADMIN_EMAILS), admin, atau moderator (dari roles/{uid})
+  const owner=isOwnerEmail(user.email);
+  const roleVal=(await db.ref('roles/'+uid).get()).val();
+  const admin=owner||roleVal==='admin';      // akses penuh
+  const mod=!admin&&roleVal==='moderator';   // jail dan hapus pesan saja
+  const staff=admin||mod;                    // dikecualikan dari bot dan kunci chat
 
   // Kata terlarang buatan admin (disimpan sebagai teks dipisah koma)
   const loadExtra = async () => {
@@ -48,11 +56,11 @@ module.exports=async function(req,res){
     db.ref('users/'+uid).get(),
     db.ref('settings/locked').get(),
     replyId?db.ref('messages/'+replyId).get():Promise.resolve(null),
-    admin?Promise.resolve([]):loadExtra()
+    staff?Promise.resolve([]):loadExtra()
    ]);
    if(banSnap.exists() && (!banSnap.val().expiresAt || Number(banSnap.val().expiresAt)>now)) return reply(res,403,{error:'Akun sedang diblokir.',status:'banned',record:banSnap.val()});
    if(jailSnap.exists() && Number((jailSnap.val()||{}).until)>now) return reply(res,403,{error:'Akun sedang dalam Jail.',status:'jailed',record:jailSnap.val()});
-   if(!admin && lockSnap.val()===true) return reply(res,403,{error:'Chat sedang dikunci admin.'});
+   if(!staff && lockSnap.val()===true) return reply(res,403,{error:'Chat sedang dikunci admin.'});
 
    const profile=profileSnap.val()||{};
    let quote=null;
@@ -60,9 +68,9 @@ module.exports=async function(req,res){
     const o=replySnap.val()||{};
     quote={id:replyId,name:String(o.name||'Pengguna').slice(0,24),text:o.type==='image'?'Foto':o.type==='file'?'File: '+String(o.fname||'').slice(0,60):String(o.text||'').slice(0,80)};
    }
-   const payload={uid,name:String(profile.name||user.name||user.email.split('@')[0]).slice(0,24),ts:now,type, ...(text?{text}:{}), ...(data?{data}:{}), ...(admin?{admin:true}:{}), ...(quote?{reply:quote}:{})};
+   const payload={uid,name:String(profile.name||user.name||user.email.split('@')[0]).slice(0,24),ts:now,type, ...(text?{text}:{}), ...(data?{data}:{}), ...(admin?{admin:true,role:'admin'}:{}), ...(mod?{role:'moderator'}:{}), ...(quote?{reply:quote}:{})};
    const msgRef=db.ref('messages').push(); await msgRef.set(payload);
-   if(!admin && text){
+   if(!staff && text){
     const result=scan(text,extra);
     if(result.score>0){
      const histRef=db.ref('moderation/users/'+uid); const histSnap=await histRef.get(); const hist=histSnap.val()||{}; const warnings=Number(hist.warnings||0)+1;
@@ -90,7 +98,7 @@ module.exports=async function(req,res){
    if(m.uid!==uid) return reply(res,403,{error:'Hanya pemilik pesan yang bisa mengedit.'});
    if(m.type!=='text') return reply(res,400,{error:'Hanya pesan teks yang bisa diedit.'});
    if(now-Number(m.ts||0)>EDIT_WINDOW) return reply(res,403,{error:'Waktu mengedit sudah lewat (15 menit).'});
-   if(!admin){
+   if(!staff){
     const [banSnap,jailSnap,lockSnap,extra]=await Promise.all([db.ref('banned/'+uid).get(),db.ref('jail/'+uid).get(),db.ref('settings/locked').get(),loadExtra()]);
     if(banSnap.exists() && (!banSnap.val().expiresAt || Number(banSnap.val().expiresAt)>now)) return reply(res,403,{error:'Akun sedang diblokir.'});
     if(jailSnap.exists() && Number((jailSnap.val()||{}).until)>now) return reply(res,403,{error:'Akun sedang dalam Jail.'});
@@ -101,16 +109,42 @@ module.exports=async function(req,res){
    return reply(res,200,{success:true});
   }
 
-  if(!admin) return reply(res,403,{error:'Akses admin diperlukan.'});
+  // ====== Aksi moderasi: hanya staf ======
+  if(!staff) return reply(res,403,{error:'Akses staf diperlukan.'});
   const target=String(body.uid||''); if(!/^[A-Za-z0-9_-]{10,128}$/.test(target)) return reply(res,400,{error:'ID pengguna tidak valid.'});
   const reason=String(body.reason||'Tindakan moderator').slice(0,240);
+
+  // Aksi yang hanya boleh admin/pemilik
+  const adminOnly=['ban','unban','setRole'];
+  if(adminOnly.includes(action) && !admin) return reply(res,403,{error:'Aksi ini hanya untuk admin.'});
+  if(target===uid && ['ban','jail','setRole'].includes(action)) return reply(res,400,{error:'Tidak bisa dilakukan pada akunmu sendiri.'});
+
+  // Lindungi target: pemilik kebal, admin hanya bisa disentuh pemilik, moderator tidak bisa menyentuh staf
+  const tUser=await auth.getUser(target).catch(()=>null);
+  if(!tUser) return reply(res,404,{error:'Akun tidak ditemukan.'});
+  const tRole=(await db.ref('roles/'+target).get()).val()||null;
+  if(isOwnerEmail(tUser.email)) return reply(res,403,{error:'Pemilik tidak bisa diubah atau dimoderasi.'});
+  if(tRole==='admin' && !owner) return reply(res,403,{error:'Hanya pemilik yang bisa mengelola admin.'});
+  if(mod && tRole) return reply(res,403,{error:'Moderator tidak bisa memoderasi staf.'});
+
+  if(action==='setRole'){
+   const newRole=String(body.role||'');
+   if(!ROLES.includes(newRole)&&newRole!=='none') return reply(res,400,{error:'Peran tidak valid.'});
+   // Mengangkat admin hanya boleh pemilik (mencabut admin sudah dicegah di atas)
+   if(newRole==='admin' && !owner) return reply(res,403,{error:'Hanya pemilik yang bisa mengangkat admin.'});
+   if(newRole==='none') await db.ref('roles/'+target).remove();
+   else await db.ref('roles/'+target).set(newRole);
+   await db.ref('moderation/logs').push({uid:target,action:'setRole:'+newRole,reason:'Oleh '+(user.email||uid),source:'admin',createdAt:now});
+   return reply(res,200,{success:true});
+  }
+
   if(action==='ban') await db.ref('banned/'+target).set({source:'admin',reason,createdAt:now,expiresAt:body.permanent?null:now+Math.min(Math.max(Number(body.hours)||24,1),720)*3600000,type:body.permanent?'permanent':'temporary'});
   else if(action==='unban') await db.ref('banned/'+target).remove();
-  else if(action==='jail') await db.ref('jail/'+target).set({source:'admin',reason,createdAt:now,until:now+Math.min(Math.max(Number(body.minutes)||10,1),1440)*60000});
+  else if(action==='jail') await db.ref('jail/'+target).set({source:admin?'admin':'moderator',reason,createdAt:now,until:now+Math.min(Math.max(Number(body.minutes)||10,1),1440)*60000});
   else if(action==='unjail') await db.ref('jail/'+target).remove();
   else if(action==='reset-warnings') await db.ref('moderation/users/'+target).update({warnings:0,lastAction:'reset',lastAt:now});
   else return reply(res,400,{error:'Aksi tidak dikenal.'});
-  await db.ref('moderation/logs').push({uid:target,action,reason,source:'admin',createdAt:now});
+  await db.ref('moderation/logs').push({uid:target,action,reason,source:admin?'admin':'moderator',createdAt:now});
   return reply(res,200,{success:true});
  }catch(e){ console.error('moderation api:',e); return reply(res,500,{error:'Server gagal memproses moderasi.'}); }
 };
