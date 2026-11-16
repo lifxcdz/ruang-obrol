@@ -548,6 +548,15 @@ document.addEventListener('touchend',ev=>{ const n=Date.now(); if(n-lastTouch<30
 
 /* ---- Util ---- */
 function show(id){ ['vLoad','vAuth','vVerify','vChat'].forEach(v=>$(v).classList.toggle('hidden',v!==id)); }
+// Batasi waktu tunggu operasi Firebase agar halaman tidak terjebak di layar Memuat.
+function withTimeout(promise, ms, message){
+  let timer;
+  return Promise.race([
+    promise,
+    new Promise((_, reject)=>{ timer=setTimeout(()=>reject(new Error(message||'Waktu koneksi habis')),ms); })
+  ]).finally(()=>clearTimeout(timer));
+}
+
 function toast(t){ const d=document.createElement('div'); d.className='toast'; d.textContent=t; document.body.appendChild(d); setTimeout(()=>d.remove(),2800); }
 function authMsg(e){
   const c=(e&&e.code)||'';
@@ -573,7 +582,16 @@ function setMode(m){
   $('forgot').classList.toggle('hidden',m!=='in'); $('authErr').textContent='';
 }
 document.querySelectorAll('[data-soon]').forEach(b=>b.onclick=()=>toast('Masuk dengan '+b.dataset.soon+' segera hadir.'));
-$('tabIn').onclick=()=>setMode('in'); $('tabUp').onclick=()=>setMode('up');
+$('tabIn').onclick=()=>setMode('in');
+// Pengaman: jangan biarkan layar Memuat tampil tanpa batas jika Firebase Auth gagal merespons.
+const authStartupWatchdog=setTimeout(()=>{
+  const loading=$('vLoad');
+  if(loading && !loading.classList.contains('hidden')){
+    console.warn('Firebase Auth belum merespons; menampilkan halaman masuk.');
+    show('vAuth');
+    $('authErr').textContent='Koneksi belum siap. Periksa internet lalu muat ulang halaman.';
+  }
+},12000); $('tabUp').onclick=()=>setMode('up');
 
 /* ---- Cloudflare Turnstile ---- */
 let cfWidget=null, cfToken=null;
@@ -850,13 +868,14 @@ function handlePurge(p){
 onAuthStateChanged(auth,async u=>{
   cleanup();
   if(!u){ show('vAuth'); return; }
-  await u.reload().catch(()=>{});
+  try{ await withTimeout(u.reload(),7000,'Pemeriksaan akun terlalu lama'); }
+  catch(e){ console.warn('Pemeriksaan ulang akun dilewati:',e); }
   if(!u.emailVerified){
     $('verifyText').textContent='Kami mengirim link verifikasi ke '+u.email+'. Buka link itu, lalu kembali ke sini.';
     $('verifyMsg').textContent='';
     show('vVerify'); return;
   }
-  try{ await u.getIdToken(true); }catch(e){}
+  try{ await withTimeout(u.getIdToken(true),7000,'Pembaruan sesi terlalu lama'); }catch(e){ console.warn('Token akan diperbarui saat diperlukan:',e); }
   enter(u);
 });
 
@@ -864,8 +883,15 @@ function cleanup(){ unsubs.forEach(f=>f()); unsubs=[]; entered=false; stBanned=s
 
 async function enter(u){
   if(entered) return;
+  entered=true;
+  me=u; isAdmin=ADMIN_EMAILS.map(e=>e.toLowerCase()).includes((u.email||'').toLowerCase());
+  $('whoName').textContent=u.displayName||u.email;
+  $('btnAdmin').classList.toggle('hidden',!isAdmin); $('menuAdmin').classList.toggle('hidden',!isAdmin);
+  // Tampilkan aplikasi dahulu; pemeriksaan akun dikerjakan dengan batas waktu.
+  show('vChat');
+  restoreMenuRoute();
   try{
-    const managedSnap=await get(ref(db,'users/'+u.uid));
+    const managedSnap=await withTimeout(get(ref(db,'users/'+u.uid)),6000,'Database belum merespons');
     const managedProfile=managedSnap.val()||{};
     if(managedProfile.managed===true && managedProfile.expiresAt && Number(managedProfile.expiresAt)<=Date.now()){
       await signOut(auth);
@@ -873,14 +899,8 @@ async function enter(u){
       return;
     }
   }catch(error){
-    console.warn('Pemeriksaan masa berlaku akun gagal:',error);
+    console.warn('Pemeriksaan masa berlaku akun dilewati:',error);
   }
-  entered=true;
-  me=u; isAdmin=ADMIN_EMAILS.map(e=>e.toLowerCase()).includes((u.email||'').toLowerCase());
-  $('whoName').textContent=u.displayName||u.email;
-  $('btnAdmin').classList.toggle('hidden',!isAdmin); $('menuAdmin').classList.toggle('hidden',!isAdmin);
-  show('vChat');
-  restoreMenuRoute();
   try{
     await update(ref(db,'users/'+u.uid),{name:u.displayName||u.email.split('@')[0],joinedAt:Date.parse(u.metadata.creationTime)||Date.now()});
     await update(ref(db,'private/'+u.uid),{email:u.email});
