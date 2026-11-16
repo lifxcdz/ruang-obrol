@@ -256,7 +256,7 @@ select option{background:#0c1427;color:var(--text)}
 /* Popup aplikasi */
 .dialog-wrap{position:fixed;inset:0;z-index:100;background:rgba(1,5,15,.72);backdrop-filter:blur(12px);display:flex;align-items:center;justify-content:center;padding:22px}
 .dialog-card{width:min(440px,100%);border:1px solid var(--line);border-radius:22px;background:var(--surface);padding:21px;box-shadow:0 24px 80px rgba(0,0,0,.45)}
-.dialog-card h3{font-size:19px;margin-bottom:7px}.dialog-card p{font-size:14px;color:var(--muted);margin-bottom:15px;line-height:1.55}.dialog-card textarea,.dialog-card input{border:1px solid var(--line);border-radius:12px;padding:12px;background:rgba(0,0,0,.12);margin-bottom:12px}.dialog-actions{display:flex;justify-content:flex-end;gap:9px}.dialog-actions button{padding:9px 15px;border-radius:11px}.dialog-actions .primary{background:#2868e8;color:white;border:0}.title-chip{display:inline-flex;align-items:center;vertical-align:middle;border:0!important;outline:0!important;border-radius:7px;padding:1px 6px;font-size:10px;font-weight:700;line-height:1.5;white-space:nowrap}.meta{flex-wrap:wrap}.event-card{border:1px solid var(--line);border-radius:16px;padding:15px;background:rgba(75,140,255,.07);margin-bottom:12px}
+.dialog-card h3{font-size:19px;margin-bottom:7px}.dialog-card p{white-space:pre-line;font-size:14px;color:var(--muted);margin-bottom:15px;line-height:1.55}.dialog-card textarea,.dialog-card input{border:1px solid var(--line);border-radius:12px;padding:12px;background:rgba(0,0,0,.12);margin-bottom:12px}.dialog-actions{display:flex;justify-content:flex-end;gap:9px}.dialog-actions button{padding:9px 15px;border-radius:11px}.dialog-actions .primary{background:#2868e8;color:white;border:0}.title-chip{display:inline-flex;align-items:center;vertical-align:middle;border:0!important;outline:0!important;border-radius:7px;padding:1px 6px;font-size:10px;font-weight:700;line-height:1.5;white-space:nowrap}.meta{flex-wrap:wrap}.event-card{border:1px solid var(--line);border-radius:16px;padding:15px;background:rgba(75,140,255,.07);margin-bottom:12px}
 /* Tema terang */
 :root[data-theme=light]{--bg:#f3f6fc;--surface:#fff;--line:rgba(30,50,90,.16);--line-soft:rgba(30,50,90,.1);--text:#142038;--muted:#5b6b88;--blue:#2868e8}
 :root[data-theme=light] body{background:radial-gradient(ellipse at 50% -20%,rgba(37,99,235,.1),transparent 48%),var(--bg)}
@@ -878,12 +878,12 @@ async function sendMsg(extra){
       if(result.id&&!$('m_'+result.id)){ tmpEl.dataset.real=result.id; setTimeout(()=>tmpEl.remove(),6000); }
       else tmpEl.remove();
     }
-    if(result.moderation){const m=result.moderation;toast('Pesan tidak dikirim. '+(m.action==='warning'?'Peringatan: ':m.action==='jail'?'Akun masuk Jail: ':'Akun diblokir: ')+m.reason);}
+    if(result.moderation) modNotice(result.moderation);
   }catch(e){
     if(tmpEl) tmpEl.remove();
     if(rep&&!replyTo) setReply(rep);
     if(!extra && !$('txt').value){ $('txt').value=draft; autosize(); }
-    if(e.moderation){const m=e.moderation;toast((m.action==='warning'?'Peringatan: ':m.action==='jail'?'Akun masuk Jail: ':'Akun diblokir: ')+m.reason+' · pesan tidak dikirim.');}else toast(e.message||'Pesan gagal dikirim.');
+    if(e.moderation) modNotice(e.moderation); else toast(e.message||'Pesan gagal dikirim.');
   }
   $('send').disabled=false;
 }
@@ -1253,7 +1253,11 @@ applyPrefsUi();
 if('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(()=>{});
 
 /* ---- Dialog custom aplikasi ---- */
-function appDialog({title='Konfirmasi',message='',placeholder='',value='',multiline=false,confirmText='Lanjutkan',danger=false,requiredText='',inputType='text'}={}){
+function modNotice(m){
+ const t={warning:['Peringatan','Pesanmu mengandung kata terlarang dan otomatis dihapus.'],jail:['Akun masuk Jail','Kamu tidak bisa mengirim pesan untuk sementara.'],ban:['Akun diblokir','Akunmu dibatasi karena pelanggaran berulang.']}[m.action]||['Moderasi',''];
+ appDialog({title:t[0],message:t[1]+'\nAlasan: '+(m.reason||'-'),confirmText:'Mengerti',danger:m.action!=='warning',noCancel:true});
+}
+function appDialog({title='Konfirmasi',message='',placeholder='',value='',multiline=false,confirmText='Lanjutkan',danger=false,requiredText='',inputType='text',noCancel=false}={}){
  return new Promise(resolve=>{
   const root=$('dialogRoot'); root.innerHTML=''; const wrap=document.createElement('div'); wrap.className='dialog-wrap';
   const card=document.createElement('div'); card.className='dialog-card';
@@ -1263,7 +1267,7 @@ function appDialog({title='Konfirmasi',message='',placeholder='',value='',multil
   const cancel=document.createElement('button');cancel.type='button';cancel.textContent='Batal';
   const ok=document.createElement('button');ok.type='button';ok.textContent=confirmText;ok.className='primary';if(danger)ok.style.background='#c74355';
   const finish=result=>{root.innerHTML='';resolve(result);};cancel.onclick=()=>finish(null);ok.onclick=()=>{const v=field?field.value.trim():true;if(requiredText&&v!==requiredText){toast('Ketik '+requiredText+' dengan benar.');return;}if(field&&!v){field.focus();return;}finish(v);};
-  actions.append(cancel,ok);card.append(actions);wrap.append(card);wrap.addEventListener('click',e=>{if(e.target===wrap)finish(null);});root.append(wrap);if(field)field.focus();
+  if(!noCancel)actions.append(cancel);actions.append(ok);card.append(actions);wrap.append(card);wrap.addEventListener('click',e=>{if(e.target===wrap)finish(null);});root.append(wrap);if(field)field.focus();
  });
 }
 function titleInfo(key){const map={admin:['ADMIN','#6eaaff'],moderator:['MODERATOR','#b49aff'],developer:['DEVELOPER','#f0b45b'],founder:['FOUNDER','#f4cf70'],verified:['VERIFIED','#49a6ff'],helper:['HELPER','#48c9a5'],support:['SUPPORT','#59c7d8'],designer:['DESIGNER','#d78cff'],contributor:['CONTRIBUTOR','#7bd49b'],eventhost:['EVENT HOST','#ff9f70'],vip:['VIP','#e7c66d'],event1:['TOP 1','#f2c45c'],event2:['TOP 2','#b8c4d8'],event3:['TOP 3','#d99a70'],member:['MEMBER','#8493ad']};return map[key]||['MEMBER','#8493ad'];}
