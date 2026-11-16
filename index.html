@@ -865,18 +865,41 @@ function handlePurge(p){
   };
   purgeTimer=setInterval(tick,250); tick();
 }
+// Cegah callback Firebase yang berulang memulai proses masuk berkali-kali.
+let authProcessingUid=null;
+let lastAuthUid=null;
 onAuthStateChanged(auth,async u=>{
-  cleanup();
-  if(!u){ show('vAuth'); return; }
-  try{ await withTimeout(u.reload(),7000,'Pemeriksaan akun terlalu lama'); }
-  catch(e){ console.warn('Pemeriksaan ulang akun dilewati:',e); }
-  if(!u.emailVerified){
-    $('verifyText').textContent='Kami mengirim link verifikasi ke '+u.email+'. Buka link itu, lalu kembali ke sini.';
-    $('verifyMsg').textContent='';
-    show('vVerify'); return;
+  if(!u){
+    if(lastAuthUid!==null){ cleanup(); lastAuthUid=null; }
+    authProcessingUid=null;
+    show('vAuth');
+    return;
   }
-  try{ await withTimeout(u.getIdToken(true),7000,'Pembaruan sesi terlalu lama'); }catch(e){ console.warn('Token akan diperbarui saat diperlukan:',e); }
-  enter(u);
+
+  // reload() dan pembaruan token dapat memicu callback lagi untuk UID yang sama.
+  if(authProcessingUid===u.uid || (lastAuthUid===u.uid && entered)) return;
+  if(lastAuthUid!==null && lastAuthUid!==u.uid) cleanup();
+  lastAuthUid=u.uid;
+  authProcessingUid=u.uid;
+
+  try{
+    try{ await withTimeout(u.reload(),7000,'Pemeriksaan akun terlalu lama'); }
+    catch(e){ console.warn('Pemeriksaan ulang akun dilewati:',e); }
+
+    if(!u.emailVerified){
+      $('verifyText').textContent='Kami mengirim link verifikasi ke '+u.email+'. Buka link itu, lalu kembali ke sini.';
+      $('verifyMsg').textContent='';
+      show('vVerify');
+      return;
+    }
+
+    try{ await withTimeout(u.getIdToken(true),7000,'Pembaruan sesi terlalu lama'); }
+    catch(e){ console.warn('Token akan diperbarui saat diperlukan:',e); }
+
+    await enter(u);
+  } finally {
+    if(authProcessingUid===u.uid) authProcessingUid=null;
+  }
 });
 
 function cleanup(){ unsubs.forEach(f=>f()); unsubs=[]; entered=false; stBanned=stJail=stLock=false; replyTo=null; $('replyBar').classList.add('hidden'); $('typingLine').classList.add('hidden'); $('pinBar').classList.add('hidden'); $('annBar').classList.add('hidden'); $('vDmList').classList.add('hidden'); closeActs(); clearInterval(purgeTimer); purgeTimer=null; $('purgeBar').classList.add('hidden'); stopMusicLocal(); musicCur=null; $('vUser').classList.add('hidden'); $('vProfile').classList.add('hidden'); $('vAdmin').classList.add('hidden'); $('list').innerHTML='<div class="empty" id="empty">Belum ada pesan. Mulai obrolan.</div>'; }
