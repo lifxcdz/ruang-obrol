@@ -7,18 +7,36 @@
 const admin = require('firebase-admin');
 const nodemailer = require('nodemailer');
 
-if (!admin.apps.length) {
-  admin.initializeApp({ credential: admin.credential.cert(JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT)) });
+function init() {
+  if (!admin.apps.length) {
+    const raw = process.env.FIREBASE_SERVICE_ACCOUNT || '';
+    const sa = JSON.parse(raw.trim());
+    if (sa.private_key) sa.private_key = sa.private_key.replace(/\\n/g, '\n');
+    admin.initializeApp({ credential: admin.credential.cert(sa) });
+  }
 }
-const transporter = nodemailer.createTransport({
-  service: 'gmail',
-  auth: { user: process.env.GMAIL_USER, pass: (process.env.GMAIL_APP_PASSWORD || '').replace(/\s+/g, '') }
-});
+function mailer() {
+  return nodemailer.createTransport({
+    service: 'gmail',
+    auth: { user: process.env.GMAIL_USER, pass: (process.env.GMAIL_APP_PASSWORD || '').replace(/\s+/g, '') }
+  });
+}
 const esc = s => String(s || '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
 module.exports = async function handler(req, res) {
-  if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+  if (req.method !== 'POST') {
+    // Cek status env dari browser (hanya true/false, tanpa nilai rahasia)
+    return res.status(405).json({
+      error: 'Method not allowed',
+      env: {
+        FIREBASE_SERVICE_ACCOUNT: !!process.env.FIREBASE_SERVICE_ACCOUNT,
+        GMAIL_USER: !!process.env.GMAIL_USER,
+        GMAIL_APP_PASSWORD: !!process.env.GMAIL_APP_PASSWORD
+      }
+    });
+  }
   try {
+    init();
     const token = (req.headers.authorization || '').replace(/^Bearer\s+/i, '');
     const decoded = await admin.auth().verifyIdToken(token);
     const user = await admin.auth().getUser(decoded.uid);
@@ -41,7 +59,7 @@ module.exports = async function handler(req, res) {
 <tr><td style="font-size:12px;line-height:1.6;color:#8a97b0">Kalau bukan kamu yang mendaftar, abaikan email ini.</td></tr>
 </table></td></tr></table></body></html>`;
 
-    await transporter.sendMail({
+    await mailer().sendMail({
       from: `"Ruang Obrol" <${process.env.GMAIL_USER}>`,
       to: user.email,
       subject: 'Verifikasi akun Ruang Obrol',
@@ -50,6 +68,7 @@ module.exports = async function handler(req, res) {
     });
     res.json({ ok: true });
   } catch (e) {
+    console.error('send-verification gagal:', e && e.message);
     res.status(400).json({ error: 'Gagal mengirim email verifikasi.' });
   }
 }
