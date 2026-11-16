@@ -1,19 +1,22 @@
-// Vercel serverless: kirim email verifikasi dengan TOMBOL (bukan link mentah).
-// Env yang dibutuhkan di Vercel:
-//   FIREBASE_SERVICE_ACCOUNT = isi JSON service account (satu baris)
-//   RESEND_API_KEY           = API key dari resend.com
-//   MAIL_FROM                = contoh: Ruang Obrol <noreply@domainmu.com> (domain harus terverifikasi di Resend)
-// Paket: npm i firebase-admin resend
-import admin from 'firebase-admin';
-import { Resend } from 'resend';
+// Vercel serverless: kirim email verifikasi dengan TOMBOL lewat Gmail SMTP (tanpa domain sendiri).
+// Env di Vercel:
+//   FIREBASE_SERVICE_ACCOUNT = isi JSON service account Firebase (satu baris)
+//   GMAIL_USER               = alamat Gmail pengirim, contoh lifxcdz@gmail.com
+//   GMAIL_APP_PASSWORD       = App Password Gmail 16 karakter (bukan password biasa)
+// Paket: npm i firebase-admin nodemailer
+const admin = require('firebase-admin');
+const nodemailer = require('nodemailer');
 
 if (!admin.apps.length) {
   admin.initializeApp({ credential: admin.credential.cert(JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT)) });
 }
-const resend = new Resend(process.env.RESEND_API_KEY);
+const transporter = nodemailer.createTransport({
+  service: 'gmail',
+  auth: { user: process.env.GMAIL_USER, pass: (process.env.GMAIL_APP_PASSWORD || '').replace(/\s+/g, '') }
+});
 const esc = s => String(s || '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
   try {
     const token = (req.headers.authorization || '').replace(/^Bearer\s+/i, '');
@@ -38,14 +41,13 @@ export default async function handler(req, res) {
 <tr><td style="font-size:12px;line-height:1.6;color:#8a97b0">Kalau bukan kamu yang mendaftar, abaikan email ini.</td></tr>
 </table></td></tr></table></body></html>`;
 
-    const { error } = await resend.emails.send({
-      from: process.env.MAIL_FROM || 'Ruang Obrol <onboarding@resend.dev>',
+    await transporter.sendMail({
+      from: `"Ruang Obrol" <${process.env.GMAIL_USER}>`,
       to: user.email,
       subject: 'Verifikasi akun Ruang Obrol',
       html,
       text: 'Verifikasi akun Ruang Obrol: ' + link
     });
-    if (error) throw new Error(error.message || 'kirim gagal');
     res.json({ ok: true });
   } catch (e) {
     res.status(400).json({ error: 'Gagal mengirim email verifikasi.' });
