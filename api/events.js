@@ -19,7 +19,7 @@ module.exports = async function (req, res) {
     if (action === 'set-title') {
       requireAdmin();
       const target = clean(body.uid, 128);
-      const allowed = ['member', 'moderator', 'developer', 'founder', 'verified', 'helper'];
+      const allowed = ['member', 'moderator', 'developer', 'founder', 'verified', 'helper', 'support', 'designer', 'contributor', 'eventhost', 'vip'];
       if (!target || target === uid || !allowed.includes(body.title)) return json(res, 400, { error: 'Target atau title tidak valid.' });
       await db.ref('users/' + target + '/title').set(body.title);
       await db.ref('moderation/logs').push({ uid: target, action: 'set-title', reason: body.title, source: 'admin', createdAt: now });
