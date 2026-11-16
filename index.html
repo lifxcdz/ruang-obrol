@@ -286,6 +286,7 @@ select option{background:#0c1427;color:var(--text)}
 .check-spin{width:34px;height:34px;margin:0 auto 18px;border-radius:50%;border:3px solid rgba(148,170,210,.2);border-top-color:#6aa2ff;animation:spin .8s linear infinite}
 .check-title{font-weight:600;font-size:17px;margin-bottom:6px}
 .check-sub{font-size:13px;color:var(--muted);line-height:1.5}
+.verify-tutorial{display:block;width:100%;max-width:100%;height:auto;max-height:176px;object-fit:contain;margin:14px auto 16px;border:1px solid var(--line);border-radius:12px;background:rgba(255,255,255,.035)}
 </style>
 </head>
 <body>
@@ -323,6 +324,7 @@ select option{background:#0c1427;color:var(--text)}
   <div class="card">
     <div class="brand">Cek email kamu</div>
     <div class="sub" id="verifyText"></div>
+    <img class="verify-tutorial" src="/tutorial-verifikasi.jpg" alt="Panduan menemukan email verifikasi di folder Spam Gmail" loading="eager">
     <div id="verifyMsg" class="msg-ok"></div>
     <button id="verifyDone" class="btn" type="button">Saya sudah verifikasi</button>
     <button id="verifyResend" class="btn ghost" type="button">Kirim ulang email</button>
