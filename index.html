@@ -97,6 +97,26 @@ footer .send{width:auto;padding:0 16px;height:44px;background:var(--text);color:
 .toast{position:fixed;left:50%;bottom:90px;transform:translateX(-50%);border:1px solid var(--line);background:var(--surface);padding:10px 14px;z-index:40;font-size:14px;max-width:88vw;text-align:center}
 @media (prefers-reduced-motion:no-preference){.toast{animation:in .2s ease}@keyframes in{from{opacity:0}to{opacity:1}}}
 
+/* Background khusus halaman masuk dan daftar */
+#vAuth{
+  position:relative;
+  isolation:isolate;
+  min-height:100%;
+  background:linear-gradient(180deg,rgba(3,8,22,.18),rgba(3,8,22,.38)),url("bg-login.jpg") center center / cover no-repeat;
+}
+#vAuth .card{
+  background:rgba(7,13,29,.78);
+  border:1px solid rgba(142,177,255,.2);
+  box-shadow:0 24px 80px rgba(0,0,0,.42);
+  backdrop-filter:blur(18px);
+  -webkit-backdrop-filter:blur(18px);
+}
+#vAuth .sub,#vAuth .note,#vAuth .field label{color:#b8c7e5}
+#vAuth .field input{background:rgba(3,8,20,.52);border-color:rgba(148,170,210,.22)}
+#vAuth .tabs button{background:rgba(255,255,255,.045)}
+#vAuth .tabs button.on{background:#eaf1ff;color:#102044}
+@media(max-width:480px){#vAuth{padding:20px 18px}#vAuth .card{padding:25px 20px}}
+
 /* Premium refresh */
 :root{--line:rgba(148,170,210,.16);--line-soft:rgba(148,170,210,.11);--surface:#0c1427;--blue:#4b8cff}
 body{background:radial-gradient(ellipse at 50% -20%,rgba(37,99,235,.16),transparent 48%),var(--bg)}
