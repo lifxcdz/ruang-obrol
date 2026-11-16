@@ -286,7 +286,13 @@ select option{background:#0c1427;color:var(--text)}
 .check-spin{width:34px;height:34px;margin:0 auto 18px;border-radius:50%;border:3px solid rgba(148,170,210,.2);border-top-color:#6aa2ff;animation:spin .8s linear infinite}
 .check-title{font-weight:600;font-size:17px;margin-bottom:6px}
 .check-sub{font-size:13px;color:var(--muted);line-height:1.5}
-.verify-tutorial{display:block;width:100%;max-width:100%;height:auto;max-height:176px;object-fit:contain;margin:14px auto 16px;border:1px solid var(--line);border-radius:12px;background:rgba(255,255,255,.035)}
+/* Foto panduan verifikasi: tanpa outline, selebar tombol, rasio asli, besar */
+.verify-tutorial{display:block;width:100%;height:auto;max-width:100%;max-height:none;object-fit:contain;margin:14px 0 16px;border:0;outline:0;border-radius:0;background:none;box-shadow:none}
+/* Spinner di tombol saat memproses */
+.btn.loading,.admin-action.loading,.social-btn.loading,.link.loading{position:relative;color:transparent!important;pointer-events:none}
+.btn.loading:after,.admin-action.loading:after{content:"";position:absolute;left:50%;top:50%;width:20px;height:20px;margin:-10px 0 0 -10px;border-radius:50%;border:2.5px solid rgba(255,255,255,.3);border-top-color:#fff;animation:spin .7s linear infinite}
+.btn.ghost.loading:after,.admin-action.secondary.loading:after{border-color:rgba(148,170,210,.3);border-top-color:var(--text)}
+.link.loading:after{content:"";position:absolute;left:50%;top:50%;width:16px;height:16px;margin:-8px 0 0 -8px;border-radius:50%;border:2px solid rgba(148,170,210,.3);border-top-color:var(--text);animation:spin .7s linear infinite}
 </style>
 </head>
 <body>
@@ -447,6 +453,14 @@ setPersistence(auth, browserLocalPersistence).catch(()=>{});
 const db = getDatabase(app);
 const $ = id => document.getElementById(id);
 
+/* ---- Spinner tombol: tampil selama proses berjalan ---- */
+async function withLoad(btn,fn){
+  if(!btn||btn.classList.contains('loading')) return;
+  btn.classList.add('loading'); btn.disabled=true;
+  try{ return await fn(); }
+  finally{ btn.classList.remove('loading'); btn.disabled=false; }
+}
+
 /* ---- Cegah zoom ---- */
 ['gesturestart','gesturechange','gestureend'].forEach(e=>document.addEventListener(e,ev=>ev.preventDefault()));
 document.addEventListener('touchmove',ev=>{ if(ev.touches.length>1) ev.preventDefault(); },{passive:false});
@@ -500,44 +514,54 @@ async function authViaServer(body){
   return d.token;
 }
 
-$('authGo').onclick=async()=>{
+/* ---- Email verifikasi bertombol (dikirim server), cadangan: email bawaan Firebase ---- */
+async function sendVerifyMail(){
+  const u=auth.currentUser; if(!u) throw new Error('Sesi login tidak ditemukan.');
+  try{
+    const token=await u.getIdToken();
+    const r=await fetch('/api/send-verification',{method:'POST',headers:{'Authorization':'Bearer '+token}});
+    if(!r.ok) throw new Error('server');
+  }catch(e){
+    await sendEmailVerification(u);
+  }
+}
+
+$('authGo').onclick=()=>withLoad($('authGo'),async()=>{
   let email=$('iEmail').value.trim(), pass=$('iPass').value, name=$('iName').value.trim();
-   if(mode==='in' && !email.includes('@')) email=email.toLowerCase().replace(/[^a-z0-9._-]/g,'')+'@akun.ruang-obrol.app';
+  if(mode==='in' && !email.includes('@')) email=email.toLowerCase().replace(/[^a-z0-9._-]/g,'')+'@akun.ruang-obrol.app';
   $('authErr').textContent='';
   if(!email||!pass){ $('authErr').textContent='Isi email dan password.'; return; }
   if(mode==='up'&&!name){ $('authErr').textContent='Isi nama.'; return; }
   if(TURNSTILE_SITE_KEY.startsWith('ISI_')){ $('authErr').textContent='Verifikasi belum dikonfigurasi (site key kosong).'; return; }
   if(!cfToken){ $('authErr').textContent='Selesaikan verifikasi Cloudflare dulu.'; return; }
-  $('authGo').disabled=true;
   try{
     const customToken=await authViaServer({mode,email,password:pass,name,cf:cfToken});
     const cred=await signInWithCustomToken(auth,customToken);
     if(mode==='up'){
       await updateProfile(cred.user,{displayName:name});
-      await sendEmailVerification(cred.user);
+      await sendVerifyMail();
     }
   }catch(e){ $('authErr').textContent=e.apiMsg?e.message:authMsg(e); }
   resetTurnstile();
-  $('authGo').disabled=false;
-};
-$('forgot').onclick=async()=>{
+});
+$('forgot').onclick=()=>withLoad($('forgot'),async()=>{
   const email=$('iEmail').value.trim();
   if(!email){ $('authErr').textContent='Isi email dulu, lalu tekan Lupa password.'; return; }
   try{ await sendPasswordResetEmail(auth,email); toast('Link reset password dikirim ke email.'); }
   catch(e){ $('authErr').textContent=authMsg(e); }
-};
+});
 
 /* ---- Verifikasi ---- */
-$('verifyDone').onclick=async()=>{
+$('verifyDone').onclick=()=>withLoad($('verifyDone'),async()=>{
   const u=auth.currentUser; if(!u) return;
   await u.reload();
   if(u.emailVerified){ await u.getIdToken(true); enter(u); }
-  else $('verifyMsg').textContent='Email belum terverifikasi. Buka link di email dulu.';
-};
-$('verifyResend').onclick=async()=>{
-  try{ await sendEmailVerification(auth.currentUser); $('verifyMsg').textContent='Email verifikasi dikirim ulang. Cek juga folder spam.'; }
+  else $('verifyMsg').textContent='Email belum terverifikasi. Buka email lalu ketuk tombol verifikasi.';
+});
+$('verifyResend').onclick=()=>withLoad($('verifyResend'),async()=>{
+  try{ await sendVerifyMail(); $('verifyMsg').textContent='Email verifikasi dikirim ulang. Cek juga folder spam.'; }
   catch(e){ $('verifyMsg').textContent=authMsg(e); }
-};
+});
 $('verifyOut').onclick=()=>signOut(auth);
 $('btnOut').onclick=async()=>{ await dropPresence(); signOut(auth); };
 
@@ -678,7 +702,7 @@ onAuthStateChanged(auth,async u=>{
   if(!u){ show('vAuth'); return; }
   await u.reload().catch(()=>{});
   if(!u.emailVerified){
-    $('verifyText').textContent='Kami mengirim link verifikasi ke '+u.email+'. Buka link itu, lalu kembali ke sini.';
+    $('verifyText').textContent='Kami mengirim email verifikasi ke '+u.email+'. Ketuk tombol Verifikasi di email itu, lalu kembali ke sini.';
     $('verifyMsg').textContent='';
     show('vVerify'); return;
   }
@@ -933,10 +957,9 @@ function openUser(uid){
   $('vUser').classList.remove('hidden');
 }
 $('userClose').onclick=()=>$('vUser').classList.add('hidden');
-$('profSave').onclick=async()=>{
+$('profSave').onclick=()=>withLoad($('profSave'),async()=>{
   const n=$('iProfName').value.trim(), out=$('profMsg');
   if(!n){ out.className='msg-err'; out.textContent='Nama tidak boleh kosong.'; return; }
-  $('profSave').disabled=true;
   const ig=$('iIg').value.trim().replace(/^@/,'').replace(/[^A-Za-z0-9._]/g,'').slice(0,30);
   const data={name:n,bio:$('iBio').value.trim().slice(0,120),status:$('iStatus').value.trim().slice(0,40),city:$('iCity').value.trim().slice(0,40),hobby:$('iHobby').value.trim().slice(0,60),ig,color:pColor};
   try{
@@ -944,8 +967,7 @@ $('profSave').onclick=async()=>{
     await update(ref(db,'users/'+me.uid),data);
     $('whoName').textContent=n; out.className='msg-ok'; out.textContent='Profil tersimpan.';
   }catch(e){ out.className='msg-err'; out.textContent='Gagal menyimpan. Cek koneksi atau Rules database.'; }
-  $('profSave').disabled=false;
-};
+});
 
 /* ---- Pengaturan lokal, tema, notifikasi ---- */
 const store={ get(k,d){ try{ const v=localStorage.getItem(k); return v==null?d:JSON.parse(v); }catch(e){ return d; } }, set(k,v){ try{ localStorage.setItem(k,JSON.stringify(v)); }catch(e){} } };
@@ -1189,18 +1211,16 @@ $('sbDm').onclick=()=>{ drawDmList(); $('vDmList').classList.remove('hidden'); }
 $('dmListClose').onclick=()=>$('vDmList').classList.add('hidden');
 
 /* ---- Keamanan akun ---- */
-$('pwSave').onclick=async()=>{
+$('pwSave').onclick=()=>withLoad($('pwSave'),async()=>{
   const out=$('pwMsg'), oldP=$('iOldPw').value, newP=$('iNewPw').value;
   if(!oldP||newP.length<6){ out.className='msg-err'; out.textContent='Isi password saat ini dan password baru (minimal 6 karakter).'; return; }
-  $('pwSave').disabled=true;
   try{
     await reauthenticateWithCredential(me,EmailAuthProvider.credential(me.email,oldP));
     await updatePassword(me,newP);
     out.className='msg-ok'; out.textContent='Password berhasil diganti.'; $('iOldPw').value=''; $('iNewPw').value='';
   }catch(e){ out.className='msg-err'; out.textContent=authMsg(e); }
-  $('pwSave').disabled=false;
-};
-$('delAcc').onclick=async()=>{
+});
+$('delAcc').onclick=()=>withLoad($('delAcc'),async()=>{
   const out=$('pwMsg'), oldP=$('iOldPw').value;
   if(isAdmin){ out.className='msg-err'; out.textContent='Akun admin tidak bisa dihapus dari sini.'; return; }
   if(!oldP){ out.className='msg-err'; out.textContent='Isi password saat ini dulu untuk menghapus akun.'; return; }
@@ -1213,7 +1233,7 @@ $('delAcc').onclick=async()=>{
     await deleteUser(me);
     toast('Akun dihapus.');
   }catch(e){ out.className='msg-err'; out.textContent=authMsg(e); }
-};
+});
 
 applyPrefsUi();
 if('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(()=>{});
