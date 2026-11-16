@@ -4,7 +4,12 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#070b16">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="apple-touch-icon" href="/icon-192.png">
 <title>Ruang Obrol</title>
+<script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" async defer></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,500;12..96,700&display=swap" rel="stylesheet">
@@ -157,12 +162,110 @@ footer .ib,.send{border-radius:13px!important}
 /* Memuat: hanya teks, tanpa garis/kotak */
 .load-text{color:var(--muted);font-size:17px;letter-spacing:.01em;border:0;background:none}
 /* Pemberitahuan hapus semua pesan */
-.purge-bar{position:fixed;left:50%;top:calc(env(safe-area-inset-top) + 10px);transform:translateX(-50%);z-index:60;width:min(420px,92vw);text-align:center;padding:14px 16px;border-radius:16px;border:1px solid rgba(255,107,107,.45);background:rgba(28,12,18,.94);backdrop-filter:blur(14px);box-shadow:0 14px 44px rgba(0,0,0,.45)}
-.purge-title{font-weight:600;color:#ffb4b4}
-.purge-time{font-size:30px;font-weight:700;margin-top:4px;font-variant-numeric:tabular-nums;letter-spacing:.02em}
+.purge-bar{flex:none;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:9px 14px;border-bottom:1px solid rgba(255,107,107,.28);background:linear-gradient(90deg,rgba(255,107,107,.14),rgba(255,107,107,.05))}
+.purge-title{font-size:14px;font-weight:500;color:#ffb4b4;line-height:1.3}
+.purge-time{font-size:18px;font-weight:700;font-variant-numeric:tabular-nums;color:#fff;background:rgba(255,107,107,.18);border-radius:10px;padding:3px 10px;flex:none}
 select{background:rgba(3,8,20,.42);border:1px solid var(--line);border-radius:13px;padding:11px 12px;width:100%;color:var(--text);font:inherit;outline:none}
 select option{background:#0c1427;color:var(--text)}
 .online-dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:#4ade80;margin-right:6px}
+/* Pemutar lagu dari admin */
+.music-bar{flex:none;display:flex;align-items:center;gap:12px;padding:9px 14px;border-bottom:1px solid rgba(75,140,255,.28);background:linear-gradient(90deg,rgba(75,140,255,.16),rgba(75,140,255,.05))}
+.music-info{flex:1;min-width:0}
+.music-title{font-size:14px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.music-sub{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+.music-bar button{padding:6px 12px;font-size:13px;flex:none;border-radius:10px}
+.yt-box{width:200px;height:113px;border-radius:10px;overflow:hidden;background:#000;flex:none}
+.yt-box iframe{width:100%;height:100%;display:block;border:0}
+.music-bar.yt{display:grid;grid-template-columns:200px 1fr;grid-template-rows:1fr auto;gap:8px 12px;align-items:start}
+.music-bar.yt .yt-box{grid-row:1 / span 2}
+.music-bar.yt .music-title{white-space:normal;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical}
+.music-bar.yt button{justify-self:start;align-self:end}
+/* Profil */
+.avatar{width:72px;height:72px;border-radius:24px;display:grid;place-items:center;font-size:30px;font-weight:700;color:#fff;margin:0 auto 14px}
+.pcolors{display:flex;gap:10px;flex-wrap:wrap}
+.pcolor{width:34px;height:34px;border-radius:12px;border:2px solid transparent;padding:0}
+.pcolor.on{border-color:#fff}
+.pinfo{display:grid;grid-template-columns:auto 1fr;gap:8px 16px;font-size:14px;margin:16px 0 4px}
+.pinfo dt{color:var(--muted)}
+.pinfo dd{word-break:break-word}
+.field textarea{padding:11px 12px;resize:none;min-height:72px}
+.psec{font-size:13px;color:var(--muted);margin:16px 0 8px}
+.nm{cursor:pointer}
+/* Subbar, banner, balasan, reaksi, DM */
+.subbar{flex:none;display:flex;gap:8px;padding:8px 14px;border-bottom:1px solid var(--line);overflow-x:auto;scrollbar-width:none}
+.subbar::-webkit-scrollbar{display:none}
+.subbar button{flex:none;padding:6px 12px;font-size:13px;border-radius:20px;background:rgba(255,255,255,.04);white-space:nowrap;position:relative}
+.dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:#ff6b6b;margin-left:6px}
+.searchrow{flex:none;padding:8px 14px;border-bottom:1px solid var(--line)}
+.searchrow input{padding:9px 12px;border-radius:12px;background:rgba(3,8,20,.42)}
+.note-bar{flex:none;display:flex;align-items:center;gap:10px;padding:8px 14px;border-bottom:1px solid rgba(75,140,255,.28);background:rgba(75,140,255,.1);font-size:14px}
+.note-bar.pin{background:rgba(250,200,80,.09);border-color:rgba(250,200,80,.3)}
+.note-bar .nb-text{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.note-bar button{padding:4px 10px;font-size:12px;flex:none;border-radius:9px}
+.typing{flex:none;padding:3px 16px;font-size:12px;color:var(--muted)}
+.replybar{flex:none;display:flex;align-items:center;gap:10px;padding:8px 14px;border-top:1px solid var(--line);background:rgba(75,140,255,.08);font-size:13px}
+.replybar .rb-text{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.replybar button{padding:4px 10px;font-size:12px;border-radius:9px;flex:none}
+.m .more{font-size:13px;line-height:1;padding:1px 7px;border-radius:8px;border:none;color:var(--muted);background:none;letter-spacing:1px}
+.m .ed{font-size:11px;color:var(--muted)}
+.quote{border-left:3px solid var(--blue);padding:3px 8px;margin:-2px 0 6px;font-size:13px;border-radius:4px;background:rgba(255,255,255,.05);cursor:pointer;display:flex;flex-direction:column;white-space:normal}
+.quote b{font-size:12px;color:#8db7ff}
+.quote span{color:var(--muted);overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.mention{color:#8db7ff;font-weight:500}
+.mention.me{background:rgba(75,140,255,.25);border-radius:6px;padding:0 3px}
+.rx{display:flex;flex-wrap:wrap;gap:5px;margin-top:4px}
+.rx:empty{display:none}
+.rxchip{padding:2px 8px;font-size:13px;border-radius:12px;background:rgba(255,255,255,.05)}
+.rxchip.on{border-color:var(--blue);background:rgba(75,140,255,.18)}
+.rcpt{font-size:11px;color:var(--muted);margin-top:2px}
+.rcpt:empty{display:none}
+.flash .box{box-shadow:0 0 0 2px var(--blue)}
+.nomatch{display:none!important}
+.actwrap{position:fixed;inset:0;z-index:70;background:rgba(2,6,16,.6);display:flex;align-items:flex-end;justify-content:center}
+.actsheet{width:100%;max-width:480px;background:var(--surface);border:1px solid var(--line);border-radius:20px 20px 0 0;padding:10px 10px calc(10px + env(safe-area-inset-bottom));display:flex;flex-direction:column;gap:4px;max-height:80vh;overflow:auto}
+.actsheet button{border:none;text-align:left;padding:13px 14px;border-radius:12px;background:none}
+.actsheet button.danger,.uactions button.danger{color:#ff9292}
+.emojirow{display:flex;justify-content:space-around;padding:6px 0 10px;border-bottom:1px solid var(--line);margin-bottom:4px}
+.emojirow button{font-size:24px;padding:6px 10px;text-align:center;border-radius:14px}
+.uactions{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.uactions button{padding:8px 14px;border-radius:12px;font-size:14px}
+.dm-msgs{flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:10px}
+.dm-comp{display:flex;gap:8px;padding:10px 12px;border-top:1px solid var(--line);align-items:flex-end}
+.dm-comp textarea{flex:1;padding:10px 12px;resize:none;max-height:100px;min-height:44px;border-radius:14px}
+.dm-comp .send{height:44px;padding:0 16px;background:var(--text);color:var(--bg);border-color:var(--text);font-weight:500;border-radius:13px}
+/* Tema terang */
+:root[data-theme=light]{--bg:#f3f6fc;--surface:#fff;--line:rgba(30,50,90,.16);--line-soft:rgba(30,50,90,.1);--text:#142038;--muted:#5b6b88;--blue:#2868e8}
+:root[data-theme=light] body{background:radial-gradient(ellipse at 50% -20%,rgba(37,99,235,.1),transparent 48%),var(--bg)}
+:root[data-theme=light] .card{background:#fff;box-shadow:0 14px 50px rgba(20,40,90,.1)}
+:root[data-theme=light] .box{background:#fff}
+:root[data-theme=light] .m.me .box{background:#dbe8ff;border-color:rgba(40,104,232,.35)}
+:root[data-theme=light] header,:root[data-theme=light] footer{background:rgba(255,255,255,.92)}
+:root[data-theme=light] .field input,:root[data-theme=light] .field textarea,:root[data-theme=light] footer textarea,:root[data-theme=light] .searchrow input,:root[data-theme=light] .dm-comp textarea,:root[data-theme=light] select{background:#fff}
+:root[data-theme=light] .overlay{background:rgba(238,243,252,.94)}
+:root[data-theme=light] .overlay .top{background:rgba(255,255,255,.96)}
+:root[data-theme=light] .row,:root[data-theme=light] .admin-section{background:#fff}
+:root[data-theme=light] .toast,:root[data-theme=light] .actsheet{background:#fff}
+:root[data-theme=light] .subbar button,:root[data-theme=light] .rxchip,:root[data-theme=light] .btn.ghost{background:rgba(30,50,90,.05)}
+:root[data-theme=light] .quote{background:rgba(30,50,90,.06)}
+:root[data-theme=light] .purge-time{color:#142038}
+:root[data-theme=light] .admin-action.secondary{background:rgba(30,50,90,.06)}
+:root[data-theme=light] .m .more,:root[data-theme=light] .m .del{color:var(--muted)}
+/* Jarak Turnstile: tidak ada celah sebelum muncul */
+#cfBox{display:flex;justify-content:center;margin:12px 0 4px}
+#cfBox:empty{display:none}
+#authErr:empty{display:none}
+#authErr{margin:8px 0}
+.or-line{display:flex;align-items:center;gap:10px;margin:16px 0 12px;color:var(--muted);font-size:13px}
+.or-line:before,.or-line:after{content:"";flex:1;height:1px;background:var(--line)}
+.social-row{display:flex;justify-content:center;gap:12px}
+.social-btn{width:48px;height:48px;display:grid;place-items:center;padding:0;border-radius:14px;background:rgba(255,255,255,.05)}
+.social-btn svg{width:22px;height:22px}
+/* Layar verifikasi saat masuk / daftar */
+.check{position:fixed;inset:0;z-index:80;display:flex;align-items:center;justify-content:center;padding:24px;background:rgba(5,9,19,.88);backdrop-filter:blur(14px)}
+.check-box{width:100%;max-width:340px;text-align:center;border:1px solid var(--line);border-radius:20px;background:linear-gradient(160deg,rgba(19,31,55,.98),rgba(10,17,32,.98));padding:30px 24px;box-shadow:0 22px 70px rgba(0,0,0,.4)}
+.check-spin{width:34px;height:34px;margin:0 auto 18px;border-radius:50%;border:3px solid rgba(148,170,210,.2);border-top-color:#6aa2ff;animation:spin .8s linear infinite}
+.check-title{font-weight:600;font-size:17px;margin-bottom:6px}
+.check-sub{font-size:13px;color:var(--muted);line-height:1.5}
 </style>
 </head>
 <body>
@@ -182,8 +285,14 @@ select option{background:#0c1427;color:var(--text)}
     <div class="field hidden" id="fName"><label for="iName">Nama</label><input id="iName" autocomplete="nickname" maxlength="24"></div>
     <div class="field"><label for="iEmail">Email</label><input id="iEmail" type="text" autocomplete="username" inputmode="email" placeholder="Email atau username"></div>
     <div class="field"><label for="iPass">Password</label><input id="iPass" type="password" autocomplete="current-password"></div>
+    <div id="cfBox"></div>
     <div id="authErr" class="msg-err"></div>
     <button id="authGo" class="btn" type="button">Masuk</button>
+    <div class="or-line"><span>atau masuk dengan</span></div>
+    <div class="social-row">
+      <button class="social-btn" type="button" data-soon="Google" aria-label="Masuk dengan Google"><svg viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg></button>
+      <button class="social-btn" type="button" data-soon="Facebook" aria-label="Masuk dengan Facebook"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="12" fill="#1877F2"/><path fill="#fff" d="M13.5 19v-6h2l.4-2.5h-2.4V9c0-.7.3-1.2 1.3-1.2h1.2V5.6c-.3 0-1-.1-1.9-.1-1.9 0-3.2 1.2-3.2 3.3v1.7H8.8V13h2.1v6h2.6z"/></svg></button>
+    </div>
     <button id="forgot" class="link" type="button">Lupa password?</button>
     <p class="note hidden" id="upNote">Daftar harus pakai email asli. Link verifikasi akan dikirim ke email itu. Password bebas, minimal 6 karakter.</p>
   </div>
@@ -209,9 +318,18 @@ select option{background:#0c1427;color:var(--text)}
     <button id="btnAdmin" class="hidden" type="button">Admin</button>
     <button id="btnOut" type="button">Keluar</button>
   </header>
+  <div id="subbar" class="subbar"><button id="sbSearch" type="button">Cari</button><button id="sbDm" type="button">Pribadi<span class="dot hidden" id="dmDot"></span></button><button id="sbTheme" type="button">Tema</button><button id="sbNotif" type="button">Notif: mati</button></div>
+  <div id="searchRow" class="searchrow hidden"><input id="searchIn" placeholder="Cari di pesan yang tampil" autocomplete="off"></div>
+  <div id="musicBar" class="music-bar hidden"><div id="ytBox" class="yt-box hidden"></div><div class="music-info"><div class="music-title" id="musicTitle"></div><div class="music-sub" id="musicSub"></div></div><button id="musicMute" type="button">Bisukan</button></div>
+  <div id="purgeBar" class="purge-bar hidden"><div class="purge-title" id="purgeTitle">Penghapusan pesan akan dimulai</div><div class="purge-time" id="purgeTime">00:00</div></div>
+  <div id="annBar" class="note-bar hidden"><div class="nb-text" id="annText"></div><button id="annClose" type="button">Tutup</button></div>
+  <div id="pinBar" class="note-bar pin hidden"><div class="nb-text" id="pinText"></div><button id="pinOff" class="hidden" type="button">Lepas</button></div>
   <div id="list"><div class="empty" id="empty">Belum ada pesan. Mulai obrolan.</div></div>
   <div id="bannedBar" class="banned hidden">Akunmu sedang dibatasi. Lihat detail status moderasi.</div>
   <div id="jailBar" class="banned hidden"></div>
+  <div id="lockBar" class="banned hidden">Chat sedang dikunci admin. Hanya admin yang bisa mengirim pesan.</div>
+  <div id="typingLine" class="typing hidden"></div>
+  <div id="replyBar" class="replybar hidden"><div class="rb-text" id="replyText"></div><button id="replyX" type="button">Batal</button></div>
   <footer id="composer">
     <div class="sheet hidden" id="sheet">
       <button id="pickImg" type="button">Foto</button>
@@ -235,25 +353,52 @@ select option{background:#0c1427;color:var(--text)}
 <section id="vProfile" class="overlay hidden">
   <div class="top"><h2>Profil</h2><button id="profClose" type="button">Tutup</button></div>
   <div class="body"><div class="card" style="margin:0 auto">
+    <div class="avatar" id="pAvatar"></div>
     <div class="field"><label for="iProfName">Nama</label><input id="iProfName" maxlength="24" autocomplete="nickname"></div>
-    <div class="field"><label>Email</label><div id="profEmail" class="note" style="margin:0"></div></div>
+    <div class="field"><label for="iBio">Bio</label><textarea id="iBio" maxlength="120" placeholder="Ceritakan sedikit tentang kamu"></textarea></div>
+    <div class="field"><label for="iStatus">Status</label><input id="iStatus" maxlength="40" placeholder="Contoh: Lagi santai"></div>
+    <div class="field"><label for="iCity">Kota</label><input id="iCity" maxlength="40" autocomplete="address-level2"></div>
+    <div class="field"><label for="iHobby">Hobi</label><input id="iHobby" maxlength="60" placeholder="Contoh: musik, game, fotografi"></div>
+    <div class="field"><label for="iIg">Instagram</label><input id="iIg" maxlength="31" placeholder="username tanpa @" autocapitalize="none"></div>
+    <div class="field"><label>Warna profil</label><div class="pcolors" id="pColors"></div></div>
+    <div class="psec">Info akun</div>
+    <dl class="pinfo">
+      <dt>Email</dt><dd id="profEmail"></dd>
+      <dt>Peran</dt><dd id="profRole"></dd>
+      <dt>Bergabung</dt><dd id="profJoined"></dd>
+      <dt>Terakhir masuk</dt><dd id="profLast"></dd>
+    </dl>
     <div id="profMsg" class="msg-err"></div>
-    <button id="profSave" class="btn" type="button">Simpan nama</button>
-    <p class="note">Nama baru akan tampil di semua pesanmu, termasuk yang lama.</p>
+    <button id="profSave" class="btn" type="button">Simpan profil</button>
+    <p class="note">Nama baru akan tampil di semua pesanmu, termasuk yang lama. Bio, status, kota, hobi, dan Instagram bisa dilihat pengguna lain saat mereka mengetuk namamu di chat. Email tidak ditampilkan ke orang lain.</p>
+    <div class="psec">Pengguna diblokir</div>
+    <div id="blockedList" class="note" style="margin:0 0 6px"></div>
+    <div class="psec">Keamanan</div>
+    <div class="field"><label for="iOldPw">Password saat ini</label><input id="iOldPw" type="password" autocomplete="current-password"></div>
+    <div class="field"><label for="iNewPw">Password baru (minimal 6 karakter)</label><input id="iNewPw" type="password" autocomplete="new-password"></div>
+    <div id="pwMsg" class="msg-err"></div>
+    <button id="pwSave" class="btn ghost" type="button">Ganti password</button>
+    <button id="delAcc" class="btn ghost" type="button" style="color:#ff9292;border-color:rgba(255,107,107,.35)">Hapus akun</button>
   </div></div>
 </section>
 
 <!-- Pratinjau foto -->
-<div id="purgeBar" class="purge-bar hidden"><div class="purge-title" id="purgeTitle">Penghapusan pesan akan dimulai</div><div class="purge-time" id="purgeTime">00:00</div></div>
+<section id="vUser" class="overlay hidden"><div class="top"><h2>Profil pengguna</h2><button id="userClose" type="button">Tutup</button></div><div class="body"><div class="card" style="margin:0 auto"><div class="avatar" id="uAvatar"></div><div class="brand" id="uName" style="font-size:22px;text-align:center"></div><dl class="pinfo" id="uInfo"></dl><div class="uactions" id="uActions"></div></div></div></section>
+
+<div id="actWrap" class="actwrap hidden"><div class="actsheet" id="actSheet"></div></div>
+
+<section id="vDmList" class="overlay hidden"><div class="top"><h2>Pesan pribadi</h2><button id="dmListClose" type="button">Tutup</button></div><div class="body" id="dmListBody"></div></section>
+<section id="vDm" class="overlay hidden"><div class="top"><h2 id="dmTitle">Pesan pribadi</h2><button id="dmClose" type="button">Tutup</button></div><div class="dm-msgs" id="dmMsgs"></div><div class="dm-comp"><textarea id="dmTxt" rows="1" maxlength="1000" placeholder="Tulis pesan pribadi"></textarea><button class="send" id="dmSend" type="button">Kirim</button></div></section>
 
 <section id="vLight" class="overlay light hidden"><div class="top"><h2>Foto</h2><button id="lightClose" type="button">Tutup</button></div><div class="body"><img id="lightImg" alt=""></div></section>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, sendEmailVerification,
-  sendPasswordResetEmail, onAuthStateChanged, signOut, updateProfile, setPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import { getDatabase, ref, push, set, remove, onChildAdded, onChildRemoved, onValue, serverTimestamp,
-  query, limitToLast, get, update, onDisconnect } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+import { getAuth, signInWithCustomToken, signInWithEmailAndPassword, sendEmailVerification,
+  sendPasswordResetEmail, onAuthStateChanged, signOut, updateProfile, setPersistence, browserLocalPersistence,
+  updatePassword, reauthenticateWithCredential, EmailAuthProvider, deleteUser } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { getDatabase, ref, push, set, remove, onChildAdded, onChildRemoved, onChildChanged, onValue, serverTimestamp,
+  query, limitToLast, limitToFirst, get, update, onDisconnect } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 
 /* ====== ISI BAGIAN INI ====== */
 const firebaseConfig = {
@@ -263,6 +408,8 @@ const firebaseConfig = {
   projectId: "ruang-obrol",
   appId: "1:630514464050:web:3a6b445d79ff97a6c1932b",
 };
+// Site key Cloudflare Turnstile (publik, dari dashboard Cloudflare)
+const TURNSTILE_SITE_KEY = "0x4AAAAAAGAjoHwEjnf2nYUB";
 // Email yang otomatis jadi admin (harus sama dengan email di Rules database)
 const ADMIN_EMAILS = ["lifxcdz@gmail.com"];
 /* ============================ */
@@ -312,24 +459,43 @@ function setMode(m){
   $('iPass').autocomplete = m==='in'?'current-password':'new-password';
   $('forgot').classList.toggle('hidden',m!=='in'); $('authErr').textContent='';
 }
+document.querySelectorAll('[data-soon]').forEach(b=>b.onclick=()=>toast('Masuk dengan '+b.dataset.soon+' segera hadir.'));
 $('tabIn').onclick=()=>setMode('in'); $('tabUp').onclick=()=>setMode('up');
+
+/* ---- Cloudflare Turnstile ---- */
+let cfWidget=null, cfToken=null;
+function mountTurnstile(){
+  if(cfWidget!==null||!window.turnstile||TURNSTILE_SITE_KEY.startsWith('ISI_')) return;
+  cfWidget=window.turnstile.render('#cfBox',{sitekey:TURNSTILE_SITE_KEY,theme:'dark',
+    callback:t=>{cfToken=t;}, 'expired-callback':()=>{cfToken=null;}, 'error-callback':()=>{cfToken=null;}});
+}
+const cfPoll=setInterval(()=>{ mountTurnstile(); if(cfWidget!==null) clearInterval(cfPoll); },300);
+function resetTurnstile(){ cfToken=null; try{ if(cfWidget!==null) window.turnstile.reset(cfWidget); }catch(e){} }
+async function authViaServer(body){
+  const r=await fetch('/api/auth',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  const d=await r.json().catch(()=>({}));
+  if(!r.ok||!d.token){ const e=new Error(d.error||'Permintaan gagal.'); e.apiMsg=true; throw e; }
+  return d.token;
+}
 
 $('authGo').onclick=async()=>{
   let email=$('iEmail').value.trim(), pass=$('iPass').value, name=$('iName').value.trim();
    if(mode==='in' && !email.includes('@')) email=email.toLowerCase().replace(/[^a-z0-9._-]/g,'')+'@akun.ruang-obrol.app';
   $('authErr').textContent='';
   if(!email||!pass){ $('authErr').textContent='Isi email dan password.'; return; }
+  if(mode==='up'&&!name){ $('authErr').textContent='Isi nama.'; return; }
+  if(TURNSTILE_SITE_KEY.startsWith('ISI_')){ $('authErr').textContent='Verifikasi belum dikonfigurasi (site key kosong).'; return; }
+  if(!cfToken){ $('authErr').textContent='Selesaikan verifikasi Cloudflare dulu.'; return; }
   $('authGo').disabled=true;
   try{
+    const customToken=await authViaServer({mode,email,password:pass,name,cf:cfToken});
+    const cred=await signInWithCustomToken(auth,customToken);
     if(mode==='up'){
-      if(!name){ $('authErr').textContent='Isi nama.'; $('authGo').disabled=false; return; }
-      const c=await createUserWithEmailAndPassword(auth,email,pass);
-      await updateProfile(c.user,{displayName:name});
-      await sendEmailVerification(c.user);
-    }else{
-      await signInWithEmailAndPassword(auth,email,pass);
+      await updateProfile(cred.user,{displayName:name});
+      await sendEmailVerification(cred.user);
     }
-  }catch(e){ $('authErr').textContent=authMsg(e); }
+  }catch(e){ $('authErr').textContent=e.apiMsg?e.message:authMsg(e); }
+  resetTurnstile();
   $('authGo').disabled=false;
 };
 $('forgot').onclick=async()=>{
@@ -356,18 +522,115 @@ $('btnOut').onclick=async()=>{ await dropPresence(); signOut(auth); };
 /* ---- Sesi ---- */
 let me=null, isAdmin=false, unsubs=[], entered=false; const names={};
 let myPres=null, srvOff=0, purgeTimer=null, purging=false;
+const usersData={};
+let musicEl=null, musicCur=null, musicMuted=false, ytPlayer=null, ytTimer=null, ytChecked=false, ytLoading=null;
+function stopMusicLocal(){
+  if(musicEl){ const a=musicEl; musicEl=null; a.onloadedmetadata=a.onerror=a.onended=a.ontimeupdate=null; try{ a.pause(); a.removeAttribute('src'); a.load(); }catch(e){} }
+  clearInterval(ytTimer); ytTimer=null; ytChecked=false;
+  if(ytPlayer){ try{ ytPlayer.destroy(); }catch(e){} ytPlayer=null; }
+  $('ytBox').classList.add('hidden'); $('ytBox').innerHTML=''; $('musicBar').classList.remove('yt');
+  $('musicBar').classList.add('hidden');
+}
+async function musicFinished(){
+  stopMusicLocal(); musicCur=null;
+  if(!isAdmin) return;
+  try{
+    const qs=await get(query(ref(db,'broadcast/queue'),limitToFirst(1)));
+    const v=qs.val();
+    if(v){
+      const k=Object.keys(v)[0], it=v[k];
+      await remove(ref(db,'broadcast/queue/'+k));
+      await set(ref(db,'broadcast/music'),{url:it.url,title:it.title||'Lagu dari admin',startAt:Date.now()+srvOff,by:me.uid});
+    }else{
+      await remove(ref(db,'broadcast/music'));
+    }
+  }catch(e){}
+}
+function handleMusic(m){
+  if(m&&musicCur&&m.url===musicCur.url&&m.startAt===musicCur.startAt) return;
+  stopMusicLocal(); musicCur=null;
+  if(!m||!m.url) return;
+  musicCur=m;
+  $('musicTitle').textContent=m.title||'Lagu dari admin';
+  $('musicSub').textContent='Memuat...';
+  $('musicBar').classList.remove('hidden');
+  const vid=ytId(m.url);
+  if(vid&&/^[\w-]{11}$/.test(vid)){ playYT(m,vid); return; }
+  const a=new Audio(); musicEl=a; a.preload='auto'; a.muted=musicMuted;
+  a.onloadedmetadata=()=>{
+    const el=(Date.now()+srvOff-Number(m.startAt))/1000;
+    if(isFinite(a.duration)&&el>=a.duration-0.5){ musicFinished(); return; }
+    try{ if(el>1) a.currentTime=el; }catch(e){}
+    a.play().catch(()=>{ $('musicSub').textContent='Ketuk banner untuk memutar'; });
+  };
+  a.ontimeupdate=()=>{ $('musicSub').textContent=fmtCount(Math.floor(a.currentTime))+' / '+(isFinite(a.duration)?fmtCount(Math.floor(a.duration)):'--:--'); };
+  a.onended=musicFinished;
+  a.onerror=()=>{ $('musicSub').textContent='Lagu tidak bisa dimuat'; if(isAdmin) toast('Link lagu tidak bisa diputar. Pastikan link langsung ke file audio.'); };
+  a.src=m.url;
+}
+function ytId(u){
+  try{
+    const x=new URL(u); const h=x.hostname.replace(/^(www|m|music)\./,'');
+    if(h==='youtu.be') return x.pathname.slice(1).split('/')[0];
+    if(h==='youtube.com'||h==='youtube-nocookie.com'){
+      if(x.pathname==='/watch') return x.searchParams.get('v');
+      const m=x.pathname.match(/^\/(shorts|embed|live)\/([\w-]{11})/); if(m) return m[2];
+    }
+  }catch(e){}
+  return null;
+}
+function loadYT(){
+  if(window.YT&&window.YT.Player) return Promise.resolve();
+  if(ytLoading) return ytLoading;
+  ytLoading=new Promise(res=>{
+    const prev=window.onYouTubeIframeAPIReady;
+    window.onYouTubeIframeAPIReady=()=>{ if(prev) prev(); res(); };
+    const s=document.createElement('script'); s.src='https://www.youtube.com/iframe_api'; document.head.appendChild(s);
+  });
+  return ytLoading;
+}
+async function playYT(m,vid){
+  $('musicBar').classList.add('yt'); $('ytBox').classList.remove('hidden'); $('ytBox').innerHTML='<div id="ytHost"></div>';
+  await loadYT();
+  if(musicCur!==m) return;
+  const elapsed=()=>(Date.now()+srvOff-Number(m.startAt))/1000;
+  ytPlayer=new window.YT.Player('ytHost',{width:200,height:113,videoId:vid,
+    playerVars:{autoplay:1,playsinline:1,controls:1,rel:0,modestbranding:1},
+    events:{
+      onReady:e=>{
+        if(musicMuted) e.target.mute();
+        const el=elapsed(); if(el>1) e.target.seekTo(el,true);
+        e.target.playVideo();
+        ytTimer=setInterval(()=>{ try{ const c=ytPlayer.getCurrentTime(), d=ytPlayer.getDuration(); $('musicSub').textContent=fmtCount(Math.floor(c))+' / '+(d?fmtCount(Math.floor(d)):'--:--'); }catch(_){} },500);
+      },
+      onStateChange:e=>{
+        if(e.data===1&&!ytChecked){ ytChecked=true; const d=e.target.getDuration(); if(d>0&&elapsed()>=d-1){ musicFinished(); return; } }
+        if(e.data===0) musicFinished();
+      },
+      onError:()=>{ $('musicSub').textContent='Video ini tidak bisa diputar di sini'; if(isAdmin) toast('Video tidak mengizinkan disematkan. Coba video lain.'); }
+    }});
+}
+$('musicBar').onclick=()=>{
+  if(!musicCur) return;
+  if(musicEl&&musicEl.paused) musicEl.play().catch(()=>{});
+  if(ytPlayer&&ytPlayer.getPlayerState&&ytPlayer.getPlayerState()!==1) try{ ytPlayer.playVideo(); }catch(e){}
+};
+$('musicMute').onclick=e=>{
+  e.stopPropagation(); musicMuted=!musicMuted;
+  if(musicEl) musicEl.muted=musicMuted;
+  if(ytPlayer) try{ musicMuted?ytPlayer.mute():ytPlayer.unMute(); }catch(_){}
+  $('musicMute').textContent=musicMuted?'Bunyikan':'Bisukan';
+};
 const fmtCount=s=>{ const h=Math.floor(s/3600), m=Math.floor(s%3600/60), x=s%60, p=n=>String(n).padStart(2,'0'); return h?h+':'+p(m)+':'+p(x):p(m)+':'+p(x); };
 async function dropPresence(){ if(myPres){ const r=myPres; myPres=null; try{ await remove(r); }catch(e){} } }
 async function runPurge(){
-  if(purging) return; purging=true;
+  if(purging||!isAdmin) return;
+  purging=true;
   try{
-    try{ await remove(ref(db,'messages')); }
-    catch(e){ const s=await get(ref(db,'messages')); const ks=Object.keys(s.val()||{}); await Promise.all(ks.map(k=>remove(ref(db,'messages/'+k)))); }
-    await remove(ref(db,'broadcast/purge'));
+    await moderationApi({action:'purge'});
     toast('Semua pesan sudah dihapus.');
   }catch(e){
-    try{ await remove(ref(db,'broadcast/purge')); }catch(_){}
-    toast('Gagal menghapus semua pesan. Cek Rules database.');
+    toast(e.message||'Gagal menghapus semua pesan.');
   }
   purging=false;
 }
@@ -401,7 +664,7 @@ onAuthStateChanged(auth,async u=>{
   enter(u);
 });
 
-function cleanup(){ unsubs.forEach(f=>f()); unsubs=[]; entered=false; clearInterval(purgeTimer); purgeTimer=null; $('purgeBar').classList.add('hidden'); $('vProfile').classList.add('hidden'); $('vAdmin').classList.add('hidden'); $('list').innerHTML='<div class="empty" id="empty">Belum ada pesan. Mulai obrolan.</div>'; }
+function cleanup(){ unsubs.forEach(f=>f()); unsubs=[]; entered=false; stBanned=stJail=stLock=false; replyTo=null; $('replyBar').classList.add('hidden'); $('typingLine').classList.add('hidden'); $('pinBar').classList.add('hidden'); $('annBar').classList.add('hidden'); $('vDmList').classList.add('hidden'); closeActs(); clearInterval(purgeTimer); purgeTimer=null; $('purgeBar').classList.add('hidden'); stopMusicLocal(); musicCur=null; $('vUser').classList.add('hidden'); $('vProfile').classList.add('hidden'); $('vAdmin').classList.add('hidden'); $('list').innerHTML='<div class="empty" id="empty">Belum ada pesan. Mulai obrolan.</div>'; }
 
 async function enter(u){
   if(entered) return;
@@ -422,7 +685,7 @@ async function enter(u){
   $('btnAdmin').classList.toggle('hidden',!isAdmin);
   show('vChat');
   try{
-    await update(ref(db,'users/'+u.uid),{name:u.displayName||u.email.split('@')[0]});
+    await update(ref(db,'users/'+u.uid),{name:u.displayName||u.email.split('@')[0],joinedAt:Date.parse(u.metadata.creationTime)||Date.now()});
     await update(ref(db,'private/'+u.uid),{email:u.email});
   }catch(e){ toast('Gagal menyimpan profil. Cek Rules database.'); }
 
@@ -434,36 +697,87 @@ async function enter(u){
   // Timer hapus semua pesan
   unsubs.push(onValue(ref(db,'.info/serverTimeOffset'),s=>{ srvOff=Number(s.val())||0; }));
   unsubs.push(onValue(ref(db,'broadcast/purge'),s=>handlePurge(s.val())));
+  unsubs.push(onValue(ref(db,'broadcast/music'),s=>handleMusic(s.val())));
 
   unsubs.push(onValue(ref(db,'banned/'+u.uid),s=>{
-    const v=s.val(); const b=!!(v&&(!v.expiresAt||Number(v.expiresAt)>Date.now())); $('bannedBar').classList.toggle('hidden',!b); $('composer').classList.toggle('hidden',b);
+    const v=s.val(); stBanned=!!(v&&(!v.expiresAt||Number(v.expiresAt)>Date.now())); updateComposer();
   }));
-  unsubs.push(onValue(ref(db,'jail/'+u.uid),s=>{const j=s.val();const active=!!(j&&Number(j.until)>Date.now());$('jailBar').classList.toggle('hidden',!active);$('jailBar').textContent=active?'Akun dalam Jail sampai '+new Date(j.until).toLocaleString('id-ID')+'. Alasan: '+(j.reason||'Pelanggaran aturan'):'';$('composer').classList.toggle('hidden',active||$('bannedBar').classList.contains('hidden')===false);}));
+  unsubs.push(onValue(ref(db,'jail/'+u.uid),s=>{
+    const j=s.val(); stJail=!!(j&&Number(j.until)>Date.now());
+    $('jailBar').textContent=stJail?'Akun dalam Jail sampai '+new Date(j.until).toLocaleString('id-ID')+'. Alasan: '+(j.reason||'Pelanggaran aturan'):'';
+    updateComposer();
+  }));
+  unsubs.push(onValue(ref(db,'settings/locked'),s=>{ stLock=!!s.val(); updateComposer(); }));
+  unsubs.push(onValue(ref(db,'pinned'),s=>handlePin(s.val())));
+  unsubs.push(onValue(ref(db,'broadcast/announce'),s=>handleAnn(s.val())));
+  unsubs.push(onValue(ref(db,'typing'),s=>{ typingData=s.val()||{}; drawTyping(); }));
+  unsubs.push(onValue(ref(db,'reads'),s=>{ readsData=s.val()||{}; updateReceipts(); }));
+  unsubs.push(onValue(ref(db,'dmIndex/'+u.uid),s=>{
+    dmIdx=s.val()||{};
+    $('dmDot').classList.toggle('hidden',!Object.keys(dmIdx).some(k=>dmIdx[k]&&dmIdx[k].unread&&!blocked.has(k)));
+    if(!$('vDmList').classList.contains('hidden')) drawDmList();
+  }));
+  live.on=false; setTimeout(()=>{ live.on=true; },2500);
+  unsubs.push(()=>{ Object.keys(rxUnsubs).forEach(k=>{ try{ rxUnsubs[k](); }catch(e){} delete rxUnsubs[k]; }); closeDm(); setTyping(false); });
 
   unsubs.push(onValue(ref(db,'users'),s=>{
     const v=s.val()||{}; for(const k in v) names[k]=v[k].name;
+    Object.keys(usersData).forEach(k=>delete usersData[k]); Object.assign(usersData,v);
     document.querySelectorAll('.nm').forEach(el=>{ if(me&&el.dataset.uid!==me.uid&&names[el.dataset.uid]) el.textContent=names[el.dataset.uid]; });
   }));
   const q=query(ref(db,'messages'),limitToLast(LOAD_LAST));
   unsubs.push(onChildAdded(q,s=>addMsg(s.key,s.val()),err=>toast('Tidak bisa membaca pesan: '+err.code)));
-  unsubs.push(onChildRemoved(q,s=>{ const el=$('m_'+s.key); if(el) el.remove(); if(!$('list').querySelector('.m')&&!$('empty')){ const d=document.createElement('div'); d.className='empty'; d.id='empty'; d.textContent='Belum ada pesan. Mulai obrolan.'; $('list').appendChild(d); } }));
+  unsubs.push(onChildChanged(q,s=>updateMsg(s.key,s.val())));
+  unsubs.push(onChildRemoved(q,s=>{ if(rxUnsubs[s.key]){ try{ rxUnsubs[s.key](); }catch(e){} delete rxUnsubs[s.key]; } delete msgData[s.key]; const el=$('m_'+s.key); if(el) el.remove(); if(!$('list').querySelector('.m')&&!$('empty')){ const d=document.createElement('div'); d.className='empty'; d.id='empty'; d.textContent='Belum ada pesan. Mulai obrolan.'; $('list').appendChild(d); } }));
 }
 
 /* ---- Tampil pesan ---- */
+const live={on:false}, msgData={}, rxUnsubs={};
+const EMOJIS=['👍','❤️','😂','😮','😢','🙏'];
+let searchQ='', replyTo=null, readsData={}, typingData={}, typingLast=0, typingIdle=null, readTimer=null, lastRead=0;
+let stBanned=false, stJail=false, stLock=false, annCur=null;
+const snippet=(m,n=80)=>m.type==='image'?'Foto':m.type==='file'?'File: '+(m.fname||''):String(m.text||'').slice(0,n);
+const myTag=()=>String((me&&me.displayName)||'').trim().split(/\s+/)[0].toLowerCase();
+const mentionsMe=t=>{ const n=myTag(); return !!n&&String(t||'').toLowerCase().includes('@'+n); };
+function renderText(el,text){
+  el.textContent='';
+  const re=/@([^\s@]{1,24})/g; let last=0, mm;
+  while((mm=re.exec(text))){
+    el.append(text.slice(last,mm.index));
+    const s=document.createElement('span'); s.className='mention'+(mm[1].toLowerCase()===myTag()?' me':''); s.textContent=mm[0]; el.append(s);
+    last=mm.index+mm[0].length;
+  }
+  el.append(text.slice(last));
+}
+function jumpTo(id){ const t=$('m_'+id); if(!t) return toast('Pesan asli tidak ada di layar.'); t.scrollIntoView({block:'center',behavior:'smooth'}); t.classList.add('flash'); setTimeout(()=>t.classList.remove('flash'),1300); }
 function addMsg(id,m){
   if($('m_'+id)) return;
+  document.querySelectorAll('[data-real="'+id+'"]').forEach(x=>x.remove());
   const list=$('list'); const e=$('empty'); if(e) e.remove();
   const near = list.scrollHeight-list.scrollTop-list.clientHeight<140;
   const mine = m.uid===me.uid;
-  const w=document.createElement('div'); w.className='m'+(mine?' me':''); w.id='m_'+id;
+  const tmp = String(id).startsWith('tmp');
+  if(!tmp) msgData[id]=m;
+  const w=document.createElement('div'); w.className='m'+(mine?' me':''); w.id='m_'+id; w.dataset.uid=m.uid; w.dataset.ts=m.ts||0;
+  if(!mine&&blocked.has(m.uid)) w.classList.add('hidden');
 
   const meta=document.createElement('div'); meta.className='meta';
-  const nm=document.createElement('span'); nm.className='nm'; nm.dataset.uid=m.uid; nm.textContent=mine?'Kamu':(names[m.uid]||m.name||'Pengguna'); meta.appendChild(nm);
+  const nm=document.createElement('span'); nm.className='nm'; nm.dataset.uid=m.uid; nm.textContent=mine?'Kamu':(names[m.uid]||m.name||'Pengguna'); nm.onclick=()=>openUser(m.uid); meta.appendChild(nm);
   if(m.admin){ const b=document.createElement('span'); b.className='badge'; b.textContent='Admin'; meta.appendChild(b); }
   const tm=document.createElement('span'); tm.textContent=fmtTime(m.ts); meta.appendChild(tm);
+  const ed=document.createElement('span'); ed.className='ed'; ed.textContent=m.edited?'(diedit)':''; meta.appendChild(ed);
+  if(!tmp){ const more=document.createElement('button'); more.className='more'; more.type='button'; more.textContent='···'; more.setAttribute('aria-label','Aksi pesan'); more.onclick=()=>openActions(id); meta.appendChild(more); }
   w.appendChild(meta);
 
   const box=document.createElement('div'); box.className='box';
+  if(m.reply){
+    const q=document.createElement('div'); q.className='quote';
+    const qn=document.createElement('b'); qn.textContent=m.reply.name||'Pengguna';
+    const qt=document.createElement('span'); qt.textContent=m.reply.text||'';
+    q.append(qn,qt);
+    q.onclick=()=>jumpTo(m.reply.id);
+    box.appendChild(q);
+  }
   if(m.type==='image'){
     const im=document.createElement('img'); im.src=m.data; im.alt='Foto'; im.onclick=()=>{ $('lightImg').src=m.data; $('vLight').classList.remove('hidden'); };
     box.appendChild(im);
@@ -473,16 +787,17 @@ function addMsg(id,m){
     a.querySelector('.fn').textContent=m.fname||'file'; a.querySelector('.fs').textContent=fmtSize(m.size||0)+' · ketuk untuk unduh';
     box.appendChild(a);
   }
-  if(m.text){ const t=document.createElement('div'); t.className='cap'; t.textContent=m.text; box.appendChild(t); }
+  if(m.text){ const t=document.createElement('div'); t.className='cap'; renderText(t,m.text); box.appendChild(t); }
   w.appendChild(box);
 
-  if(mine||isAdmin){
-    const d=document.createElement('button'); d.className='del'; d.textContent='Hapus';
-    d.onclick=async()=>{ if(!confirm('Hapus pesan ini?')) return; try{ await remove(ref(db,'messages/'+id)); }catch(e){ toast('Gagal menghapus.'); } };
-    w.appendChild(d);
-  }
+  const rx=document.createElement('div'); rx.className='rx'; rx.id='rx_'+id; w.appendChild(rx);
+  const rc=document.createElement('div'); rc.className='rcpt'; if(mine) w.appendChild(rc);
   list.appendChild(w);
+  if(!tmp){ watchReactions(id); updateReceipts(); }
+  if(searchQ) w.classList.toggle('nomatch',!(w.textContent||'').toLowerCase().includes(searchQ));
   if(near||mine) list.scrollTop=list.scrollHeight;
+  if(live.on&&!mine&&!tmp) notifyMsg(m);
+  scheduleRead();
 }
 $('vLight').querySelector('#lightClose').onclick=()=>$('vLight').classList.add('hidden');
 
@@ -493,11 +808,27 @@ async function sendMsg(extra){
   if(!extra && !text) return;
   const payload={type:extra&&extra.type||'text',text:text,...(extra||{})};
   $('send').disabled=true;
+  const draft=$('txt').value;
+  if(!extra){ $('txt').value=''; autosize(); }
+  const tmpId='tmp'+Date.now();
+  const rep=replyTo; clearReply();
+  setTyping(false);
+  addMsg(tmpId,{uid:me.uid,name:me.displayName||'',ts:Date.now(),type:payload.type,text:payload.text,data:payload.data,fname:payload.fname,size:payload.size,reply:rep||undefined});
+  const tmpEl=$('m_'+tmpId); if(tmpEl){ tmpEl.style.opacity='.6'; }
   try{
-    const result=await moderationApi({...payload,action:'send'});
-    $('txt').value=''; autosize();
+    const result=await moderationApi({...payload,action:'send',replyTo:rep?rep.id:undefined});
+    if(extra){ $('txt').value=''; autosize(); }
+    if(tmpEl){
+      if(result.id&&!$('m_'+result.id)){ tmpEl.dataset.real=result.id; setTimeout(()=>tmpEl.remove(),6000); }
+      else tmpEl.remove();
+    }
     if(result.moderation){const m=result.moderation;toast(m.action==='warning'?'Peringatan: '+m.reason:m.action==='jail'?'Akun masuk Jail sementara: '+m.reason:'Akun diblokir sementara: '+m.reason);}
-  }catch(e){toast(e.message||'Pesan gagal dikirim.');}
+  }catch(e){
+    if(tmpEl) tmpEl.remove();
+    if(rep&&!replyTo) setReply(rep);
+    if(!extra && !$('txt').value){ $('txt').value=draft; autosize(); }
+    toast(e.message||'Pesan gagal dikirim.');
+  }
   $('send').disabled=false;
 }
 $('send').onclick=()=>sendMsg();
@@ -536,35 +867,347 @@ $('fAny').onchange=async e=>{
 };
 
 /* ---- Profil ---- */
+const PCOLORS=['#2868e8','#8b5cf6','#ec4899','#f97316','#10b981','#06b6d4'];
+let pColor=PCOLORS[0];
+const initial=n=>(String(n||'?').trim()[0]||'?').toUpperCase();
+const fmtDate=ts=>ts?new Date(Number(ts)).toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'}):'-';
+function paintAvatar(el,name,color){ el.textContent=initial(name); el.style.background=color||PCOLORS[0]; }
+function drawColors(){
+  const box=$('pColors'); box.innerHTML='';
+  PCOLORS.forEach(c=>{
+    const b=document.createElement('button'); b.type='button'; b.className='pcolor'+(c===pColor?' on':''); b.style.background=c; b.setAttribute('aria-label','Pilih warna');
+    b.onclick=()=>{ pColor=c; drawColors(); paintAvatar($('pAvatar'),$('iProfName').value||me.displayName,pColor); };
+    box.appendChild(b);
+  });
+}
 $('who').onclick=()=>{
-  $('iProfName').value=me.displayName||''; $('profEmail').textContent=me.email;
-  $('profMsg').textContent=''; $('vProfile').classList.remove('hidden');
+  const p=usersData[me.uid]||{};
+  $('iProfName').value=me.displayName||''; $('iBio').value=p.bio||''; $('iStatus').value=p.status||''; $('iCity').value=p.city||''; $('iHobby').value=p.hobby||''; $('iIg').value=p.ig||'';
+  pColor=p.color||PCOLORS[0]; drawColors(); paintAvatar($('pAvatar'),me.displayName,pColor);
+  $('profEmail').textContent=me.email;
+  $('profRole').textContent=isAdmin?'Admin':'Anggota';
+  $('profJoined').textContent=fmtDate(Date.parse((me.metadata||{}).creationTime));
+  $('profLast').textContent=(me.metadata||{}).lastSignInTime?new Date(me.metadata.lastSignInTime).toLocaleString('id-ID'):'-';
+  $('profMsg').textContent=''; $('pwMsg').textContent=''; $('iOldPw').value=''; $('iNewPw').value='';
+  drawBlockedList(); $('vProfile').classList.remove('hidden');
 };
+$('iProfName').addEventListener('input',()=>paintAvatar($('pAvatar'),$('iProfName').value,pColor));
 $('profClose').onclick=()=>$('vProfile').classList.add('hidden');
+function openUser(uid){
+  const p=usersData[uid]; if(!p) return;
+  paintAvatar($('uAvatar'),p.name,p.color); $('uName').textContent=p.name||'Pengguna';
+  const rows=[['Bio',p.bio],['Status',p.status],['Kota',p.city],['Hobi',p.hobby],['Instagram',p.ig?'@'+p.ig:''],['Bergabung',p.joinedAt?fmtDate(p.joinedAt):'']].filter(r=>r[1]);
+  const dl=$('uInfo'); dl.innerHTML='';
+  if(!rows.length){ const d=document.createElement('dd'); d.style.gridColumn='1 / -1'; d.style.color='var(--muted)'; d.textContent='Belum ada data profil.'; dl.append(d); }
+  rows.forEach(([k,v])=>{ const dt=document.createElement('dt'); dt.textContent=k; const dd=document.createElement('dd'); dd.textContent=v; dl.append(dt,dd); });
+  const act=$('uActions'); act.innerHTML='';
+  if(uid!==me.uid){
+    const mk=(t,fn,cls)=>{ const b=document.createElement('button'); b.type='button'; b.textContent=t; if(cls) b.className=cls; b.onclick=fn; act.append(b); };
+    mk('Pesan pribadi',()=>{ $('vUser').classList.add('hidden'); openDm(uid); });
+    mk('Sebut @'+String(p.name||'').trim().split(/\s+/)[0],()=>{ const t=$('txt'); t.value=(t.value?t.value+' ':'')+'@'+String(p.name||'').trim().split(/\s+/)[0]+' '; $('vUser').classList.add('hidden'); t.focus(); autosize(); });
+    const isB=blocked.has(uid);
+    mk(isB?'Buka blokir':'Blokir',()=>{ setBlocked(uid,!isB); toast(isB?'Blokir dibuka.':'Pengguna diblokir. Pesannya disembunyikan di perangkatmu.'); openUser(uid); },isB?'':'danger');
+  }
+  $('vUser').classList.remove('hidden');
+}
+$('userClose').onclick=()=>$('vUser').classList.add('hidden');
 $('profSave').onclick=async()=>{
   const n=$('iProfName').value.trim(), out=$('profMsg');
   if(!n){ out.className='msg-err'; out.textContent='Nama tidak boleh kosong.'; return; }
   $('profSave').disabled=true;
+  const ig=$('iIg').value.trim().replace(/^@/,'').replace(/[^A-Za-z0-9._]/g,'').slice(0,30);
+  const data={name:n,bio:$('iBio').value.trim().slice(0,120),status:$('iStatus').value.trim().slice(0,40),city:$('iCity').value.trim().slice(0,40),hobby:$('iHobby').value.trim().slice(0,60),ig,color:pColor};
   try{
     await updateProfile(me,{displayName:n});
-    await update(ref(db,'users/'+me.uid),{name:n});
-    $('whoName').textContent=n; out.className='msg-ok'; out.textContent='Nama tersimpan.';
+    await update(ref(db,'users/'+me.uid),data);
+    $('whoName').textContent=n; out.className='msg-ok'; out.textContent='Profil tersimpan.';
   }catch(e){ out.className='msg-err'; out.textContent='Gagal menyimpan. Cek koneksi atau Rules database.'; }
   $('profSave').disabled=false;
 };
+
+/* ---- Pengaturan lokal, tema, notifikasi ---- */
+const store={ get(k,d){ try{ const v=localStorage.getItem(k); return v==null?d:JSON.parse(v); }catch(e){ return d; } }, set(k,v){ try{ localStorage.setItem(k,JSON.stringify(v)); }catch(e){} } };
+const prefs=Object.assign({theme:'dark',notif:false},store.get('ro_prefs',{}));
+let blocked=new Set(store.get('ro_blocked',[]));
+function applyPrefsUi(){
+  document.documentElement.dataset.theme=prefs.theme;
+  const tc=document.querySelector('meta[name=theme-color]'); if(tc) tc.content=prefs.theme==='light'?'#f3f6fc':'#070b16';
+  $('sbTheme').textContent='Tema: '+(prefs.theme==='light'?'terang':'gelap');
+  $('sbNotif').textContent='Notif: '+(prefs.notif?'aktif':'mati');
+}
+function beep(){
+  try{
+    const c=new (window.AudioContext||window.webkitAudioContext)(); const o=c.createOscillator(), g=c.createGain();
+    o.connect(g); g.connect(c.destination); o.frequency.value=880;
+    g.gain.setValueAtTime(.08,c.currentTime); g.gain.exponentialRampToValueAtTime(.0001,c.currentTime+.25);
+    o.start(); o.stop(c.currentTime+.25);
+  }catch(e){}
+}
+async function showSysNotif(title,body){
+  try{ const reg=await (navigator.serviceWorker&&navigator.serviceWorker.getRegistration()); if(reg&&reg.showNotification){ await reg.showNotification(title,{body,tag:'ro-chat',icon:'/icon-192.png'}); return; } }catch(e){}
+  try{ new Notification(title,{body,tag:'ro-chat'}); }catch(e){}
+}
+function notifyMsg(m){
+  if(!prefs.notif||blocked.has(m.uid)) return;
+  const men=mentionsMe(m.text);
+  if(!document.hidden&&!men) return;
+  beep(); try{ if(navigator.vibrate) navigator.vibrate(men?[120,60,120]:80); }catch(e){}
+  if(document.hidden&&'Notification' in window&&Notification.permission==='granted') showSysNotif((names[m.uid]||m.name||'Pengguna')+(men?' menyebut kamu':''),snippet(m,100));
+}
+$('sbTheme').onclick=()=>{ prefs.theme=prefs.theme==='light'?'dark':'light'; store.set('ro_prefs',prefs); applyPrefsUi(); };
+$('sbNotif').onclick=async()=>{
+  if(!prefs.notif){
+    if('Notification' in window&&Notification.permission==='default'){ try{ await Notification.requestPermission(); }catch(e){} }
+    prefs.notif=true; beep(); toast('Notifikasi aktif: bunyi saat kamu disebut, dan notifikasi saat halaman di latar belakang.');
+  }else prefs.notif=false;
+  store.set('ro_prefs',prefs); applyPrefsUi();
+};
+
+/* ---- Cari, blokir ---- */
+function applySearch(){ document.querySelectorAll('#list .m').forEach(w=>w.classList.toggle('nomatch',!!searchQ&&!(w.textContent||'').toLowerCase().includes(searchQ))); }
+$('sbSearch').onclick=()=>{ const r=$('searchRow'); r.classList.toggle('hidden'); if(r.classList.contains('hidden')){ $('searchIn').value=''; searchQ=''; applySearch(); } else $('searchIn').focus(); };
+$('searchIn').oninput=()=>{ searchQ=$('searchIn').value.trim().toLowerCase(); applySearch(); };
+function applyBlocks(){ document.querySelectorAll('#list .m').forEach(w=>w.classList.toggle('hidden',blocked.has(w.dataset.uid)&&w.dataset.uid!==me.uid)); drawBlockedList(); }
+function setBlocked(uid,on){ if(on) blocked.add(uid); else blocked.delete(uid); store.set('ro_blocked',[...blocked]); applyBlocks(); }
+function drawBlockedList(){
+  const box=$('blockedList'); box.innerHTML='';
+  if(!blocked.size){ box.textContent='Belum ada.'; return; }
+  blocked.forEach(uid=>{
+    const row=document.createElement('div'); row.className='row';
+    const info=document.createElement('div'); info.className='info'; const n=document.createElement('div'); n.className='n'; n.textContent=(usersData[uid]&&usersData[uid].name)||'Pengguna'; info.append(n);
+    const b=document.createElement('button'); b.type='button'; b.textContent='Buka blokir'; b.onclick=()=>setBlocked(uid,false);
+    row.append(info,b); box.append(row);
+  });
+}
+
+/* ---- Balas, reaksi, status baca, mengetik ---- */
+function setReply(r){ replyTo=r; $('replyText').textContent='Membalas '+r.name+': '+r.text; $('replyBar').classList.remove('hidden'); $('txt').focus(); }
+function clearReply(){ replyTo=null; $('replyBar').classList.add('hidden'); }
+$('replyX').onclick=clearReply;
+function startReply(id){ const m=msgData[id]; if(!m) return; setReply({id,name:m.uid===me.uid?'dirimu':(names[m.uid]||m.name||'Pengguna'),text:snippet(m,60)}); }
+
+function watchReactions(id){ if(rxUnsubs[id]) return; rxUnsubs[id]=onValue(ref(db,'reactions/'+id),s=>drawReactions(id,s.val()||{})); }
+function drawReactions(id,v){
+  const box=$('rx_'+id); if(!box) return; box.innerHTML='';
+  const count={}, mineE=v[me.uid]||'';
+  Object.values(v).forEach(e=>{ count[e]=(count[e]||0)+1; });
+  Object.keys(count).forEach(e=>{ const b=document.createElement('button'); b.type='button'; b.className='rxchip'+(e===mineE?' on':''); b.textContent=e+' '+count[e]; b.onclick=()=>reactTo(id,e); box.appendChild(b); });
+}
+async function reactTo(id,e){
+  const r=ref(db,'reactions/'+id+'/'+me.uid);
+  try{ const s=await get(r); if(s.val()===e) await remove(r); else await set(r,e); }catch(err){ toast('Gagal memberi reaksi.'); }
+}
+function updateReceipts(){
+  document.querySelectorAll('#list .m.me').forEach(w=>{
+    const r=w.querySelector('.rcpt'); if(!r||w.id.startsWith('m_tmp')) return;
+    const ts=Number(w.dataset.ts); let n=0;
+    for(const u in readsData){ if(u!==me.uid&&Number(readsData[u])>=ts) n++; }
+    r.textContent=n?'Dibaca '+n:'';
+  });
+}
+function scheduleRead(){
+  if(!me||document.hidden) return;
+  clearTimeout(readTimer);
+  readTimer=setTimeout(()=>{
+    let last=0; document.querySelectorAll('#list .m').forEach(x=>{ const t=Number(x.dataset.ts)||0; if(t>last) last=t; });
+    if(last>lastRead){ lastRead=last; set(ref(db,'reads/'+me.uid),last).catch(()=>{}); }
+  },800);
+}
+document.addEventListener('visibilitychange',()=>{ if(!document.hidden) scheduleRead(); });
+function setTyping(on){
+  if(!me) return;
+  const r=ref(db,'typing/'+me.uid);
+  if(on){
+    const n=Date.now(); if(n-typingLast>2500){ typingLast=n; set(r,n+srvOff).catch(()=>{}); onDisconnect(r).remove().catch(()=>{}); }
+    clearTimeout(typingIdle); typingIdle=setTimeout(()=>setTyping(false),4000);
+  }else{ typingLast=0; clearTimeout(typingIdle); remove(r).catch(()=>{}); }
+}
+$('txt').addEventListener('input',()=>setTyping(!!$('txt').value.trim()));
+function drawTyping(){
+  const el=$('typingLine'); if(!me){ el.classList.add('hidden'); return; }
+  const now=Date.now()+srvOff;
+  const who=Object.keys(typingData).filter(u=>u!==me.uid&&now-Number(typingData[u])<6000&&!blocked.has(u)).map(u=>(usersData[u]&&usersData[u].name)||'Seseorang');
+  if(!who.length||$('composer').classList.contains('hidden')){ el.classList.add('hidden'); return; }
+  el.textContent=(who.length>2?who.slice(0,2).join(', ')+' dan lainnya':who.join(' dan '))+' sedang mengetik...';
+  el.classList.remove('hidden');
+}
+setInterval(drawTyping,1000);
+function updateMsg(id,m){
+  const w=$('m_'+id); if(!w) return; msgData[id]=m;
+  const t=w.querySelector('.cap'); if(t) renderText(t,m.text||'');
+  const ed=w.querySelector('.ed'); if(ed) ed.textContent=m.edited?'(diedit)':'';
+}
+
+/* ---- Menu aksi pesan ---- */
+function closeActs(){ $('actWrap').classList.add('hidden'); }
+$('actWrap').onclick=e=>{ if(e.target.id==='actWrap') closeActs(); };
+function openSheet(items,emojiFor){
+  const s=$('actSheet'); s.innerHTML='';
+  if(emojiFor){
+    const row=document.createElement('div'); row.className='emojirow';
+    EMOJIS.forEach(e=>{ const b=document.createElement('button'); b.type='button'; b.textContent=e; b.onclick=()=>{ closeActs(); reactTo(emojiFor,e); }; row.append(b); });
+    s.append(row);
+  }
+  items.forEach(it=>{ const b=document.createElement('button'); b.type='button'; b.textContent=it.label; if(it.danger) b.className='danger'; b.onclick=()=>{ closeActs(); it.fn(); }; s.append(b); });
+  const c=document.createElement('button'); c.type='button'; c.textContent='Batal'; c.style.color='var(--muted)'; c.onclick=closeActs; s.append(c);
+  $('actWrap').classList.remove('hidden');
+}
+function openActions(id){
+  const m=msgData[id]; if(!m) return; const mine=m.uid===me.uid;
+  const items=[{label:'Balas',fn:()=>startReply(id)}];
+  if(m.text) items.push({label:'Salin teks',fn:()=>{ if(navigator.clipboard) navigator.clipboard.writeText(m.text).then(()=>toast('Teks disalin.')).catch(()=>toast('Tidak bisa menyalin.')); }});
+  if(mine&&m.type==='text'&&Date.now()+srvOff-Number(m.ts)<15*60*1000) items.push({label:'Edit pesan',fn:()=>editMsg(id)});
+  items.push({label:'Lihat profil',fn:()=>openUser(m.uid)});
+  if(isAdmin) items.push({label:'Sematkan pesan',fn:()=>pinMsg(id)});
+  if(!mine) items.push({label:'Laporkan pesan',fn:()=>reportMsg(id),danger:true});
+  if(mine||isAdmin) items.push({label:'Hapus pesan',fn:()=>delMsg(id),danger:true});
+  openSheet(items,id);
+}
+async function editMsg(id){
+  const m=msgData[id]; if(!m) return;
+  const t=prompt('Edit pesan:',m.text||''); if(t==null) return;
+  const v=t.trim(); if(!v||v===m.text) return;
+  try{ await moderationApi({action:'edit',id,text:v}); }catch(e){ toast(e.message||'Gagal mengedit.'); }
+}
+async function delMsg(id){ if(!confirm('Hapus pesan ini?')) return; try{ await moderationApi({action:'delete',id}); toast('Pesan dihapus.'); }catch(e){ toast(e.message||'Gagal menghapus.'); } }
+async function pinMsg(id){
+  const m=msgData[id]; if(!m) return;
+  try{ await set(ref(db,'pinned'),{id,name:names[m.uid]||m.name||'Pengguna',text:snippet(m,120),by:me.uid,ts:Date.now()+srvOff}); toast('Pesan disematkan.'); }
+  catch(e){ toast('Gagal menyematkan. Cek Rules database.'); }
+}
+async function reportMsg(id){
+  const m=msgData[id]; if(!m) return;
+  const reason=prompt('Alasan laporan (contoh: kasar, spam, tidak pantas):'); if(!reason||!reason.trim()) return;
+  try{ await moderationApi({action:'report',id,reason:reason.trim().slice(0,120)}); toast('Laporan terkirim ke admin.'); }
+  catch(e){ toast(e.message||'Gagal mengirim laporan.'); }
+}
+
+/* ---- Sematan, pengumuman, kunci chat ---- */
+function handlePin(p){
+  const bar=$('pinBar');
+  if(!p||!p.text){ bar.classList.add('hidden'); return; }
+  $('pinText').textContent='Disematkan · '+(p.name||'')+': '+(p.text||'');
+  $('pinOff').classList.toggle('hidden',!isAdmin);
+  bar.onclick=()=>jumpTo(p.id);
+  bar.classList.remove('hidden');
+}
+$('pinOff').onclick=e=>{ e.stopPropagation(); remove(ref(db,'pinned')).catch(()=>toast('Gagal melepas sematan.')); };
+function handleAnn(a){
+  const bar=$('annBar');
+  if(!a||!a.text||store.get('ro_ann','')===a.id){ bar.classList.add('hidden'); return; }
+  annCur=a; $('annText').textContent='Pengumuman: '+a.text; bar.classList.remove('hidden');
+}
+$('annClose').onclick=()=>{ if(annCur) store.set('ro_ann',annCur.id); $('annBar').classList.add('hidden'); };
+function updateComposer(){
+  const hide=stBanned||stJail||(stLock&&!isAdmin);
+  $('composer').classList.toggle('hidden',hide);
+  $('replyBar').classList.toggle('hidden',hide||!replyTo);
+  $('bannedBar').classList.toggle('hidden',!stBanned);
+  $('jailBar').classList.toggle('hidden',!stJail);
+  $('lockBar').classList.toggle('hidden',!(stLock&&!isAdmin));
+}
+
+/* ---- Pesan pribadi (DM) ---- */
+const dmKey=(a,b)=>[a,b].sort().join('_');
+let dmIdx={}, dmCur=null, dmUnsub=[];
+function drawDmList(){
+  const body=$('dmListBody'); body.innerHTML='';
+  const keys=Object.keys(dmIdx).filter(k=>dmIdx[k]&&!blocked.has(k)).sort((a,b)=>(dmIdx[b].ts||0)-(dmIdx[a].ts||0));
+  if(!keys.length){ const n=document.createElement('div'); n.className='note'; n.textContent='Belum ada percakapan. Ketuk nama seseorang di chat, lalu pilih Pesan pribadi.'; body.append(n); return; }
+  keys.forEach(k=>{
+    const p=usersData[k]||{}; const row=document.createElement('div'); row.className='row'; row.style.cursor='pointer';
+    const av=document.createElement('div'); av.className='admin-avatar'; av.style.background=p.color||'#2868e8'; av.style.color='#fff'; av.textContent=initial(p.name);
+    const info=document.createElement('div'); info.className='info';
+    const n=document.createElement('div'); n.className='n'; n.textContent=p.name||'Pengguna'; if(dmIdx[k].unread){ const d=document.createElement('span'); d.className='dot'; n.append(d); }
+    const e=document.createElement('div'); e.className='e'; e.textContent=dmIdx[k].last||'';
+    info.append(n,e); row.append(av,info);
+    row.onclick=()=>{ $('vDmList').classList.add('hidden'); openDm(k); };
+    body.append(row);
+  });
+}
+function closeDm(){ dmUnsub.forEach(f=>{ try{ f(); }catch(e){} }); dmUnsub=[]; dmCur=null; $('vDm').classList.add('hidden'); }
+function openDm(other){
+  if(!other||other===me.uid) return;
+  closeDm();
+  dmCur={other,key:dmKey(me.uid,other)};
+  $('dmTitle').textContent=(usersData[other]&&usersData[other].name)||'Pesan pribadi';
+  $('dmMsgs').innerHTML=''; $('vDm').classList.remove('hidden');
+  const q=query(ref(db,'dm/'+dmCur.key),limitToLast(50));
+  dmUnsub=[
+    onChildAdded(q,s=>addDm(s.key,s.val()),()=>toast('Tidak bisa membuka pesan pribadi. Cek Rules database.')),
+    onChildRemoved(q,s=>{ const el=$('d_'+s.key); if(el) el.remove(); })
+  ];
+  if(dmIdx[other]&&dmIdx[other].unread) update(ref(db,'dmIndex/'+me.uid+'/'+other),{unread:false}).catch(()=>{});
+}
+function addDm(id,m){
+  if($('d_'+id)) return;
+  const list=$('dmMsgs'); const mine=m.uid===me.uid;
+  const w=document.createElement('div'); w.className='m'+(mine?' me':''); w.id='d_'+id;
+  const meta=document.createElement('div'); meta.className='meta'; const tm=document.createElement('span'); tm.textContent=fmtTime(m.ts); meta.append(tm); w.append(meta);
+  const box=document.createElement('div'); box.className='box'; const t=document.createElement('div'); t.className='cap'; renderText(t,m.text||''); box.append(t); w.append(box);
+  if(mine){ const d=document.createElement('button'); d.className='del'; d.type='button'; d.textContent='Hapus'; d.onclick=async()=>{ if(!confirm('Hapus pesan ini?')) return; try{ await remove(ref(db,'dm/'+dmCur.key+'/'+id)); }catch(e){ toast('Gagal menghapus.'); } }; w.append(d); }
+  list.append(w); list.scrollTop=list.scrollHeight;
+  if(!mine&&dmCur&&dmIdx[dmCur.other]&&dmIdx[dmCur.other].unread) update(ref(db,'dmIndex/'+me.uid+'/'+dmCur.other),{unread:false}).catch(()=>{});
+}
+async function sendDm(){
+  const t=$('dmTxt').value.trim(); if(!t||!dmCur) return;
+  const {other,key}=dmCur, ts=Date.now()+srvOff; $('dmTxt').value='';
+  try{
+    await set(push(ref(db,'dm/'+key)),{uid:me.uid,ts,text:t.slice(0,1000)});
+    await update(ref(db),{
+      ['dmIndex/'+me.uid+'/'+other]:{ts,last:t.slice(0,60),unread:false},
+      ['dmIndex/'+other+'/'+me.uid]:{ts,last:t.slice(0,60),unread:true}
+    });
+  }catch(e){ toast('Pesan pribadi gagal dikirim.'); $('dmTxt').value=t; }
+}
+$('dmSend').onclick=sendDm;
+$('dmTxt').addEventListener('keydown',e=>{ if(e.key==='Enter'&&!e.shiftKey&&!/Mobi|Android/i.test(navigator.userAgent)){ e.preventDefault(); sendDm(); } });
+$('dmClose').onclick=closeDm;
+$('sbDm').onclick=()=>{ drawDmList(); $('vDmList').classList.remove('hidden'); };
+$('dmListClose').onclick=()=>$('vDmList').classList.add('hidden');
+
+/* ---- Keamanan akun ---- */
+$('pwSave').onclick=async()=>{
+  const out=$('pwMsg'), oldP=$('iOldPw').value, newP=$('iNewPw').value;
+  if(!oldP||newP.length<6){ out.className='msg-err'; out.textContent='Isi password saat ini dan password baru (minimal 6 karakter).'; return; }
+  $('pwSave').disabled=true;
+  try{
+    await reauthenticateWithCredential(me,EmailAuthProvider.credential(me.email,oldP));
+    await updatePassword(me,newP);
+    out.className='msg-ok'; out.textContent='Password berhasil diganti.'; $('iOldPw').value=''; $('iNewPw').value='';
+  }catch(e){ out.className='msg-err'; out.textContent=authMsg(e); }
+  $('pwSave').disabled=false;
+};
+$('delAcc').onclick=async()=>{
+  const out=$('pwMsg'), oldP=$('iOldPw').value;
+  if(isAdmin){ out.className='msg-err'; out.textContent='Akun admin tidak bisa dihapus dari sini.'; return; }
+  if(!oldP){ out.className='msg-err'; out.textContent='Isi password saat ini dulu untuk menghapus akun.'; return; }
+  if(!confirm('Hapus akun secara permanen? Ini tidak bisa dibatalkan.')) return;
+  try{
+    await reauthenticateWithCredential(me,EmailAuthProvider.credential(me.email,oldP));
+    const uid=me.uid;
+    await dropPresence();
+    for(const p of ['users/'+uid,'private/'+uid,'reads/'+uid,'typing/'+uid]){ try{ await remove(ref(db,p)); }catch(e){} }
+    await deleteUser(me);
+    toast('Akun dihapus.');
+  }catch(e){ out.className='msg-err'; out.textContent=authMsg(e); }
+};
+
+applyPrefsUi();
+if('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(()=>{});
 
 /* ---- Panel admin & moderasi ---- */
 let admUnsub=[];
 async function moderationApi(payload){
  if(!auth.currentUser) throw new Error('Sesi login tidak ditemukan.');
- const token=await auth.currentUser.getIdToken(true);
+ const token=await auth.currentUser.getIdToken();
  const response=await fetch('/api/moderation',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify(payload)});
  const data=await response.json().catch(()=>({})); if(!response.ok) throw new Error(data.error||'Permintaan gagal.'); return data;
 }
 $('btnAdmin').onclick=async()=>{
  if(!isAdmin) return;
  $('vAdmin').classList.remove('hidden');
- let users={},emails={},banned={},jail={},modUsers={},logs={},presence={}; let tab='stats'; let purgeVal='30', purgeUnit='1';
+ let users={},emails={},banned={},jail={},modUsers={},logs={},presence={}; let settingsD={},reportsD={},queueD={},annD=null; let tab='stats'; let purgeVal='30', purgeUnit='1', musicTitleVal='', musicUrlVal='', annVal='', badVal='', badTouched=false;
  const esc=s=>String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
  const act=async(action,uid,extra={})=>{try{await moderationApi({action,uid,...extra});toast('Tindakan berhasil.');}catch(e){toast(e.message||'Gagal.');}};
  const makeRow=uid=>{
@@ -585,9 +1228,9 @@ $('btnAdmin').onclick=async()=>{
   return row;
  };
  const draw=()=>{
-  if(document.activeElement&&document.activeElement.id==='purgeVal') return;
+  if(document.activeElement&&['purgeVal','musicTitleIn','musicUrlIn','annIn','badIn'].includes(document.activeElement.id)) return;
   const b=$('admBody'); const ids=Object.keys(users); const banIds=Object.keys(banned); const jailIds=Object.keys(jail);
-  b.innerHTML=`<nav class="admin-section" style="display:flex;gap:8px;flex-wrap:wrap"><button class="admin-action ${tab==='stats'?'':'secondary'}" data-tab="stats">Statistik</button><button class="admin-action ${tab==='users'?'':'secondary'}" data-tab="users">Pengguna</button><button class="admin-action ${tab==='banned'?'':'secondary'}" data-tab="banned">Akun diblokir (${banIds.length})</button><button class="admin-action ${tab==='jail'?'':'secondary'}" data-tab="jail">Jail (${jailIds.length})</button><button class="admin-action ${tab==='logs'?'':'secondary'}" data-tab="logs">Riwayat bot</button></nav>`;
+  b.innerHTML=`<nav class="admin-section" style="display:flex;gap:8px;flex-wrap:wrap"><button class="admin-action ${tab==='stats'?'':'secondary'}" data-tab="stats">Statistik</button><button class="admin-action ${tab==='users'?'':'secondary'}" data-tab="users">Pengguna</button><button class="admin-action ${tab==='banned'?'':'secondary'}" data-tab="banned">Akun diblokir (${banIds.length})</button><button class="admin-action ${tab==='jail'?'':'secondary'}" data-tab="jail">Jail (${jailIds.length})</button><button class="admin-action ${tab==='ann'?'':'secondary'}" data-tab="ann">Pengumuman</button><button class="admin-action ${tab==='reports'?'':'secondary'}" data-tab="reports">Laporan (${Object.keys(reportsD).length})</button><button class="admin-action ${tab==='settings'?'':'secondary'}" data-tab="settings">Pengaturan</button><button class="admin-action ${tab==='music'?'':'secondary'}" data-tab="music">Musik</button><button class="admin-action ${tab==='logs'?'':'secondary'}" data-tab="logs">Riwayat bot</button></nav>`;
   if(tab==='stats') b.innerHTML+=`<section class="admin-section"><h3>Ringkasan Ruang Obrol</h3><div class="admin-grid"><div class="card"><b>${ids.length}</b><div class="hint">Total akun</div></div><div class="card"><b>${banIds.length}</b><div class="hint">Akun diblokir</div></div><div class="card"><b>${jailIds.length}</b><div class="hint">Sedang di Jail</div></div><div class="card"><b>${Object.keys(logs).length}</b><div class="hint">Catatan moderasi</div></div></div><div class="hint">Bot memberi peringatan terlebih dahulu, lalu Jail sementara, dan ban sementara untuk pelanggaran berulang. Admin dikecualikan.</div></section><section class="admin-section"><h3>Akun online (<span id="onCount">0</span>)</h3><div class="hint">Akun yang sedang login dan membuka Ruang Obrol. Kamu bisa langsung Jail atau Ban dari sini.</div><div id="onlineUsers"></div></section><section class="admin-section"><h3>Hapus semua pesan</h3><div class="hint">Ketik lama hitung mundur. Semua pengguna akan melihat pemberitahuan penghapusan pesan beserta timernya. Biarkan halaman ini tetap terbuka sampai selesai.</div><div class="admin-grid"><div class="field"><input id="purgeVal" type="number" inputmode="numeric" min="5" placeholder="Waktu"></div><div class="field"><select id="purgeUnit"><option value="1">Detik</option><option value="60">Menit</option><option value="3600">Jam</option></select></div></div><button class="admin-action" id="purgeGo" type="button">Mulai hapus semua pesan</button><button class="admin-action secondary" id="purgeCancel" type="button">Batalkan timer</button></section>`;
   if(tab==='stats'){
    const on=Object.keys(presence).filter(k=>presence[k]&&Object.keys(presence[k]).length);
@@ -616,10 +1259,70 @@ $('btnAdmin').onclick=async()=>{
     if(uid!==me.uid){const btn=document.createElement('button');btn.textContent=ban?'Buka ban':j?'Lepas Jail':'Jail 10 menit';btn.onclick=()=>act(ban?'unban':j?'unjail':'jail',uid,{minutes:10,reason:'Tindakan admin'});row.append(btn);const banBtn=document.createElement('button');banBtn.className='danger';banBtn.textContent=ban?'':'Ban 24 jam';if(!ban)banBtn.onclick=()=>{const reason=prompt('Alasan ban:','Pelanggaran aturan komunitas');if(reason)act('ban',uid,{hours:24,reason});};row.append(banBtn);}
     list.append(row);});
   }
+  if(tab==='ann'){
+   b.innerHTML+=`<section class="admin-section"><h3>Pengumuman untuk semua pengguna</h3><div class="hint">Tampil sebagai banner di atas chat. Pengguna bisa menutupnya di perangkat masing-masing.</div><div class="field"><textarea id="annIn" maxlength="200" placeholder="Tulis pengumuman"></textarea></div><button class="admin-action" id="annSend" type="button">Kirim pengumuman</button><button class="admin-action secondary" id="annClear" type="button">Hapus pengumuman</button><div class="note" id="annNow"></div></section>`;
+   const ai=b.querySelector('#annIn'); ai.value=annVal; ai.oninput=()=>{annVal=ai.value;};
+   b.querySelector('#annNow').textContent=annD&&annD.text?'Sedang tampil: '+annD.text:'Tidak ada pengumuman.';
+   b.querySelector('#annSend').onclick=async()=>{ const t=ai.value.trim(); if(!t){ toast('Tulis pengumuman dulu.'); return; } try{ await set(ref(db,'broadcast/announce'),{id:String(Date.now()),text:t.slice(0,200),by:me.uid}); annVal=''; toast('Pengumuman dikirim.'); }catch(e){ toast('Gagal mengirim. Cek Rules database.'); } };
+   b.querySelector('#annClear').onclick=async()=>{ try{ await remove(ref(db,'broadcast/announce')); toast('Pengumuman dihapus.'); }catch(e){ toast('Gagal menghapus.'); } };
+  }
+  if(tab==='reports'){
+   b.innerHTML+=`<section class="admin-section"><h3>Laporan pesan</h3><div id="reportList"></div></section>`;
+   const list=b.querySelector('#reportList'); const ids=Object.keys(reportsD).sort((x,y)=>(reportsD[y].ts||0)-(reportsD[x].ts||0));
+   if(!ids.length) list.innerHTML='<div class="note">Belum ada laporan.</div>';
+   ids.forEach(id=>{
+    const r=reportsD[id]; const row=document.createElement('div'); row.className='row admin-account';
+    const info=document.createElement('div'); info.className='info';
+    const n=document.createElement('div'); n.className='n'; n.textContent=(r.msgName||'Pengguna')+' · dilaporkan oleh '+(r.byName||'pengguna');
+    const e=document.createElement('div'); e.className='e'; e.textContent=r.msgText||'';
+    const st=document.createElement('div'); st.className='e'; st.textContent='Alasan: '+(r.reason||'-');
+    info.append(n,e,st); row.append(info);
+    const del=document.createElement('button'); del.textContent='Hapus pesan'; del.onclick=async()=>{ try{ await moderationApi({action:'delete-report-message',reportId:id}); toast('Pesan dan laporan dihapus.'); }catch(err){ toast(err.message||'Gagal menghapus.'); } };
+    const jb=document.createElement('button'); jb.textContent='Jail 10 menit'; jb.onclick=()=>act('jail',r.msgUid,{minutes:10,reason:r.reason||'Dilaporkan pengguna'});
+    const ig=document.createElement('button'); ig.textContent='Abaikan'; ig.onclick=async()=>{ try{ await moderationApi({action:'dismiss-report',reportId:id}); }catch(err){ toast(err.message||'Gagal.'); } };
+    row.append(del,jb,ig); list.append(row);
+   });
+  }
+  if(tab==='settings'){
+   const locked=!!settingsD.locked;
+   b.innerHTML+=`<section class="admin-section"><h3>Kunci chat</h3><div class="hint">Saat dikunci, hanya admin yang bisa mengirim pesan.</div><div class="admin-pin-line"><span>${locked?'Chat dikunci':'Chat terbuka'}</span><button class="admin-switch ${locked?'on':''}" id="lockSw" type="button" aria-label="Kunci chat"></button></div></section><section class="admin-section"><h3>Filter kata</h3><div class="hint">Pisahkan dengan koma. Pesan yang memuat kata ini dihitung sebagai pelanggaran oleh bot moderasi (peringatan, lalu Jail, lalu ban).</div><div class="field"><textarea id="badIn" placeholder="kata1, kata2, kata3"></textarea></div><button class="admin-action" id="badSave" type="button">Simpan filter</button></section>`;
+   const bi=b.querySelector('#badIn'); bi.value=badVal; bi.oninput=()=>{ badVal=bi.value; badTouched=true; };
+   b.querySelector('#lockSw').onclick=async()=>{ try{ await set(ref(db,'settings/locked'),!locked); toast(!locked?'Chat dikunci.':'Chat dibuka.'); }catch(e){ toast('Gagal. Cek Rules database.'); } };
+   b.querySelector('#badSave').onclick=async()=>{ const list=bi.value.split(',').map(x=>x.trim().toLowerCase()).filter(Boolean).slice(0,200).join(', '); try{ await set(ref(db,'settings/badwords'),list); badTouched=false; badVal=list; toast('Filter disimpan.'); }catch(e){ toast('Gagal menyimpan. Cek Rules database.'); } };
+  }
+  if(tab==='music'){
+   b.innerHTML+=`<section class="admin-section"><h3>Putar lagu untuk semua pengguna</h3><div class="hint">Tempel link YouTube atau link langsung ke file audio (.mp3, .m4a, .ogg, dan sejenisnya). Lagu terdengar di semua pengguna yang sedang membuka Ruang Obrol, dan banner otomatis hilang saat lagu habis. Untuk YouTube, video tampil kecil di banner dan hanya bisa video yang mengizinkan disematkan.</div><div class="field"><label>Judul</label><input id="musicTitleIn" maxlength="60" placeholder="Judul lagu"></div><div class="field"><label>Link YouTube atau file audio (https)</label><input id="musicUrlIn" type="url" placeholder="https://youtu.be/... atau https://.../lagu.mp3" autocapitalize="none"></div><button class="admin-action" id="musicPlay" type="button">Putar lagu</button><button class="admin-action secondary" id="musicStop" type="button">Hentikan lagu</button><button class="admin-action secondary" id="musicNext" type="button">Lewati ke lagu berikutnya</button><button class="admin-action secondary" id="musicQueueAdd" type="button">Tambah ke antrean</button><div class="note" id="musicNow"></div></section><section class="admin-section"><h3>Antrean lagu (${Object.keys(queueD).length})</h3><div class="hint">Lagu di antrean diputar otomatis satu per satu setelah lagu sebelumnya selesai. Biarkan halaman admin terbuka agar antrean berjalan.</div><div id="queueList"></div></section>`;
+   const mt=b.querySelector('#musicTitleIn'), mu=b.querySelector('#musicUrlIn');
+   mt.value=musicTitleVal; mu.value=musicUrlVal;
+   mt.oninput=()=>{musicTitleVal=mt.value;}; mu.oninput=()=>{musicUrlVal=mu.value;};
+   b.querySelector('#musicNow').textContent=musicCur?'Sedang diputar: '+(musicCur.title||'Lagu'):'Tidak ada lagu yang diputar.';
+   b.querySelector('#musicPlay').onclick=async()=>{
+    const url=mu.value.trim();
+    if(!/^https:\/\//i.test(url)){ toast('Link harus diawali https://'); return; }
+    try{ await set(ref(db,'broadcast/music'),{url,title:mt.value.trim().slice(0,60)||'Lagu dari admin',startAt:Date.now()+srvOff,by:me.uid}); toast('Lagu diputar untuk semua pengguna.'); }
+    catch(e){ toast('Gagal memutar. Cek Rules database.'); }
+   };
+   b.querySelector('#musicStop').onclick=async()=>{ try{ await remove(ref(db,'broadcast/music')); toast('Lagu dihentikan.'); }catch(e){ toast('Gagal menghentikan.'); } };
+   b.querySelector('#musicNext').onclick=()=>{ musicFinished(); };
+   b.querySelector('#musicQueueAdd').onclick=async()=>{
+    const url=mu.value.trim();
+    if(!/^https:\/\//i.test(url)){ toast('Link harus diawali https://'); return; }
+    try{ await push(ref(db,'broadcast/queue'),{url,title:mt.value.trim().slice(0,60)||'Lagu dari admin',by:me.uid}); musicTitleVal=''; musicUrlVal=''; toast('Ditambahkan ke antrean.'); draw(); }
+    catch(e){ toast('Gagal menambah antrean. Cek Rules database.'); }
+   };
+   const ql=b.querySelector('#queueList'); const qids=Object.keys(queueD);
+   if(!qids.length) ql.innerHTML='<div class="note">Antrean kosong.</div>';
+   qids.forEach((id,i)=>{
+    const it=queueD[id]; const row=document.createElement('div'); row.className='row admin-account';
+    const info=document.createElement('div'); info.className='info'; const n=document.createElement('div'); n.className='n'; n.textContent=(i+1)+'. '+(it.title||'Lagu'); const e=document.createElement('div'); e.className='e'; e.textContent=it.url||''; info.append(n,e);
+    const rm=document.createElement('button'); rm.textContent='Hapus'; rm.onclick=()=>remove(ref(db,'broadcast/queue/'+id)).catch(()=>toast('Gagal menghapus.'));
+    row.append(info,rm); ql.append(row);
+   });
+  }
   if(tab==='logs'){b.innerHTML+=`<section class="admin-section"><h3>Riwayat moderasi terbaru</h3><div id="moderationLogs"></div></section>`;const list=b.querySelector('#moderationLogs');const entries=Object.entries(logs).sort((a,b)=>(b[1].createdAt||b[1].lastAt||0)-(a[1].createdAt||a[1].lastAt||0)).slice(0,80);list.innerHTML=entries.length?'':'<div class="note">Belum ada riwayat moderasi.</div>';entries.forEach(([key,v])=>{const item=document.createElement('div');item.className='admin-account';item.textContent=`${users[v.uid]?.name||v.uid} · ${v.action||'catatan'} · ${v.reason||''} · ${new Date(v.createdAt||v.lastAt||Date.now()).toLocaleString('id-ID')}`;list.append(item);});}
   b.querySelectorAll('[data-tab]').forEach(btn=>btn.onclick=()=>{tab=btn.dataset.tab;draw();});
  };
- admUnsub.forEach(f=>f()); admUnsub=[onValue(ref(db,'users'),s=>{users=s.val()||{};draw();}),onValue(ref(db,'private'),s=>{emails=s.val()||{};draw();}),onValue(ref(db,'banned'),s=>{banned=s.val()||{};draw();}),onValue(ref(db,'jail'),s=>{jail=s.val()||{};draw();}),onValue(ref(db,'moderation/users'),s=>{modUsers=s.val()||{};draw();}),onValue(ref(db,'moderation/logs'),s=>{logs=s.val()||{};draw();}),onValue(ref(db,'presence'),s=>{presence=s.val()||{};draw();})];
+ admUnsub.forEach(f=>f()); admUnsub=[onValue(ref(db,'users'),s=>{users=s.val()||{};draw();}),onValue(ref(db,'private'),s=>{emails=s.val()||{};draw();}),onValue(ref(db,'banned'),s=>{banned=s.val()||{};draw();}),onValue(ref(db,'jail'),s=>{jail=s.val()||{};draw();}),onValue(ref(db,'moderation/users'),s=>{modUsers=s.val()||{};draw();}),onValue(ref(db,'moderation/logs'),s=>{logs=s.val()||{};draw();}),onValue(ref(db,'presence'),s=>{presence=s.val()||{};draw();}),onValue(ref(db,'settings'),s=>{settingsD=s.val()||{}; if(!badTouched) badVal=String(settingsD.badwords||''); draw();}),onValue(ref(db,'reports'),s=>{reportsD=s.val()||{};draw();}),onValue(ref(db,'broadcast/queue'),s=>{queueD=s.val()||{};draw();}),onValue(ref(db,'broadcast/announce'),s=>{annD=s.val();draw();})];
 };
 $('admClose').onclick=()=>{$('vAdmin').classList.add('hidden');admUnsub.forEach(f=>f());admUnsub=[];};
 
@@ -627,4 +1330,3 @@ setMode('in');
 </script>
 </body>
 </html>
-
