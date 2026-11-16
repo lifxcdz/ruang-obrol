@@ -47,7 +47,7 @@ button:active,.pressable:active,.box:active,.row:active{background:var(--blue)!i
 .field input{padding:11px 12px}
 .btn{width:100%;padding:12px;font-weight:500;background:var(--text);color:var(--bg);border-color:var(--text)}
 .btn.ghost{background:transparent;color:var(--text);border-color:var(--line);margin-top:10px}
-.link{background:none!important;border:0!important;box-shadow:none!important;color:var(--muted);text-decoration:none;padding:8px 0;margin-top:6px;width:100%}
+.link{background:none;border:none;color:var(--muted);text-decoration:underline;padding:8px 0;margin-top:6px;width:100%}
 .msg-err{color:var(--danger);font-size:14px;margin:8px 0;min-height:1em}
 .msg-ok{color:#7be0a4;font-size:14px;margin:8px 0}
 .note{font-size:14px;color:var(--muted);margin-top:10px}
@@ -102,7 +102,7 @@ footer .send{width:auto;padding:0 16px;height:44px;background:var(--text);color:
   position:relative;
   isolation:isolate;
   min-height:100%;
-  background:linear-gradient(180deg,rgba(3,8,22,.18),rgba(3,8,22,.38)),url("bg-login.webp") center center / cover no-repeat;
+  background:linear-gradient(180deg,rgba(3,8,22,.18),rgba(3,8,22,.38)),url("bg-login.jpg") center center / cover no-repeat;
 }
 #vAuth .card{
   background:rgba(7,13,29,.78);
@@ -286,74 +286,8 @@ select option{background:#0c1427;color:var(--text)}
 .check-spin{width:34px;height:34px;margin:0 auto 18px;border-radius:50%;border:3px solid rgba(148,170,210,.2);border-top-color:#6aa2ff;animation:spin .8s linear infinite}
 .check-title{font-weight:600;font-size:17px;margin-bottom:6px}
 .check-sub{font-size:13px;color:var(--muted);line-height:1.5}
-.verify-tutorial{display:block;width:min(100%,220px);aspect-ratio:1/1;height:auto;max-height:none;object-fit:contain;margin:14px auto 16px;border:1px solid var(--line);border-radius:14px;background:rgba(255,255,255,.045)}
-
-/* Halaman verifikasi memakai background login yang sama */
-#vVerify{
-  position:relative;isolation:isolate;min-height:100%;
-  background:linear-gradient(180deg,rgba(3,8,22,.2),rgba(3,8,22,.46)),url("bg-login.webp") center center / cover no-repeat;
-}
-#vVerify .card{
-  max-width:400px;background:rgba(7,13,29,.80);
-  border:1px solid rgba(142,177,255,.18);
-  box-shadow:0 24px 80px rgba(0,0,0,.42);
-  backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);
-}
-.verify-image-wrap{
-  width:100%;aspect-ratio:1/1;position:relative;overflow:hidden;
-  margin:14px 0 16px;border:0;outline:0;border-radius:14px;
-  background:rgba(255,255,255,.035);display:grid;place-items:center;
-}
-.verify-tutorial{
-  position:absolute;inset:0;width:100%;height:100%;object-fit:contain;
-  display:block;border:0!important;outline:0!important;border-radius:0;
-  opacity:0;transition:opacity .2s;
-}
-.verify-tutorial.loaded{opacity:1}
-.verify-image-loading{
-  position:absolute;inset:0;display:flex;flex-direction:column;
-  align-items:center;justify-content:center;gap:4px;color:var(--muted);font-size:13px;
-}
-.verify-image-loading .loading-mark{margin:0 auto 8px;width:34px;height:34px}
-.verify-image-open{
-  position:absolute;right:10px;bottom:10px;z-index:2;
-  padding:8px 12px;border:1px solid rgba(255,255,255,.18);
-  border-radius:10px;background:rgba(5,10,22,.82);color:#fff;
-  font-size:12px;backdrop-filter:blur(10px);
-}
-.verify-image-open:active{background:rgba(75,140,255,.9)!important}
-.btn:disabled,.btn.ghost:disabled{opacity:.78;cursor:wait;transform:none}
-.btn .mini-spinner{
-  display:inline-block;width:16px;height:16px;vertical-align:-3px;margin-right:8px;
-  border:2px solid rgba(255,255,255,.28);border-top-color:#fff;border-radius:50%;
-  animation:spin .7s linear infinite;
-}
-.link{ text-decoration:none; }
-.link:active{background:transparent!important;border:0!important;color:#69a1ff!important}
-.link:hover{color:#69a1ff}
-.menu-account{padding:12px 4px 18px;margin-bottom:8px;border-bottom:1px solid var(--line)}
-.menu-account-name{font-size:18px;font-weight:700}
-.menu-account-email{font-size:13px;color:var(--muted);overflow-wrap:anywhere}
-.menu-item{
-  display:flex;align-items:center;gap:14px;width:100%;padding:13px 10px;
-  margin:0 0 5px;text-align:left;border:0;border-radius:12px;
-  background:transparent;color:var(--text);
-}
-.menu-item>span:first-child{width:28px;text-align:center;font-size:20px;color:#8db7ff;flex:none}
-.menu-item>span:last-child{display:flex;flex-direction:column;gap:2px;min-width:0}
-.menu-item b{font-size:15px;font-weight:600}
-.menu-item small{font-size:12px;color:var(--muted)}
-.menu-item:hover{background:rgba(75,140,255,.09);color:#8db7ff}
-.menu-item:active{background:transparent!important;border:0!important;color:#69a1ff!important}
-.menu-logout-area{border-top:1px solid var(--line);margin-top:14px;padding-top:12px}
-.menu-logout>span:first-child,.menu-logout b{color:#ff9292}
-.menu-confirm{margin:4px 0 8px;padding:14px;border-radius:13px;background:rgba(255,255,255,.045);border:1px solid var(--line)}
-.menu-confirm p{font-size:13px;color:var(--muted);margin:5px 0 12px}
-.menu-confirm>div{display:flex;gap:8px}
-.menu-confirm button{flex:1;padding:10px;border-radius:10px}
-#menuLogoutDo{background:#d94c5b;border-color:#d94c5b;color:#fff}
-#menuLogoutCancel{background:rgba(255,255,255,.05)}
-\n</style>
+.verify-tutorial{display:block;width:100%;max-width:100%;height:auto;max-height:176px;object-fit:contain;margin:14px auto 16px;border:1px solid var(--line);border-radius:12px;background:rgba(255,255,255,.035)}
+</style>
 </head>
 <body>
 
@@ -390,11 +324,7 @@ select option{background:#0c1427;color:var(--text)}
   <div class="card">
     <div class="brand">Cek email kamu</div>
     <div class="sub" id="verifyText"></div>
-    <div class="verify-image-wrap">
-      <div class="verify-image-loading" id="verifyImageLoading"><span class="loading-mark"></span><span>Memuat panduan...</span></div>
-      <img class="verify-tutorial" id="verifyTutorial" src="/tutorial-verifikasi.jpg" alt="Panduan menemukan email verifikasi di folder Spam Gmail" loading="eager">
-      <button class="verify-image-open" id="verifyImageOpen" type="button">Lihat lebih jelas</button>
-    </div>
+    <img class="verify-tutorial" src="/tutorial-verifikasi.jpg" alt="Panduan menemukan email verifikasi di folder Spam Gmail" loading="eager">
     <div id="verifyMsg" class="msg-ok"></div>
     <button id="verifyDone" class="btn" type="button">Saya sudah verifikasi</button>
     <button id="verifyResend" class="btn ghost" type="button">Kirim ulang email</button>
@@ -407,7 +337,8 @@ select option{background:#0c1427;color:var(--text)}
   <header>
     <h1>Ruang Obrol</h1>
     <button class="who" id="who" type="button" aria-label="Profil"><span class="profile-mark"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.5"/><path d="M5 20c.7-3.5 3.1-5.3 7-5.3s6.3 1.8 7 5.3"/></svg></span><span id="whoName"></span></button>
-    <button id="menuOpen" type="button" aria-label="Buka menu">☰</button>
+    <button id="btnAdmin" class="hidden" type="button">Admin</button>
+    <button id="btnOut" type="button">Keluar</button>
   </header>
   <div id="subbar" class="subbar"><button id="sbSearch" type="button">Cari</button><button id="sbDm" type="button">Pribadi<span class="dot hidden" id="dmDot"></span></button><button id="sbTheme" type="button">Tema</button><button id="sbNotif" type="button">Notif: mati</button></div>
   <div id="searchRow" class="searchrow hidden"><input id="searchIn" placeholder="Cari di pesan yang tampil" autocomplete="off"></div>
@@ -434,29 +365,7 @@ select option{background:#0c1427;color:var(--text)}
   <input type="file" id="fAny" class="hidden">
 </section>
 
-
-<!-- Menu utama -->
-<section id="vMenu" class="overlay hidden">
-  <div class="top"><h2>Menu Ruang Obrol</h2><button id="menuClose" type="button">Tutup</button></div>
-  <div class="body">
-    <div class="menu-account"><div class="menu-account-name" id="menuAccountName">Akun</div><div class="menu-account-email" id="menuAccountEmail"></div></div>
-    <button class="menu-item" data-menu="pencarian" type="button"><span>⌕</span><span><b>Pencarian</b><small>Cari pesan di ruang obrol</small></span></button>
-    <button class="menu-item" data-menu="pribadi" type="button"><span>✉</span><span><b>Pesan pribadi</b><small>Buka percakapan pribadi</small></span></button>
-    <button class="menu-item" data-menu="profil" type="button"><span>◉</span><span><b>Profil akun</b><small>Atur informasi akun</small></span></button>
-    <button class="menu-item" data-menu="tema" type="button"><span>◐</span><span><b>Tampilan</b><small>Ganti tema terang atau gelap</small></span></button>
-    <button class="menu-item" data-menu="notifikasi" type="button"><span>♧</span><span><b>Notifikasi</b><small>Atur pemberitahuan pesan</small></span></button>
-    <button class="menu-item hidden" id="menuAdmin" data-menu="admin" type="button"><span>⚙</span><span><b>Panel admin</b><small>Pengaturan dan moderasi</small></span></button>
-    <div class="menu-logout-area">
-      <button class="menu-item menu-logout" id="menuLogoutAsk" type="button"><span>⇥</span><span><b>Keluar akun</b><small>Keluar dari akun di perangkat ini</small></span></button>
-      <div id="menuLogoutConfirm" class="menu-confirm hidden">
-        <b>Keluar dari akun?</b>
-        <p>Kamu perlu masuk kembali untuk menggunakan Ruang Obrol.</p>
-        <div><button id="menuLogoutCancel" type="button">Batal</button><button id="menuLogoutDo" type="button">Keluar akun</button></div>
-      </div>
-    </div>
-  </div>
-</section>
-\n<!-- Panel admin -->
+<!-- Panel admin -->
 <section id="vAdmin" class="overlay hidden">
   <div class="top"><h2>Panel admin</h2><button id="admClose" type="button">Tutup</button></div>
   <div class="body" id="admBody"></div>
@@ -548,15 +457,6 @@ document.addEventListener('touchend',ev=>{ const n=Date.now(); if(n-lastTouch<30
 
 /* ---- Util ---- */
 function show(id){ ['vLoad','vAuth','vVerify','vChat'].forEach(v=>$(v).classList.toggle('hidden',v!==id)); }
-// Batasi waktu tunggu operasi Firebase agar halaman tidak terjebak di layar Memuat.
-function withTimeout(promise, ms, message){
-  let timer;
-  return Promise.race([
-    promise,
-    new Promise((_, reject)=>{ timer=setTimeout(()=>reject(new Error(message||'Waktu koneksi habis')),ms); })
-  ]).finally(()=>clearTimeout(timer));
-}
-
 function toast(t){ const d=document.createElement('div'); d.className='toast'; d.textContent=t; document.body.appendChild(d); setTimeout(()=>d.remove(),2800); }
 function authMsg(e){
   const c=(e&&e.code)||'';
@@ -582,16 +482,7 @@ function setMode(m){
   $('forgot').classList.toggle('hidden',m!=='in'); $('authErr').textContent='';
 }
 document.querySelectorAll('[data-soon]').forEach(b=>b.onclick=()=>toast('Masuk dengan '+b.dataset.soon+' segera hadir.'));
-$('tabIn').onclick=()=>setMode('in');
-// Pengaman: jangan biarkan layar Memuat tampil tanpa batas jika Firebase Auth gagal merespons.
-const authStartupWatchdog=setTimeout(()=>{
-  const loading=$('vLoad');
-  if(loading && !loading.classList.contains('hidden')){
-    console.warn('Firebase Auth belum merespons; menampilkan halaman masuk.');
-    show('vAuth');
-    $('authErr').textContent='Koneksi belum siap. Periksa internet lalu muat ulang halaman.';
-  }
-},12000); $('tabUp').onclick=()=>setMode('up');
+$('tabIn').onclick=()=>setMode('in'); $('tabUp').onclick=()=>setMode('up');
 
 /* ---- Cloudflare Turnstile ---- */
 let cfWidget=null, cfToken=null;
@@ -609,26 +500,15 @@ async function authViaServer(body){
   return d.token;
 }
 
-function buttonBusy(button, busy, label){
-  if(busy){
-    if(!button.dataset.originalText) button.dataset.originalText=button.textContent.trim();
-    button.disabled=true;
-    button.innerHTML='<span class="mini-spinner" aria-hidden="true"></span>'+label;
-  }else{
-    button.disabled=false;
-    if(button.dataset.originalText) button.textContent=button.dataset.originalText;
-    delete button.dataset.originalText;
-  }
-}
 $('authGo').onclick=async()=>{
   let email=$('iEmail').value.trim(), pass=$('iPass').value, name=$('iName').value.trim();
-  if(mode==='in' && !email.includes('@')) email=email.toLowerCase().replace(/[^a-z0-9._-]/g,'')+'@akun.ruang-obrol.app';
+   if(mode==='in' && !email.includes('@')) email=email.toLowerCase().replace(/[^a-z0-9._-]/g,'')+'@akun.ruang-obrol.app';
   $('authErr').textContent='';
   if(!email||!pass){ $('authErr').textContent='Isi email dan password.'; return; }
   if(mode==='up'&&!name){ $('authErr').textContent='Isi nama.'; return; }
   if(TURNSTILE_SITE_KEY.startsWith('ISI_')){ $('authErr').textContent='Verifikasi belum dikonfigurasi (site key kosong).'; return; }
   if(!cfToken){ $('authErr').textContent='Selesaikan verifikasi Cloudflare dulu.'; return; }
-  buttonBusy($('authGo'),true,mode==='in'?'Memproses...':'Membuat akun...');
+  $('authGo').disabled=true;
   try{
     const customToken=await authViaServer({mode,email,password:pass,name,cf:cfToken});
     const cred=await signInWithCustomToken(auth,customToken);
@@ -638,7 +518,7 @@ $('authGo').onclick=async()=>{
     }
   }catch(e){ $('authErr').textContent=e.apiMsg?e.message:authMsg(e); }
   resetTurnstile();
-  buttonBusy($('authGo'),false);
+  $('authGo').disabled=false;
 };
 $('forgot').onclick=async()=>{
   const email=$('iEmail').value.trim();
@@ -650,88 +530,16 @@ $('forgot').onclick=async()=>{
 /* ---- Verifikasi ---- */
 $('verifyDone').onclick=async()=>{
   const u=auth.currentUser; if(!u) return;
-  buttonBusy($('verifyDone'),true,'Memeriksa...');
-  try{
-    await u.reload();
-    if(u.emailVerified){ await u.getIdToken(true); enter(u); }
-    else $('verifyMsg').textContent='Email belum terverifikasi. Buka link di email dulu.';
-  }catch(e){ $('verifyMsg').textContent=authMsg(e); }
-  buttonBusy($('verifyDone'),false);
+  await u.reload();
+  if(u.emailVerified){ await u.getIdToken(true); enter(u); }
+  else $('verifyMsg').textContent='Email belum terverifikasi. Buka link di email dulu.';
 };
 $('verifyResend').onclick=async()=>{
-  if(!auth.currentUser) return;
-  buttonBusy($('verifyResend'),true,'Mengirim...');
   try{ await sendEmailVerification(auth.currentUser); $('verifyMsg').textContent='Email verifikasi dikirim ulang. Cek juga folder spam.'; }
   catch(e){ $('verifyMsg').textContent=authMsg(e); }
-  buttonBusy($('verifyResend'),false);
 };
-$('verifyOut').onclick=async()=>{
-  buttonBusy($('verifyOut'),true,'Keluar...');
-  try{ await signOut(auth); }catch(e){ $('verifyMsg').textContent=authMsg(e); }
-  buttonBusy($('verifyOut'),false);
-};
-
-const verifyImage=$('verifyTutorial');
-const verifyImageLoading=$('verifyImageLoading');
-verifyImage.addEventListener('load',()=>{verifyImage.classList.add('loaded');verifyImageLoading.classList.add('hidden');});
-verifyImage.addEventListener('error',()=>{verifyImageLoading.innerHTML='<span>Gambar belum dapat dimuat.</span><button type="button" id="verifyImageRetry">Coba lagi</button>';const retry=$('verifyImageRetry');if(retry)retry.onclick=()=>{verifyImageLoading.innerHTML='<span class="loading-mark"></span><span>Memuat panduan...</span>';verifyImage.src='/tutorial-verifikasi.jpg?retry='+Date.now();};});
-if(verifyImage.complete&&verifyImage.naturalWidth){verifyImage.classList.add('loaded');verifyImageLoading.classList.add('hidden');}
-$('verifyImageOpen').onclick=()=>{$('lightImg').src=verifyImage.src;$('vLight').classList.remove('hidden');};
-
-/* ---- Menu utama dan URL fitur ---- */
-function setMenuRoute(slug){
-  const path=slug?'/menu/'+slug:'/';
-  if(location.pathname!==path) history.pushState({roMenu:slug||''},'',path);
-}
-function openMainMenu(){
-  $('menuAccountName').textContent=me?.displayName||'Akun Ruang Obrol';
-  $('menuAccountEmail').textContent=me?.email||'';
-  $('menuLogoutConfirm').classList.add('hidden');
-  $('vMenu').classList.remove('hidden');
-  setMenuRoute('menu');
-}
-function closeMainMenu(restore=true){
-  $('vMenu').classList.add('hidden');
-  $('menuLogoutConfirm').classList.add('hidden');
-  if(restore) setMenuRoute('');
-}
-$('menuOpen').onclick=openMainMenu;
-$('menuClose').onclick=()=>closeMainMenu();
-$('menuLogoutAsk').onclick=()=>{$('menuLogoutConfirm').classList.remove('hidden');setMenuRoute('keluar-akun');};
-$('menuLogoutCancel').onclick=()=>{$('menuLogoutConfirm').classList.add('hidden');setMenuRoute('menu');};
-$('menuLogoutDo').onclick=async()=>{
-  buttonBusy($('menuLogoutDo'),true,'Keluar...');
-  try{await dropPresence();await signOut(auth);closeMainMenu(false);history.replaceState({},'', '/');}
-  catch(e){toast('Gagal keluar. Periksa koneksi lalu coba lagi.');buttonBusy($('menuLogoutDo'),false);}
-};
-$('menuAdmin').onclick=()=>{$('vMenu').classList.add('hidden');$('btnAdmin').click();setMenuRoute('menu/admin');};
-document.querySelectorAll('[data-menu]').forEach(item=>{
-  item.addEventListener('click',()=>{
-    const slug=item.dataset.menu;
-    if(slug==='admin'){ $('menuAdmin').click(); return; }
-    if(slug==='keluar-akun'){ $('menuLogoutAsk').click(); return; }
-    closeMainMenu(false);setMenuRoute(slug);
-    if(slug==='pencarian'){$('searchRow').classList.remove('hidden');$('searchIn').focus();}
-    if(slug==='pribadi')$('sbDm').click();
-    if(slug==='profil')$('who').click();
-    if(slug==='tema')$('sbTheme').click();
-    if(slug==='notifikasi')$('sbNotif').click();
-  });
-});
-function restoreMenuRoute(){
-  if(!location.pathname.startsWith('/menu/')) return;
-  const slug=location.pathname.split('/')[2]||'menu';
-  if(slug==='pencarian'){$('searchRow').classList.remove('hidden');}
-  else if(slug==='pribadi'){drawDmList();$('vDmList').classList.remove('hidden');}
-  else if(slug==='profil')$('who').click();
-  else if(slug==='admin'&&isAdmin)$('btnAdmin').click();
-  else if(slug==='keluar-akun'){$('vMenu').classList.remove('hidden');$('menuLogoutConfirm').classList.remove('hidden');}
-  else $('vMenu').classList.remove('hidden');
-}
-window.addEventListener('popstate',()=>{
-  if(location.pathname.startsWith('/menu/')) restoreMenuRoute();
-  else {$('vMenu').classList.add('hidden');$('menuLogoutConfirm').classList.add('hidden');}
-});
+$('verifyOut').onclick=()=>signOut(auth);
+$('btnOut').onclick=async()=>{ await dropPresence(); signOut(auth); };
 
 /* ---- Sesi ---- */
 let me=null, isAdmin=false, unsubs=[], entered=false; const names={};
@@ -865,56 +673,25 @@ function handlePurge(p){
   };
   purgeTimer=setInterval(tick,250); tick();
 }
-// Cegah callback Firebase yang berulang memulai proses masuk berkali-kali.
-let authProcessingUid=null;
-let lastAuthUid=null;
 onAuthStateChanged(auth,async u=>{
-  if(!u){
-    if(lastAuthUid!==null){ cleanup(); lastAuthUid=null; }
-    authProcessingUid=null;
-    show('vAuth');
-    return;
+  cleanup();
+  if(!u){ show('vAuth'); return; }
+  await u.reload().catch(()=>{});
+  if(!u.emailVerified){
+    $('verifyText').textContent='Kami mengirim link verifikasi ke '+u.email+'. Buka link itu, lalu kembali ke sini.';
+    $('verifyMsg').textContent='';
+    show('vVerify'); return;
   }
-
-  // reload() dan pembaruan token dapat memicu callback lagi untuk UID yang sama.
-  if(authProcessingUid===u.uid || (lastAuthUid===u.uid && entered)) return;
-  if(lastAuthUid!==null && lastAuthUid!==u.uid) cleanup();
-  lastAuthUid=u.uid;
-  authProcessingUid=u.uid;
-
-  try{
-    try{ await withTimeout(u.reload(),7000,'Pemeriksaan akun terlalu lama'); }
-    catch(e){ console.warn('Pemeriksaan ulang akun dilewati:',e); }
-
-    if(!u.emailVerified){
-      $('verifyText').textContent='Kami mengirim link verifikasi ke '+u.email+'. Buka link itu, lalu kembali ke sini.';
-      $('verifyMsg').textContent='';
-      show('vVerify');
-      return;
-    }
-
-    try{ await withTimeout(u.getIdToken(true),7000,'Pembaruan sesi terlalu lama'); }
-    catch(e){ console.warn('Token akan diperbarui saat diperlukan:',e); }
-
-    await enter(u);
-  } finally {
-    if(authProcessingUid===u.uid) authProcessingUid=null;
-  }
+  try{ await u.getIdToken(true); }catch(e){}
+  enter(u);
 });
 
 function cleanup(){ unsubs.forEach(f=>f()); unsubs=[]; entered=false; stBanned=stJail=stLock=false; replyTo=null; $('replyBar').classList.add('hidden'); $('typingLine').classList.add('hidden'); $('pinBar').classList.add('hidden'); $('annBar').classList.add('hidden'); $('vDmList').classList.add('hidden'); closeActs(); clearInterval(purgeTimer); purgeTimer=null; $('purgeBar').classList.add('hidden'); stopMusicLocal(); musicCur=null; $('vUser').classList.add('hidden'); $('vProfile').classList.add('hidden'); $('vAdmin').classList.add('hidden'); $('list').innerHTML='<div class="empty" id="empty">Belum ada pesan. Mulai obrolan.</div>'; }
 
 async function enter(u){
   if(entered) return;
-  entered=true;
-  me=u; isAdmin=ADMIN_EMAILS.map(e=>e.toLowerCase()).includes((u.email||'').toLowerCase());
-  $('whoName').textContent=u.displayName||u.email;
-  $('btnAdmin').classList.toggle('hidden',!isAdmin); $('menuAdmin').classList.toggle('hidden',!isAdmin);
-  // Tampilkan aplikasi dahulu; pemeriksaan akun dikerjakan dengan batas waktu.
-  show('vChat');
-  restoreMenuRoute();
   try{
-    const managedSnap=await withTimeout(get(ref(db,'users/'+u.uid)),6000,'Database belum merespons');
+    const managedSnap=await get(ref(db,'users/'+u.uid));
     const managedProfile=managedSnap.val()||{};
     if(managedProfile.managed===true && managedProfile.expiresAt && Number(managedProfile.expiresAt)<=Date.now()){
       await signOut(auth);
@@ -922,8 +699,13 @@ async function enter(u){
       return;
     }
   }catch(error){
-    console.warn('Pemeriksaan masa berlaku akun dilewati:',error);
+    console.warn('Pemeriksaan masa berlaku akun gagal:',error);
   }
+  entered=true;
+  me=u; isAdmin=ADMIN_EMAILS.map(e=>e.toLowerCase()).includes((u.email||'').toLowerCase());
+  $('whoName').textContent=u.displayName||u.email;
+  $('btnAdmin').classList.toggle('hidden',!isAdmin);
+  show('vChat');
   try{
     await update(ref(db,'users/'+u.uid),{name:u.displayName||u.email.split('@')[0],joinedAt:Date.parse(u.metadata.creationTime)||Date.now()});
     await update(ref(db,'private/'+u.uid),{email:u.email});
