@@ -397,6 +397,7 @@ select option{background:#0c1427;color:var(--text)}
   <div class="top"><h2>Profil</h2><button id="profClose" type="button">Tutup</button></div>
   <div class="body"><div class="card" style="margin:0 auto">
     <div class="avatar" id="pAvatar"></div>
+    <div class="uactions" style="justify-content:center;margin:0 0 14px"><button id="photoPick" type="button">Ganti foto</button><button id="photoDel" type="button">Hapus foto</button></div><input type="file" id="fPhoto" accept="image/*" class="hidden">
     <div class="field"><label for="iProfName">Nama</label><input id="iProfName" maxlength="24" autocomplete="nickname"></div>
     <div class="field"><label for="iBio">Bio</label><textarea id="iBio" maxlength="120" placeholder="Ceritakan sedikit tentang kamu"></textarea></div>
     <div class="field"><label for="iStatus">Status</label><input id="iStatus" maxlength="40" placeholder="Contoh: Lagi santai"></div>
@@ -787,7 +788,7 @@ async function enter(u){
   unsubs.push(onValue(ref(db,'events/current'),s=>{const ev=s.val();if(!ev||ev.status==='ended'){$('eventBanner').classList.add('hidden');return;} $('eventBanner').classList.remove('hidden');$('eventBannerText').textContent=(ev.name||'Event baru')+(ev.status==='waiting'?' · pendaftaran':' · sedang berlangsung');if(ev.id&&ev.id!==sessionStorage.getItem('ro_event_seen')){sessionStorage.setItem('ro_event_seen',ev.id);appDialog({kind:'event',title:'Event baru!',message:(ev.name||'Tebak-tebakan')+'\nKetuk Masuk untuk bergabung sebelum pendaftaran ditutup.',confirmText:'Masuk'}).then(v=>{ if(v) openCurrentEvent(); });}}));
   unsubs.push(onValue(ref(db,'users'),s=>{
     const v=s.val()||{}; for(const k in v) names[k]=v[k].name;
-    Object.keys(usersData).forEach(k=>delete usersData[k]); Object.assign(usersData,v); isMod=!isAdmin&&!!me&&hasTitle(me.uid,'moderator'); $('btnAdmin').classList.toggle('hidden',!(isAdmin||isMod));
+    Object.keys(usersData).forEach(k=>delete usersData[k]); Object.assign(usersData,v); isMod=!isAdmin&&!!me&&hasTitle(me.uid,'moderator'); $('btnAdmin').classList.toggle('hidden',!(isAdmin||isMod)); updateHeaderPhoto();
     document.querySelectorAll('.nm').forEach(el=>{ if(me&&el.dataset.uid!==me.uid&&names[el.dataset.uid]) el.textContent=names[el.dataset.uid]; });
   }));
   const q=query(ref(db,'messages'),limitToLast(LOAD_LAST));
@@ -827,7 +828,7 @@ function addMsg(id,m){
   if(!mine&&blocked.has(m.uid)) w.classList.add('hidden');
 
   const meta=document.createElement('div'); meta.className='meta';
-  const nm=document.createElement('span'); nm.className='nm'; nm.dataset.uid=m.uid; nm.textContent=mine?'Kamu':(names[m.uid]||m.name||'Pengguna'); nm.onclick=()=>openUser(m.uid); meta.appendChild(nm);
+  const nm=document.createElement('span'); nm.className='nm'; nm.dataset.uid=m.uid; nm.textContent=mine?'Kamu':(names[m.uid]||m.name||'Pengguna'); nm.onclick=()=>openUser(m.uid); {const ph=(usersData[m.uid]||{}).photo; if(ph){ const im=document.createElement('img'); im.src=ph; im.alt=''; im.style.cssText='width:20px;height:20px;border-radius:50%;object-fit:cover;flex:none'; meta.appendChild(im); }} meta.appendChild(nm);
   appendTitles(meta,m.uid,!!m.admin);
   const tm=document.createElement('span'); tm.textContent=fmtTime(m.ts); meta.appendChild(tm);
   const ed=document.createElement('span'); ed.className='ed'; ed.textContent=m.edited?'(diedit)':''; meta.appendChild(ed);
@@ -937,19 +938,22 @@ const PCOLORS=['#2868e8','#8b5cf6','#ec4899','#f97316','#10b981','#06b6d4'];
 let pColor=PCOLORS[0];
 const initial=n=>(String(n||'?').trim()[0]||'?').toUpperCase();
 const fmtDate=ts=>ts?new Date(Number(ts)).toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'}):'-';
-function paintAvatar(el,name,color){ el.textContent=initial(name); el.style.background=color||PCOLORS[0]; }
+function paintAvatar(el,name,color,photo){ if(photo){ el.textContent=''; el.style.background='url('+photo+') center/cover no-repeat'; } else { el.textContent=initial(name); el.style.background=color||PCOLORS[0]; } }
+let pPhoto='';
+function squarePhoto(f){ return new Promise(async(res,rej)=>{ try{ const url=await readDataURL(f); const img=new Image(); img.onload=()=>{ const S=160,c=document.createElement('canvas'); c.width=c.height=S; const k=Math.max(S/img.width,S/img.height), w=img.width*k, h=img.height*k; const g=c.getContext('2d'); g.fillStyle='#fff'; g.fillRect(0,0,S,S); g.drawImage(img,(S-w)/2,(S-h)/2,w,h); res(c.toDataURL('image/jpeg',0.72)); }; img.onerror=rej; img.src=url; }catch(e){ rej(e); } }); }
+function updateHeaderPhoto(){ const mk=document.querySelector('#who .profile-mark'); if(!mk||!me) return; const ph=(usersData[me.uid]||{}).photo; if(ph){ mk.innerHTML='<img alt="" src="'+ph+'" style="width:22px;height:22px;border-radius:50%;object-fit:cover;display:block">'; mk.style.width=mk.style.height='22px'; } else if(!mk.querySelector('svg')){ mk.style.width=mk.style.height=''; mk.innerHTML='<svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.5"/><path d="M5 20c.7-3.5 3.1-5.3 7-5.3s6.3 1.8 7 5.3"/></svg>'; } }
 function drawColors(){
   const box=$('pColors'); box.innerHTML='';
   PCOLORS.forEach(c=>{
     const b=document.createElement('button'); b.type='button'; b.className='pcolor'+(c===pColor?' on':''); b.style.background=c; b.setAttribute('aria-label','Pilih warna');
-    b.onclick=()=>{ pColor=c; drawColors(); paintAvatar($('pAvatar'),$('iProfName').value||me.displayName,pColor); };
+    b.onclick=()=>{ pColor=c; drawColors(); paintAvatar($('pAvatar'),$('iProfName').value||me.displayName,pColor,pPhoto); };
     box.appendChild(b);
   });
 }
 $('who').onclick=()=>{
   const p=usersData[me.uid]||{};
   $('iProfName').value=me.displayName||''; $('iBio').value=p.bio||''; $('iStatus').value=p.status||''; $('iCity').value=p.city||''; $('iHobby').value=p.hobby||''; $('iIg').value=p.ig||'';
-  pColor=p.color||PCOLORS[0]; drawColors(); paintAvatar($('pAvatar'),me.displayName,pColor);
+  pColor=p.color||PCOLORS[0]; pPhoto=p.photo||''; drawColors(); paintAvatar($('pAvatar'),me.displayName,pColor,pPhoto);
   $('profEmail').textContent=me.email;
   $('profRole').textContent=titleLabels(me.uid,isAdmin);
   $('profJoined').textContent=fmtDate(Date.parse((me.metadata||{}).creationTime));
@@ -957,12 +961,15 @@ $('who').onclick=()=>{
   $('profMsg').textContent=''; $('pwMsg').textContent=''; $('iOldPw').value=''; $('iNewPw').value='';
   drawBlockedList(); $('vProfile').classList.remove('hidden');
 };
-$('iProfName').addEventListener('input',()=>paintAvatar($('pAvatar'),$('iProfName').value,pColor));
+$('photoPick').onclick=()=>$('fPhoto').click();
+$('photoDel').onclick=()=>{ pPhoto=''; paintAvatar($('pAvatar'),$('iProfName').value||me.displayName,pColor,''); toast('Foto dihapus. Tekan Simpan profil.'); };
+$('fPhoto').onchange=async e=>{ const f=e.target.files[0]; e.target.value=''; if(!f) return; try{ pPhoto=await squarePhoto(f); paintAvatar($('pAvatar'),$('iProfName').value||me.displayName,pColor,pPhoto); toast('Foto dipilih. Tekan Simpan profil.'); }catch(err){ toast('Foto tidak bisa diproses.'); } };
+$('iProfName').addEventListener('input',()=>paintAvatar($('pAvatar'),$('iProfName').value,pColor,pPhoto));
 $('profClose').onclick=()=>$('vProfile').classList.add('hidden');
 $('btnOut').onclick=async()=>{const v=await appDialog({kind:'logout',title:'Keluar akun',message:'Untuk mengakhiri sesi, ketik KELUAR pada kolom berikut.',placeholder:'Ketik KELUAR',requiredText:'KELUAR',confirmText:'Keluar',danger:true});if(v){await dropPresence();await signOut(auth);$('vProfile').classList.add('hidden');}};
 function openUser(uid){
   const p=usersData[uid]; if(!p) return;
-  paintAvatar($('uAvatar'),p.name,p.color); $('uName').textContent=p.name||'Pengguna';
+  paintAvatar($('uAvatar'),p.name,p.color,p.photo); $('uName').textContent=p.name||'Pengguna';
   const rows=[['Title',titleLabels(uid,uid===me.uid&&isAdmin)],['Bio',p.bio],['Status',p.status],['Kota',p.city],['Hobi',p.hobby],['Instagram',p.ig?'@'+p.ig:''],['Bergabung',p.joinedAt?fmtDate(p.joinedAt):'']].filter(r=>r[1]);
   const dl=$('uInfo'); dl.innerHTML='';
   if(!rows.length){ const d=document.createElement('dd'); d.style.gridColumn='1 / -1'; d.style.color='var(--muted)'; d.textContent='Belum ada data profil.'; dl.append(d); }
@@ -982,11 +989,11 @@ $('profSave').onclick=()=>withLoad($('profSave'),async()=>{
   const n=$('iProfName').value.trim(), out=$('profMsg');
   if(!n){ out.className='msg-err'; out.textContent='Nama tidak boleh kosong.'; return; }
   const ig=$('iIg').value.trim().replace(/^@/,'').replace(/[^A-Za-z0-9._]/g,'').slice(0,30);
-  const data={name:n,bio:$('iBio').value.trim().slice(0,120),status:$('iStatus').value.trim().slice(0,40),city:$('iCity').value.trim().slice(0,40),hobby:$('iHobby').value.trim().slice(0,60),ig,color:pColor};
+  const data={name:n,bio:$('iBio').value.trim().slice(0,120),status:$('iStatus').value.trim().slice(0,40),city:$('iCity').value.trim().slice(0,40),hobby:$('iHobby').value.trim().slice(0,60),ig,color:pColor,photo:pPhoto||null};
   try{
     await updateProfile(me,{displayName:n});
     await update(ref(db,'users/'+me.uid),data);
-    $('whoName').textContent=n; out.className='msg-ok'; out.textContent='Profil tersimpan.';
+    $('whoName').textContent=n; out.className='msg-ok'; out.textContent='Profil tersimpan.'; updateHeaderPhoto();
   }catch(e){ out.className='msg-err'; out.textContent='Gagal menyimpan. Cek koneksi atau Rules database.'; }
 });
 
@@ -999,16 +1006,16 @@ async function openPoll(){
  if(!poll||poll.closed||Number(poll.endsAt)<=Date.now()){toast('Tidak ada polling aktif.');return;}
  const body=$('eventBody');body.innerHTML='';$('eventHeading').textContent='Polling';$('vEvent').classList.remove('hidden');
  const h=document.createElement('h3');h.textContent=poll.question;h.style.marginBottom='12px';body.append(h);
- const rows=[];
+ let mineIdx=-1;const rows=[];
  (poll.options||[]).forEach((option,index)=>{
   const b=document.createElement('button');b.className='admin-action secondary';b.style.cssText='display:flex;justify-content:space-between;align-items:center;gap:10px;text-align:left';
   const l=document.createElement('span');l.textContent=option;const c=document.createElement('b');c.textContent='...';c.style.flex='none';b.append(l,c);rows.push({b,c});
-  b.onclick=async()=>{try{await featureApi({action:'poll-vote',option:index});toast('Pilihan kamu sudah dicatat.');rows.forEach(x=>x.b.disabled=true);b.style.borderColor='var(--blue)';refresh();}catch(e){toast(e.message);}};
+  b.onclick=async()=>{try{const vr=await featureApi({action:'poll-vote',option:index});toast('Pilihan kamu sudah dicatat.');rows.forEach(x=>x.b.disabled=true);b.style.borderColor='var(--blue)';mineIdx=index;refresh(vr&&Array.isArray(vr.counts)?{counts:vr.counts,total:vr.total}:null);}catch(e){toast(e.message);}};
   body.append(b);
  });
  const total=document.createElement('p');total.className='note';body.append(total);
  const end=document.createElement('p');end.className='note';end.textContent='Berakhir '+new Date(poll.endsAt).toLocaleString('id-ID');body.append(end);
- const refresh=async()=>{const r=await pollCounts();if(!r){total.textContent='Jumlah suara belum bisa dimuat.';rows.forEach(x=>x.c.textContent='');return;}rows.forEach((x,i)=>x.c.textContent=(r.counts[i]||0)+' orang');total.textContent='Total '+r.total+' orang sudah memilih.';};
+ const refresh=async(pre)=>{const r=pre||await pollCounts();if(r&&mineIdx>=0){r.counts=[...(r.counts||[])];if(!(r.counts[mineIdx]>0)){r.counts[mineIdx]=1;}r.total=Math.max(Number(r.total)||0,r.counts.reduce((a,x)=>a+(x||0),0));}if(!r){total.textContent='Jumlah suara belum bisa dimuat.';rows.forEach(x=>x.c.textContent='');return;}rows.forEach((x,i)=>x.c.textContent=(r.counts[i]||0)+' orang');total.textContent='Total '+r.total+' orang sudah memilih.';};
  refresh();
 }
 
@@ -1204,7 +1211,7 @@ function drawDmList(){
   if(!keys.length){ const n=document.createElement('div'); n.className='note'; n.textContent='Belum ada percakapan. Ketuk nama seseorang di chat, lalu pilih Pesan pribadi.'; body.append(n); return; }
   keys.forEach(k=>{
     const p=usersData[k]||{}; const row=document.createElement('div'); row.className='row'; row.style.cursor='pointer';
-    const av=document.createElement('div'); av.className='admin-avatar'; av.style.background=p.color||'#2868e8'; av.style.color='#fff'; av.textContent=initial(p.name);
+    const av=document.createElement('div'); av.className='admin-avatar'; av.style.background=p.color||'#2868e8'; av.style.color='#fff'; paintAvatar(av,p.name,p.color||'#2868e8',p.photo);
     const info=document.createElement('div'); info.className='info';
     const n=document.createElement('div'); n.className='n'; n.textContent=p.name||'Pengguna'; if(dmIdx[k].unread){ const d=document.createElement('span'); d.className='dot'; n.append(d); }
     const e=document.createElement('div'); e.className='e'; e.textContent=dmIdx[k].last||'';
