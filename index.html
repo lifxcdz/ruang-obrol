@@ -264,6 +264,46 @@ select option{background:#0c1427;color:var(--text)}
 .dialog-card input:focus,.dialog-card textarea:focus{border-bottom-color:var(--blue)!important;box-shadow:none!important}
 .vbadge{display:inline-flex;align-items:center;line-height:0}.title-chip{height:18px;margin:0;vertical-align:middle}.meta .nm{display:inline-flex;align-items:center}
 #badHint{color:#ff9292}
+/* Tampilan Plopp */
+#vLoad{background:#b3ee05;color:#070f35}#vLoad .load-text{color:#070f35;font-weight:700;margin-top:6px}
+.mascot svg{width:210px;max-width:70%;display:block;margin:0 auto 4px;overflow:visible}
+.mascot.sm{background:#b3ee05;border-radius:26px;padding:18px 10px 8px;margin-bottom:18px}.mascot.sm svg{width:150px}
+.mascot .eye{transform-box:fill-box;transform-origin:center;animation:blink 5s infinite}.mascot .eye+.eye{animation-delay:.05s}
+@keyframes blink{0%,93%,100%{transform:scaleY(1)}96%{transform:scaleY(.08)}}
+.mascot .pupil{transition:transform .12s ease-out}
+#vAuth{position:relative;overflow:auto;justify-content:flex-start;align-items:center;padding:0;background:#b3ee05!important;color:#070f35;min-height:100%}
+#vAuth .blob{position:absolute;border-radius:50%;pointer-events:none}
+#vAuth .b1{width:200px;height:200px;background:#fff9e6;top:-80px;left:-70px}
+#vAuth .b2{width:64px;height:64px;background:#070f35;top:34px;right:84px}
+#vAuth .b3{width:112px;height:112px;background:#8b9dff;top:16px;right:-40px}
+.pl-wrap{position:relative;width:100%;max-width:400px;margin:auto;padding:84px 24px 30px}
+.pl-title{font-size:30px;font-weight:700;text-align:center;letter-spacing:-.035em;color:#070f35;line-height:1.1}
+.pl-sub{text-align:center;color:#2f4300;font-size:14px;margin:6px 0 18px}
+#vAuth .tabs{background:#a1dc00;border-radius:16px;padding:4px;margin-bottom:16px}
+#vAuth .tabs button{border:0!important;background:transparent;color:#070f35;border-radius:12px;font-weight:700;padding:10px}
+#vAuth .tabs button.on{background:#070f35;color:#fff}
+#vAuth .field label{color:#2f4300;font-weight:500;margin-left:4px}
+#vAuth .field input{background:#a1dc00;border:0;border-radius:16px;padding:15px 16px;color:#070f35;font-weight:500}
+#vAuth .field input::placeholder{color:#5f8f00}
+#vAuth .field input:focus{box-shadow:0 0 0 3px #070f35}
+#vAuth .msg-err{color:#8a1020;font-weight:500}
+.social-row{display:flex;gap:10px;margin:6px 0 10px}
+.soc{flex:1;display:flex;align-items:center;justify-content:center;gap:8px;border:0;border-radius:14px;padding:12px 8px;color:#fff;font-weight:700;font-size:14px}
+.soc.fb{background:#4f78d4}.soc.gg{background:#ff6f61}
+.soc-i{width:24px;height:24px;border-radius:50%;background:#fff;display:grid;place-items:center}.soc-i svg{width:15px;height:15px}
+#vAuth .btn{background:#070f35;color:#fff;border-radius:16px;padding:16px;font-weight:700;font-size:16px;box-shadow:none;margin-top:4px}
+#vAuth .link{color:#2f4300;text-decoration:none;margin-top:2px}#vAuth .link b{color:#070f35;text-decoration:underline}
+#vAuth .note{color:#2f4300}
+#vVerify{background:#fff9e6!important;overflow:auto;color:#070f35}
+#vVerify .card{background:#fff;border:0;box-shadow:0 10px 40px rgba(7,15,53,.12);color:#070f35;text-align:center}
+#vVerify .sub{color:#4b5a7a}#vVerify .btn{background:#070f35;color:#fff}#vVerify .btn.ghost{background:transparent;color:#070f35;border:2px solid #9bd000}
+#vVerify .link{color:#4b5a7a}
+footer .send,.dialog-actions .primary,.admin-action:not(.secondary){background:#b3ee05!important;color:#070f35!important;font-weight:700}
+.m.me .box{background:linear-gradient(145deg,#2d4208,#1d2c06)!important;border-color:rgba(179,238,5,.35)!important}
+:root[data-theme=light] .m.me .box{background:#e9fbb0!important;border-color:#8cc000!important}
+header h1{color:#c8f21a}:root[data-theme=light] header h1{color:#070f35}
+.subbar button{font-weight:500}.tabs button.on{font-weight:700}
+.dialog-actions .primary.dg{background:#c74355!important;color:#fff!important}
 /* Tema terang */
 :root[data-theme=light]{--bg:#f3f6fc;--surface:#fff;--line:rgba(30,50,90,.16);--line-soft:rgba(30,50,90,.1);--text:#142038;--muted:#5b6b88;--blue:#2868e8}
 :root[data-theme=light] body{background:radial-gradient(ellipse at 50% -20%,rgba(37,99,235,.1),transparent 48%),var(--bg)}
@@ -309,29 +349,31 @@ select option{background:#0c1427;color:var(--text)}
 <body>
 
 <!-- Memuat -->
-<section id="vLoad" class="view auth"><div class="load-text">Memuat...</div></section>
+<section id="vLoad" class="view auth"><div data-mascot class="mascot"></div><div class="load-text">Memuat...</div></section>
 
 <!-- Masuk / Daftar -->
 <section id="vAuth" class="view auth hidden">
-  <div class="card">
-    <div class="brand">Ruang Obrol</div>
-    <div class="sub">Ngobrol langsung, kirim foto dan file.</div>
+  <i class="blob b1"></i><i class="blob b3"></i><i class="blob b2"></i>
+  <div class="pl-wrap">
+    <div data-mascot class="mascot"></div>
+    <h1 class="pl-title" id="plTitle">Siap ngobrol?</h1>
+    <p class="pl-sub" id="plSub">Selamat datang di Ruang Obrol. Ngobrol langsung, kirim foto dan file.</p>
     <div class="tabs">
       <button id="tabIn" class="on" type="button">Masuk</button>
       <button id="tabUp" type="button">Daftar</button>
     </div>
-    <div class="field hidden" id="fName"><label for="iName">Nama</label><input id="iName" autocomplete="nickname" maxlength="24"></div>
+    <div class="field hidden" id="fName"><label for="iName">Nama</label><input id="iName" autocomplete="nickname" maxlength="24" placeholder="Nama kamu"></div>
     <div class="field"><label for="iEmail">Email</label><input id="iEmail" type="text" autocomplete="username" inputmode="email" placeholder="Email atau username"></div>
-    <div class="field"><label for="iPass">Password</label><input id="iPass" type="password" autocomplete="current-password"></div>
+    <div class="field"><label for="iPass">Password</label><input id="iPass" type="password" autocomplete="current-password" placeholder="Password"></div>
     <div id="cfBox"></div>
     <div id="authErr" class="msg-err"></div>
-    <button id="authGo" class="btn" type="button">Masuk</button>
-    <div class="or-line"><span>atau masuk dengan</span></div>
     <div class="social-row">
-      <button class="social-btn" type="button" data-soon="Google" aria-label="Masuk dengan Google"><svg viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg></button>
-      <button class="social-btn" type="button" data-soon="Facebook" aria-label="Masuk dengan Facebook"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="12" fill="#1877F2"/><path fill="#fff" d="M13.5 19v-6h2l.4-2.5h-2.4V9c0-.7.3-1.2 1.3-1.2h1.2V5.6c-.3 0-1-.1-1.9-.1-1.9 0-3.2 1.2-3.2 3.3v1.7H8.8V13h2.1v6h2.6z"/></svg></button>
+      <button class="soc fb" type="button" data-soon="Facebook"><span class="soc-i"><svg viewBox="0 0 24 24"><path fill="#1877F2" d="M13.5 22v-8h2.6l.5-3.2h-3.1V8.7c0-.9.4-1.7 1.8-1.7h1.4V4.2c-.3 0-1.2-.2-2.2-.2-2.3 0-3.9 1.4-3.9 4v2.1H7.9V14h2.7v8z"/></svg></span>Facebook</button>
+      <button class="soc gg" type="button" data-soon="Google"><span class="soc-i"><svg viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg></span>Google</button>
     </div>
+    <button id="authGo" class="btn" type="button">Masuk</button>
     <button id="forgot" class="link" type="button">Lupa password?</button>
+    <button id="swMode" class="link" type="button">Belum punya akun? <b>Daftar</b></button>
     <p class="note hidden" id="upNote">Daftar harus pakai email asli. Link verifikasi akan dikirim ke email itu. Password bebas, minimal 6 karakter.</p>
   </div>
 </section>
@@ -339,6 +381,7 @@ select option{background:#0c1427;color:var(--text)}
 <!-- Verifikasi email -->
 <section id="vVerify" class="view auth hidden">
   <div class="card">
+    <div data-mascot class="mascot sm"></div>
     <div class="brand">Cek email kamu</div>
     <div class="sub" id="verifyText"></div>
     <img class="verify-tutorial" src="/tutorial-verifikasi.jpg" alt="Panduan menemukan email verifikasi di folder Spam Gmail" loading="eager">
@@ -488,7 +531,9 @@ let lastTouch=0;
 document.addEventListener('touchend',ev=>{ const n=Date.now(); if(n-lastTouch<300) ev.preventDefault(); lastTouch=n; },{passive:false});
 
 /* ---- Util ---- */
-function show(id){ ['vLoad','vAuth','vVerify','vChat'].forEach(v=>$(v).classList.toggle('hidden',v!==id)); }
+function show(id){ ['vLoad','vAuth','vVerify','vChat'].forEach(v=>$(v).classList.toggle('hidden',v!==id));
+  const want=id==='vAuth'?(mode==='up'?'/signup':'/login'):id==='vVerify'?'/signup/verifikasi':id==='vChat'?(location.pathname.startsWith('/chat')?location.pathname:'/chat'):null;
+  if(want&&location.pathname!==want) history.replaceState(null,'',want); }
 function toast(t){ const d=document.createElement('div'); d.className='toast'; d.textContent=t; document.body.appendChild(d); setTimeout(()=>d.remove(),2800); }
 function authMsg(e){
   const c=(e&&e.code)||'';
@@ -505,8 +550,10 @@ const fmtTime = ts => { if(!ts) return ''; const d=new Date(ts); return d.toLoca
 
 /* ---- Tab masuk / daftar ---- */
 let mode='in';
-function setMode(m){
+function setMode(m,quiet){
   mode=m;
+  { const p=m==='up'?'/signup':'/login'; if(!quiet&&location.pathname!==p) history.pushState(null,'',p); }
+  $('plTitle').textContent=m==='in'?'Siap ngobrol?':'Yuk, bikin akun!'; $('swMode').innerHTML=m==='in'?'Belum punya akun? <b>Daftar</b>':'Sudah punya akun? <b>Masuk</b>';
   $('tabIn').classList.toggle('on',m==='in'); $('tabUp').classList.toggle('on',m==='up');
   $('fName').classList.toggle('hidden',m!=='up'); $('upNote').classList.toggle('hidden',m!=='up');
   $('authGo').textContent = m==='in'?'Masuk':'Buat akun';
@@ -514,13 +561,13 @@ function setMode(m){
   $('forgot').classList.toggle('hidden',m!=='in'); $('authErr').textContent='';
 }
 document.querySelectorAll('[data-soon]').forEach(b=>b.onclick=()=>toast('Masuk dengan '+b.dataset.soon+' segera hadir.'));
-$('tabIn').onclick=()=>setMode('in'); $('tabUp').onclick=()=>setMode('up');
+$('tabIn').onclick=()=>setMode('in'); $('tabUp').onclick=()=>setMode('up'); $('swMode').onclick=()=>setMode(mode==='in'?'up':'in');
 
 /* ---- Cloudflare Turnstile ---- */
 let cfWidget=null, cfToken=null;
 function mountTurnstile(){
   if(cfWidget!==null||!window.turnstile||TURNSTILE_SITE_KEY.startsWith('ISI_')) return;
-  cfWidget=window.turnstile.render('#cfBox',{sitekey:TURNSTILE_SITE_KEY,theme:'dark',
+  cfWidget=window.turnstile.render('#cfBox',{sitekey:TURNSTILE_SITE_KEY,theme:'light',
     callback:t=>{cfToken=t;}, 'expired-callback':()=>{cfToken=null;}, 'error-callback':()=>{cfToken=null;}});
 }
 const cfPoll=setInterval(()=>{ mountTurnstile(); if(cfWidget!==null) clearInterval(cfPoll); },300);
@@ -748,6 +795,7 @@ async function enter(u){
   $('whoName').textContent=u.displayName||u.email;
   $('btnAdmin').classList.toggle('hidden',!isAdmin);
   show('vChat');
+  setTimeout(deepLink,700);
   try{
     await update(ref(db,'users/'+u.uid),{name:u.displayName||u.email.split('@')[0],joinedAt:Date.parse(u.metadata.creationTime)||Date.now()});
     await update(ref(db,'private/'+u.uid),{email:u.email});
@@ -1324,7 +1372,7 @@ function appDialog({title='Konfirmasi',message='',placeholder='',value='',multil
   let field=null;if(placeholder||requiredText){field=document.createElement(multiline?'textarea':'input');field.placeholder=placeholder;field.value=value;field.type=inputType;if(multiline)field.rows=3;card.append(field);}
   const actions=document.createElement('div');actions.className='dialog-actions';
   const cancel=document.createElement('button');cancel.type='button';cancel.textContent='Batal';
-  const ok=document.createElement('button');ok.type='button';ok.textContent=confirmText;ok.className='primary';if(danger)ok.style.background='#c74355';
+  const ok=document.createElement('button');ok.type='button';ok.textContent=confirmText;ok.className='primary';if(danger)ok.classList.add('dg');
   const finish=result=>{root.innerHTML='';resolve(result);};cancel.onclick=()=>finish(null);ok.onclick=()=>{const v=field?field.value.trim():true;if(requiredText&&v!==requiredText){toast('Ketik '+requiredText+' dengan benar.');return;}if(field&&!v){field.focus();return;}finish(v);};
   if(!noCancel)actions.append(cancel);actions.append(ok);card.append(actions);wrap.append(card);wrap.addEventListener('click',e=>{if(e.target===wrap)finish(null);});root.append(wrap);if(field)field.focus();
  });
@@ -1502,7 +1550,33 @@ $('btnAdmin').onclick=async()=>{
 };
 $('admClose').onclick=()=>{$('vAdmin').classList.add('hidden');admUnsub.forEach(f=>f());admUnsub=[];};
 
-setMode('in');
+/* ---- Maskot & routing URL ---- */
+const MASCOT='<svg viewBox="0 0 220 130" aria-hidden="true"><path d="M96 24c-6-14 8-20 14-10 4-8 18-4 14 8-4 8-24 10-28 2z" fill="#fff9e6"/><path d="M36 34c10-9 26-9 36 0M148 34c10-9 26-9 36 0" stroke="#070f35" stroke-width="7" stroke-linecap="round" fill="none"/><g class="eye"><circle cx="62" cy="78" r="42" fill="#fff"/><g class="pupil"><circle cx="68" cy="82" r="23" fill="#0c1445"/><circle cx="60" cy="72" r="8" fill="#fff"/><circle cx="77" cy="91" r="5" fill="#1d2a6e"/></g></g><g class="eye"><circle cx="158" cy="78" r="42" fill="#fff"/><g class="pupil"><circle cx="164" cy="82" r="23" fill="#0c1445"/><circle cx="156" cy="72" r="8" fill="#fff"/><circle cx="173" cy="91" r="5" fill="#1d2a6e"/></g></g><circle cx="105" cy="122" r="3" fill="#2b3a00"/><circle cx="115" cy="122" r="3" fill="#2b3a00"/></svg>';
+document.querySelectorAll('[data-mascot]').forEach(el=>{ el.innerHTML=MASCOT; });
+document.addEventListener('pointermove',e=>{ const x=(e.clientX/innerWidth-.5)*12, y=(e.clientY/innerHeight-.5)*10; document.querySelectorAll('.mascot .pupil').forEach(p=>{ p.style.transform='translate('+x+'px,'+y+'px)'; }); });
+const OVS=[['vProfile','/chat/profil','profClose'],['vDmList','/chat/pesan','dmListClose'],['vAdmin','/chat/admin','admClose'],['vEvent','','eventClose']];
+function ovPath(){ for(const [id,p] of OVS){ if(!$(id).classList.contains('hidden')) return id==='vEvent'?($('eventHeading').textContent==='Polling'?'/chat/polling':'/chat/event'):p; } return '/chat'; }
+let ovLast='/chat';
+new MutationObserver(()=>{
+  if($('vChat').classList.contains('hidden')) return;
+  const p=ovPath(); if(p===ovLast) return; const was=ovLast; ovLast=p;
+  if(p==='/chat'){ if(history.state&&history.state.ov) history.back(); else history.replaceState(null,'','/chat'); }
+  else if(was!=='/chat'||location.pathname===p) history.replaceState(history.state&&history.state.ov?{ov:1}:null,'',p);
+  else history.pushState({ov:1},'',p);
+}).observe(document.body,{subtree:true,attributes:true,attributeFilter:['class']});
+function closeAllOv(){ OVS.forEach(([id,,c])=>{ if(!$(id).classList.contains('hidden')) $(c).click(); }); }
+function deepLink(){
+  const p=location.pathname;
+  const m={'/chat/profil':()=>$('who').click(),'/chat/pesan':()=>$('sbDm').click(),'/chat/admin':()=>{ if(isAdmin||hasTitle(me.uid,'moderator')) $('btnAdmin').click(); else history.replaceState(null,'','/chat'); },'/chat/event':()=>openCurrentEvent(),'/chat/polling':()=>openPoll()};
+  if(m[p]) m[p](); else if(p!=='/chat') history.replaceState(null,'','/chat');
+}
+addEventListener('popstate',()=>{
+  const p=location.pathname;
+  if(!me||$('vChat').classList.contains('hidden')){ if(p==='/signup'||p==='/login') setMode(p==='/signup'?'up':'in',true); return; }
+  if(p==='/chat') closeAllOv(); else deepLink();
+});
+
+setMode(location.pathname.startsWith('/signup')?'up':'in',true);
 </script>
 </body>
 </html>
