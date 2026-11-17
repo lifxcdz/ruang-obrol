@@ -3,6 +3,7 @@
 //   FIREBASE_SERVICE_ACCOUNT = isi JSON service account Firebase (satu baris)
 //   GMAIL_USER               = alamat Gmail pengirim, contoh lifxcdz@gmail.com
 //   GMAIL_APP_PASSWORD       = App Password Gmail 16 karakter (bukan password biasa)
+//   SITE_URL (opsional)      = alamat web, default https://ruang-obrol.vercel.app
 // Paket: npm i firebase-admin nodemailer
 const admin = require('firebase-admin');
 const nodemailer = require('nodemailer');
@@ -45,11 +46,14 @@ module.exports = async function handler(req, res) {
 
     const link = await admin.auth().generateEmailVerificationLink(user.email);
     const name = esc(user.displayName || '');
+    const site = (process.env.SITE_URL || 'https://ruang-obrol.vercel.app').replace(/\/+$/, '');
+    const logo = site + '/icon-192.png';
 
     const html = `<!DOCTYPE html><html><body style="margin:0;padding:0;background:#f3f6fc">
 <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#f3f6fc;padding:28px 12px">
 <tr><td align="center">
 <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:440px;background:#ffffff;border-radius:20px;padding:32px 26px;font-family:Arial,Helvetica,sans-serif;text-align:center">
+<tr><td align="center" style="padding-bottom:14px"><img src="${logo}" width="72" height="72" alt="Ruang Obrol" style="display:block;border:0;border-radius:18px"></td></tr>
 <tr><td style="font-size:24px;font-weight:700;color:#142038;padding-bottom:6px">Ruang Obrol</td></tr>
 <tr><td style="font-size:16px;color:#142038;padding-bottom:8px">Halo${name ? ', ' + name : ''}!</td></tr>
 <tr><td style="font-size:14px;line-height:1.6;color:#5b6b88;padding-bottom:24px">Ketuk tombol di bawah untuk memverifikasi email dan mengaktifkan akunmu.</td></tr>
