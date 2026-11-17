@@ -257,6 +257,13 @@ select option{background:#0c1427;color:var(--text)}
 .dialog-wrap{position:fixed;inset:0;z-index:100;background:rgba(1,5,15,.72);backdrop-filter:blur(12px);display:flex;align-items:center;justify-content:center;padding:22px}
 .dialog-card{width:min(440px,100%);border:1px solid var(--line);border-radius:22px;background:var(--surface);padding:21px;box-shadow:0 24px 80px rgba(0,0,0,.45)}
 .dialog-card h3{font-size:19px;margin-bottom:7px}.dialog-card p{white-space:pre-line;font-size:14px;color:var(--muted);margin-bottom:15px;line-height:1.55}.dialog-card textarea,.dialog-card input{border:1px solid var(--line);border-radius:12px;padding:12px;background:rgba(0,0,0,.12);margin-bottom:12px}.dialog-actions{display:flex;justify-content:flex-end;gap:9px}.dialog-actions button{padding:9px 15px;border-radius:11px}.dialog-actions .primary{background:#2868e8;color:white;border:0}.title-chip{display:inline-flex;align-items:center;vertical-align:middle;border:0!important;outline:0!important;border-radius:7px;padding:1px 6px;font-size:10px;font-weight:700;line-height:1.5;white-space:nowrap}.meta{flex-wrap:wrap}.event-card{border:1px solid var(--line);border-radius:16px;padding:15px;background:rgba(75,140,255,.07);margin-bottom:12px}
+.dialog-card{position:relative;overflow:hidden}.dialog-card:before{content:"";position:absolute;left:0;right:0;top:0;height:4px;background:var(--blue)}
+.k-ban:before,.k-report:before,.k-danger:before{background:#ff6b6b}.k-jail:before,.k-warning:before{background:#f0b45b}.k-logout:before{background:#9aa6bf}.k-event:before{background:#49c58a}.k-edit:before{background:#8b5cf6}
+.k-ban h3,.k-report h3,.k-danger h3{color:#ff9292}.k-jail h3,.k-warning h3{color:#f0b45b}.k-event h3{color:#7be0a4}
+.dialog-card input,.dialog-card textarea{border:0!important;border-bottom:2px solid var(--line)!important;border-radius:0!important;background:transparent!important;padding:10px 2px!important}
+.dialog-card input:focus,.dialog-card textarea:focus{border-bottom-color:var(--blue)!important;box-shadow:none!important}
+.title-chip{height:18px;margin:0;vertical-align:middle}.meta .nm{display:inline-flex;align-items:center}
+#badHint{color:#ff9292}
 /* Tema terang */
 :root[data-theme=light]{--bg:#f3f6fc;--surface:#fff;--line:rgba(30,50,90,.16);--line-soft:rgba(30,50,90,.1);--text:#142038;--muted:#5b6b88;--blue:#2868e8}
 :root[data-theme=light] body{background:radial-gradient(ellipse at 50% -20%,rgba(37,99,235,.1),transparent 48%),var(--bg)}
@@ -361,6 +368,7 @@ select option{background:#0c1427;color:var(--text)}
   <div id="jailBar" class="banned hidden"></div>
   <div id="lockBar" class="banned hidden">Chat sedang dikunci admin. Hanya admin yang bisa mengirim pesan.</div>
   <div id="typingLine" class="typing hidden"></div>
+  <div id="badHint" class="typing hidden">Pesan dengan kata terlarang dihapus otomatis dan bisa membuat akunmu di-Jail atau diblokir.</div>
   <div id="replyBar" class="replybar hidden"><div class="rb-text" id="replyText"></div><button id="replyX" type="button">Batal</button></div>
   <footer id="composer">
     <div class="sheet hidden" id="sheet">
@@ -762,6 +770,7 @@ async function enter(u){
     $('jailBar').textContent=stJail?'Akun dalam Jail sampai '+new Date(j.until).toLocaleString('id-ID')+'. Alasan: '+(j.reason||'Pelanggaran aturan'):'';
     updateComposer();
   }));
+  unsubs.push(onValue(ref(db,'settings/badwords'),s=>{badList=String(s.val()||'').split(',').map(x=>x.trim()).filter(Boolean);},()=>{}));
   unsubs.push(onValue(ref(db,'settings/locked'),s=>{ stLock=!!s.val(); updateComposer(); }));
   unsubs.push(onValue(ref(db,'pinned'),s=>handlePin(s.val())));
   unsubs.push(onValue(ref(db,'broadcast/announce'),s=>handleAnn(s.val())));
@@ -775,10 +784,10 @@ async function enter(u){
   live.on=false; setTimeout(()=>{ live.on=true; },2500);
   unsubs.push(()=>{ Object.keys(rxUnsubs).forEach(k=>{ try{ rxUnsubs[k](); }catch(e){} delete rxUnsubs[k]; }); closeDm(); setTyping(false); });
 
-  unsubs.push(onValue(ref(db,'events/current'),s=>{const ev=s.val();if(!ev||ev.status==='ended'){$('eventBanner').classList.add('hidden');return;} $('eventBanner').classList.remove('hidden');$('eventBannerText').textContent=(ev.name||'Event baru')+(ev.status==='waiting'?' · pendaftaran':' · sedang berlangsung');if(ev.id&&ev.id!==sessionStorage.getItem('ro_event_seen')){sessionStorage.setItem('ro_event_seen',ev.id);toast('Event baru: '+(ev.name||'Tebak-tebakan')+' · ketuk notifikasi untuk masuk.');}}));
+  unsubs.push(onValue(ref(db,'events/current'),s=>{const ev=s.val();if(!ev||ev.status==='ended'){$('eventBanner').classList.add('hidden');return;} $('eventBanner').classList.remove('hidden');$('eventBannerText').textContent=(ev.name||'Event baru')+(ev.status==='waiting'?' · pendaftaran':' · sedang berlangsung');if(ev.id&&ev.id!==sessionStorage.getItem('ro_event_seen')){sessionStorage.setItem('ro_event_seen',ev.id);appDialog({kind:'event',title:'Event baru!',message:(ev.name||'Tebak-tebakan')+'\nKetuk Masuk untuk bergabung sebelum pendaftaran ditutup.',confirmText:'Masuk'}).then(v=>{ if(v) openCurrentEvent(); });}}));
   unsubs.push(onValue(ref(db,'users'),s=>{
     const v=s.val()||{}; for(const k in v) names[k]=v[k].name;
-    Object.keys(usersData).forEach(k=>delete usersData[k]); Object.assign(usersData,v);
+    Object.keys(usersData).forEach(k=>delete usersData[k]); Object.assign(usersData,v); isMod=!isAdmin&&!!me&&(usersData[me.uid]||{}).title==='moderator'; $('btnAdmin').classList.toggle('hidden',!(isAdmin||isMod));
     document.querySelectorAll('.nm').forEach(el=>{ if(me&&el.dataset.uid!==me.uid&&names[el.dataset.uid]) el.textContent=names[el.dataset.uid]; });
   }));
   const q=query(ref(db,'messages'),limitToLast(LOAD_LAST));
@@ -796,7 +805,7 @@ const snippet=(m,n=80)=>m.type==='image'?'Foto':m.type==='file'?'File: '+(m.fnam
 const myTag=()=>String((me&&me.displayName)||'').trim().split(/\s+/)[0].toLowerCase();
 const mentionsMe=t=>{ const n=myTag(); return !!n&&String(t||'').toLowerCase().includes('@'+n); };
 function renderText(el,text){
-  el.textContent='';
+  el.textContent=''; text=censor(text);
   const re=/@([^\s@]{1,24})/g; let last=0, mm;
   while((mm=re.exec(text))){
     el.append(text.slice(last,mm.index));
@@ -891,6 +900,7 @@ $('send').onclick=()=>sendMsg();
 $('txt').addEventListener('keydown',e=>{ if(e.key==='Enter'&&!e.shiftKey&&!/Mobi|Android/i.test(navigator.userAgent)){ e.preventDefault(); sendMsg(); } });
 function autosize(){ const t=$('txt'); t.style.height='auto'; t.style.height=Math.min(t.scrollHeight,120)+'px'; }
 $('txt').addEventListener('input',autosize);
+$('txt').addEventListener('input',()=>$('badHint').classList.toggle('hidden',!hasBad($('txt').value)));
 
 /* ---- Lampiran ---- */
 $('attach').onclick=()=>$('sheet').classList.toggle('hidden');
@@ -941,7 +951,7 @@ $('who').onclick=()=>{
   $('iProfName').value=me.displayName||''; $('iBio').value=p.bio||''; $('iStatus').value=p.status||''; $('iCity').value=p.city||''; $('iHobby').value=p.hobby||''; $('iIg').value=p.ig||'';
   pColor=p.color||PCOLORS[0]; drawColors(); paintAvatar($('pAvatar'),me.displayName,pColor);
   $('profEmail').textContent=me.email;
-  $('profRole').textContent=titleInfo((usersData[me.uid]&&usersData[me.uid].title)|| (isAdmin?'admin':'member'))[0];
+  {const k=(usersData[me.uid]&&usersData[me.uid].title)||(isAdmin?'admin':'member'); $('profRole').textContent=titleInfo(k)[0]+' · '+titleDescription(k);}
   $('profJoined').textContent=fmtDate(Date.parse((me.metadata||{}).creationTime));
   $('profLast').textContent=(me.metadata||{}).lastSignInTime?new Date(me.metadata.lastSignInTime).toLocaleString('id-ID'):'-';
   $('profMsg').textContent=''; $('pwMsg').textContent=''; $('iOldPw').value=''; $('iNewPw').value='';
@@ -949,11 +959,12 @@ $('who').onclick=()=>{
 };
 $('iProfName').addEventListener('input',()=>paintAvatar($('pAvatar'),$('iProfName').value,pColor));
 $('profClose').onclick=()=>$('vProfile').classList.add('hidden');
-$('btnOut').onclick=async()=>{const v=await appDialog({title:'Keluar akun',message:'Untuk mengakhiri sesi, ketik KELUAR pada kolom berikut.',placeholder:'Ketik KELUAR',requiredText:'KELUAR',confirmText:'Keluar',danger:true});if(v){await dropPresence();await signOut(auth);$('vProfile').classList.add('hidden');}};
+$('btnOut').onclick=async()=>{const v=await appDialog({kind:'logout',title:'Keluar akun',message:'Untuk mengakhiri sesi, ketik KELUAR pada kolom berikut.',placeholder:'Ketik KELUAR',requiredText:'KELUAR',confirmText:'Keluar',danger:true});if(v){await dropPresence();await signOut(auth);$('vProfile').classList.add('hidden');}};
 function openUser(uid){
   const p=usersData[uid]; if(!p) return;
   paintAvatar($('uAvatar'),p.name,p.color); $('uName').textContent=p.name||'Pengguna';
-  const rows=[['Bio',p.bio],['Status',p.status],['Kota',p.city],['Hobi',p.hobby],['Instagram',p.ig?'@'+p.ig:''],['Bergabung',p.joinedAt?fmtDate(p.joinedAt):'']].filter(r=>r[1]);
+  const tk=p.title||(uid===me.uid&&isAdmin?'admin':'member');
+  const rows=[['Title',titleInfo(tk)[0]+' · '+titleDescription(tk)],['Bio',p.bio],['Status',p.status],['Kota',p.city],['Hobi',p.hobby],['Instagram',p.ig?'@'+p.ig:''],['Bergabung',p.joinedAt?fmtDate(p.joinedAt):'']].filter(r=>r[1]);
   const dl=$('uInfo'); dl.innerHTML='';
   if(!rows.length){ const d=document.createElement('dd'); d.style.gridColumn='1 / -1'; d.style.color='var(--muted)'; d.textContent='Belum ada data profil.'; dl.append(d); }
   rows.forEach(([k,v])=>{ const dt=document.createElement('dt'); dt.textContent=k; const dd=document.createElement('dd'); dd.textContent=v; dl.append(dt,dd); });
@@ -1118,16 +1129,16 @@ function openActions(id){
   items.push({label:'Lihat profil',fn:()=>openUser(m.uid)});
   if(isAdmin) items.push({label:'Sematkan pesan',fn:()=>pinMsg(id)});
   if(!mine) items.push({label:'Laporkan pesan',fn:()=>reportMsg(id),danger:true});
-  if(mine||isAdmin) items.push({label:'Hapus pesan',fn:()=>delMsg(id),danger:true});
+  if(mine||isAdmin||isMod) items.push({label:'Hapus pesan',fn:()=>delMsg(id),danger:true});
   openSheet(items,id);
 }
 async function editMsg(id){
   const m=msgData[id]; if(!m) return;
-  const t=await appDialog({title:'Edit pesan',message:'Perbarui isi pesan sebelum disimpan.',placeholder:'Tulis pesan',value:m.text||'',multiline:true,confirmText:'Simpan'}); if(t==null) return;
+  const t=await appDialog({kind:'edit',title:'Edit pesan',message:'Perbarui isi pesan sebelum disimpan.',placeholder:'Tulis pesan',value:m.text||'',multiline:true,confirmText:'Simpan'}); if(t==null) return;
   const v=t.trim(); if(!v||v===m.text) return;
   try{ await moderationApi({action:'edit',id,text:v}); }catch(e){ toast(e.message||'Gagal mengedit.'); }
 }
-async function delMsg(id){ if(await appDialog({title:'Hapus pesan?',message:'Pesan ini akan dihapus dari ruang obrol.',confirmText:'Hapus',danger:true})==null) return; try{ await moderationApi({action:'delete',id}); toast('Pesan dihapus.'); }catch(e){ toast(e.message||'Gagal menghapus.'); } }
+async function delMsg(id){ if(await appDialog({kind:'danger',title:'Hapus pesan?',message:'Pesan ini akan dihapus dari ruang obrol.',confirmText:'Hapus',danger:true})==null) return; try{ await moderationApi({action:'delete',id}); toast('Pesan dihapus.'); }catch(e){ toast(e.message||'Gagal menghapus.'); } }
 async function pinMsg(id){
   const m=msgData[id]; if(!m) return;
   try{ await set(ref(db,'pinned'),{id,name:names[m.uid]||m.name||'Pengguna',text:snippet(m,120),by:me.uid,ts:Date.now()+srvOff}); toast('Pesan disematkan.'); }
@@ -1135,7 +1146,7 @@ async function pinMsg(id){
 }
 async function reportMsg(id){
   const m=msgData[id]; if(!m) return;
-  const reason=await appDialog({title:'Laporkan pesan',message:'Jelaskan alasan laporan agar moderator dapat meninjaunya.',placeholder:'Contoh: spam atau bahasa kasar',multiline:true,confirmText:'Kirim laporan'}); if(!reason) return;
+  const reason=await appDialog({kind:'report',title:'Laporkan pesan',message:'Jelaskan alasan laporan agar moderator dapat meninjaunya.',placeholder:'Contoh: spam atau bahasa kasar',multiline:true,confirmText:'Kirim laporan'}); if(!reason) return;
   try{ await moderationApi({action:'report',id,reason:reason.trim().slice(0,120)}); toast('Laporan terkirim ke admin.'); }
   catch(e){ toast(e.message||'Gagal mengirim laporan.'); }
 }
@@ -1203,7 +1214,7 @@ function addDm(id,m){
   const w=document.createElement('div'); w.className='m'+(mine?' me':''); w.id='d_'+id;
   const meta=document.createElement('div'); meta.className='meta'; const tm=document.createElement('span'); tm.textContent=fmtTime(m.ts); meta.append(tm); w.append(meta);
   const box=document.createElement('div'); box.className='box'; const t=document.createElement('div'); t.className='cap'; renderText(t,m.text||''); box.append(t); w.append(box);
-  if(mine){ const d=document.createElement('button'); d.className='del'; d.type='button'; d.textContent='Hapus'; d.onclick=async()=>{ if(await appDialog({title:'Hapus pesan pribadi?',message:'Pesan ini akan dihapus.',confirmText:'Hapus',danger:true})==null) return; try{ await remove(ref(db,'dm/'+dmCur.key+'/'+id)); }catch(e){ toast('Gagal menghapus.'); } }; w.append(d); }
+  if(mine){ const d=document.createElement('button'); d.className='del'; d.type='button'; d.textContent='Hapus'; d.onclick=async()=>{ if(await appDialog({kind:'danger',title:'Hapus pesan pribadi?',message:'Pesan ini akan dihapus.',confirmText:'Hapus',danger:true})==null) return; try{ await remove(ref(db,'dm/'+dmCur.key+'/'+id)); }catch(e){ toast('Gagal menghapus.'); } }; w.append(d); }
   list.append(w); list.scrollTop=list.scrollHeight;
   if(!mine&&dmCur&&dmIdx[dmCur.other]&&dmIdx[dmCur.other].unread) update(ref(db,'dmIndex/'+me.uid+'/'+dmCur.other),{unread:false}).catch(()=>{});
 }
@@ -1238,7 +1249,7 @@ $('delAcc').onclick=()=>withLoad($('delAcc'),async()=>{
   const out=$('pwMsg'), oldP=$('iOldPw').value;
   if(isAdmin){ out.className='msg-err'; out.textContent='Akun admin tidak bisa dihapus dari sini.'; return; }
   if(!oldP){ out.className='msg-err'; out.textContent='Isi password saat ini dulu untuk menghapus akun.'; return; }
-  if(await appDialog({title:'Hapus akun?',message:'Akun akan dihapus permanen dan tindakan ini tidak bisa dibatalkan.',confirmText:'Hapus akun',danger:true})==null) return;
+  if(await appDialog({kind:'danger',title:'Hapus akun?',message:'Akun akan dihapus permanen dan tindakan ini tidak bisa dibatalkan.',confirmText:'Hapus akun',danger:true})==null) return;
   try{
     await reauthenticateWithCredential(me,EmailAuthProvider.credential(me.email,oldP));
     const uid=me.uid;
@@ -1253,14 +1264,36 @@ applyPrefsUi();
 if('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(()=>{});
 
 /* ---- Dialog custom aplikasi ---- */
+let evTimer=null,badList=[],isMod=false;
+function parseDur(v){
+ v=String(v||'').trim().toLowerCase();
+ if(/^(permanen|selamanya|perm)$/.test(v)) return Infinity;
+ const m=v.match(/^(\d+(?:[.,]\d+)?)\s*(m|mnt|menit|j|h|jam|d|hr|hari)?$/); if(!m) return NaN;
+ const n=parseFloat(m[1].replace(',','.')), u=m[2]||'m';
+ const mult=/^(j|h|jam)$/.test(u)?60:/^(d|hr|hari)$/.test(u)?1440:1;
+ return Math.max(1,Math.round(n*mult));
+}
+function fmtDur(min){ return min===Infinity?'permanen':min>=1440?Math.round(min/1440*10)/10+' hari':min>=60?Math.round(min/60*10)/10+' jam':min+' menit'; }
+async function askDur(kind,uid){
+ const isBan=kind==='ban';
+ const d=await appDialog({kind,title:isBan?'Durasi Ban':'Durasi Jail',message:'Atur berapa lama. Contoh: 30m (menit), 2j (jam), 3hari, atau permanen.',placeholder:'Durasi',value:isBan?'24j':'10m',confirmText:'Lanjut'});
+ if(!d) return null;
+ const min=parseDur(d); if(isNaN(min)){ toast('Format durasi tidak dikenali. Contoh: 30m, 2j, 3hari, permanen.'); return null; }
+ const reason=await appDialog({kind,title:isBan?'Alasan Ban':'Alasan Jail',message:'Durasi: '+fmtDur(min)+'. Alasan ditampilkan ke pengguna.',placeholder:'Alasan tindakan',confirmText:isBan?'Ban':'Jail',danger:isBan});
+ return reason?{min,reason}:null;
+}
+async function askJail(uid){ const r=await askDur('jail',uid); if(r){ const mins=r.min===Infinity?5256000:r.min; try{await moderationApi({action:'jail',uid,minutes:mins,reason:r.reason,permanent:r.min===Infinity});toast('Tindakan berhasil.');}catch(e){toast(e.message||'Gagal.');} } }
+async function askBan(uid){ const r=await askDur('ban',uid); if(r){ const hrs=r.min===Infinity?87600:Math.max(1,Math.ceil(r.min/60)); try{await moderationApi({action:'ban',uid,hours:hrs,reason:r.reason,permanent:r.min===Infinity});toast('Tindakan berhasil.');}catch(e){toast(e.message||'Gagal.');} } }
+function censor(t){ let x=String(t||''); badList.forEach(w=>{ if(w.length>1) x=x.replace(new RegExp(w.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'),'gi'),m=>'*'.repeat(m.length)); }); return x; }
+function hasBad(t){ const x=String(t||'').toLowerCase(); return badList.some(w=>w.length>1&&x.includes(w.toLowerCase())); }
 function modNotice(m){
  const t={warning:['Peringatan','Pesanmu mengandung kata terlarang dan otomatis dihapus.'],jail:['Akun masuk Jail','Kamu tidak bisa mengirim pesan untuk sementara.'],ban:['Akun diblokir','Akunmu dibatasi karena pelanggaran berulang.']}[m.action]||['Moderasi',''];
- appDialog({title:t[0],message:t[1]+'\nAlasan: '+(m.reason||'-'),confirmText:'Mengerti',danger:m.action!=='warning',noCancel:true});
+ appDialog({kind:m.action==='warning'?'warning':m.action,title:t[0],message:t[1]+'\nAlasan: '+(m.reason||'-'),confirmText:'Mengerti',danger:m.action!=='warning',noCancel:true});
 }
-function appDialog({title='Konfirmasi',message='',placeholder='',value='',multiline=false,confirmText='Lanjutkan',danger=false,requiredText='',inputType='text',noCancel=false}={}){
+function appDialog({title='Konfirmasi',message='',placeholder='',value='',multiline=false,confirmText='Lanjutkan',danger=false,requiredText='',inputType='text',noCancel=false,kind=''}={}){
  return new Promise(resolve=>{
   const root=$('dialogRoot'); root.innerHTML=''; const wrap=document.createElement('div'); wrap.className='dialog-wrap';
-  const card=document.createElement('div'); card.className='dialog-card';
+  const card=document.createElement('div'); card.className='dialog-card';if(kind)card.classList.add('k-'+kind);
   const h=document.createElement('h3');h.textContent=title; const p=document.createElement('p');p.textContent=message;card.append(h,p);
   let field=null;if(placeholder||requiredText){field=document.createElement(multiline?'textarea':'input');field.placeholder=placeholder;field.value=value;field.type=inputType;if(multiline)field.rows=3;card.append(field);}
   const actions=document.createElement('div');actions.className='dialog-actions';
@@ -1273,8 +1306,8 @@ function appDialog({title='Konfirmasi',message='',placeholder='',value='',multil
 function titleInfo(key){const map={admin:['ADMIN','#6eaaff'],moderator:['MODERATOR','#b49aff'],developer:['DEVELOPER','#f0b45b'],founder:['FOUNDER','#f4cf70'],verified:['VERIFIED','#49a6ff'],helper:['HELPER','#48c9a5'],support:['SUPPORT','#59c7d8'],designer:['DESIGNER','#d78cff'],contributor:['CONTRIBUTOR','#7bd49b'],eventhost:['EVENT HOST','#ff9f70'],vip:['VIP','#e7c66d'],event1:['TOP 1','#f2c45c'],event2:['TOP 2','#b8c4d8'],event3:['TOP 3','#d99a70'],member:['MEMBER','#8493ad']};return map[key]||['MEMBER','#8493ad'];}
 function appendTitle(meta,key){if(!key)return;const [label,color]=titleInfo(key);const b=document.createElement('span');b.className='title-chip';b.textContent=label;b.style.color=color;b.style.background='color-mix(in srgb, '+color+' 14%, transparent)';meta.append(b);}
 function titleDescription(key){return ({member:'Anggota komunitas dengan akses obrolan biasa.',admin:'Pengelola utama dengan akses penuh ke panel admin.',moderator:'Petugas moderasi yang ditunjuk admin.',developer:'Pengembang teknis Ruang Obrol.',founder:'Pendiri komunitas Ruang Obrol.',verified:'Akun yang telah mendapat verifikasi khusus.',helper:'Membantu anggota menjawab pertanyaan.',support:'Membantu pengguna terkait kendala akun.',designer:'Kontributor desain tampilan dan pengalaman pengguna.',contributor:'Kontributor fitur atau konten komunitas.',eventhost:'Penyelenggara event dan permainan.',vip:'Anggota dengan status VIP.',event1:'Peringkat pertama event terakhir.',event2:'Peringkat kedua event terakhir.',event3:'Peringkat ketiga event terakhir.'})[key]||'Title khusus yang diberikan admin.';}
-$('eventJoin').onclick=e=>{e.stopPropagation();openCurrentEvent();};$('eventBanner').onclick=()=>openCurrentEvent();$('eventClose').onclick=()=> $('vEvent').classList.add('hidden');
-async function openCurrentEvent(){const snap=await get(ref(db,'events/current'));const ev=snap.val();if(!ev||ev.status==='ended'){toast('Event sudah berakhir.');$('eventBanner').classList.add('hidden');return;}const state=await featureApi({action:'event-state'});const body=$('eventBody');body.innerHTML='';$('eventHeading').textContent=ev.name||'Event';$('vEvent').classList.remove('hidden');const status=document.createElement('div');status.className='event-card';status.textContent=state.status==='waiting'?'Pendaftaran peserta dibuka.':state.status==='active'?'Event sedang berlangsung.':'Event telah berakhir.';body.append(status);if(state.status==='waiting'){const deadline=document.createElement('p');deadline.className='note';deadline.textContent='Pendaftaran ditutup: '+(state.registrationEndsAt?new Date(state.registrationEndsAt).toLocaleString('id-ID'):'menunggu admin');body.append(deadline);const join=document.createElement('button');join.className='admin-action';join.textContent=state.joined?'Kamu sudah terdaftar':'Gabung event';join.disabled=state.joined||!!ev.registrationClosed||Date.now()>=Number(state.registrationEndsAt||0);join.onclick=async()=>{try{await featureApi({action:'event-join'});toast('Berhasil bergabung. Tunggu admin memulai event.');openCurrentEvent();}catch(e){toast(e.message);}};body.append(join);}if(state.status==='active'){if(!state.joined){const closed=document.createElement('p');closed.className='note';closed.textContent='Pendaftaran sudah ditutup. Kamu bisa mengikuti event berikutnya.';body.append(closed);}else if(state.question){const h=document.createElement('h3');h.textContent=state.question;body.append(h);const score=document.createElement('p');score.className='note';score.textContent='Skor: '+state.score;body.append(score);const input=document.createElement('input');input.placeholder='Jawaban kamu';input.maxLength=120;body.append(input);const send=document.createElement('button');send.className='admin-action';send.textContent='Kirim jawaban';send.onclick=async()=>{if(!input.value.trim())return;try{const r=await featureApi({action:'event-answer',answer:input.value.trim()});toast(r.correct?'Jawaban benar!':'Belum tepat, coba lagi.');openCurrentEvent();}catch(e){toast(e.message);}};body.append(send);}else{const done=document.createElement('p');done.textContent='Semua pertanyaan selesai. Skor: '+state.score;body.append(done);}}if(ev.winners&&Object.keys(ev.winners).length){const rank=document.createElement('div');rank.className='event-card';rank.textContent='Pemenang: '+Object.values(ev.winners).map(x=>'Top '+x.rank+' '+x.name+' ('+x.score+')').join(' · ');body.append(rank);}}
+$('eventJoin').onclick=e=>{e.stopPropagation();openCurrentEvent();};$('eventBanner').onclick=()=>openCurrentEvent();$('eventClose').onclick=()=>{ clearInterval(evTimer); $('vEvent').classList.add('hidden'); };
+async function openCurrentEvent(){const snap=await get(ref(db,'events/current'));const ev=snap.val();if(!ev||ev.status==='ended'){toast('Event sudah berakhir.');$('eventBanner').classList.add('hidden');$('vEvent').classList.add('hidden');clearInterval(evTimer);return;}const state=await featureApi({action:'event-state'});const body=$('eventBody');body.innerHTML='';$('eventHeading').textContent=ev.name||'Event';$('vEvent').classList.remove('hidden');const status=document.createElement('div');status.className='event-card';status.textContent=state.status==='waiting'?'Pendaftaran peserta dibuka.':state.status==='active'?'Event sedang berlangsung.':'Event telah berakhir.';body.append(status);clearInterval(evTimer);{const endAt=state.status==='waiting'?Number(state.registrationEndsAt||0):state.status==='active'?Number(ev.endsAt||0):0;if(endAt){const cd=document.createElement('div');cd.className='event-card';body.append(cd);const tick=()=>{const left=Math.max(0,Math.ceil((endAt-(Date.now()+srvOff))/1000));cd.textContent=(state.status==='waiting'?'Pendaftaran ditutup dalam ':'Sisa waktu event ')+fmtCount(left);if(left<=0){clearInterval(evTimer);setTimeout(openCurrentEvent,1500);}};evTimer=setInterval(tick,1000);tick();}}if(state.status==='waiting'){const deadline=document.createElement('p');deadline.className='note';deadline.textContent='Pendaftaran ditutup: '+(state.registrationEndsAt?new Date(state.registrationEndsAt).toLocaleString('id-ID'):'menunggu admin');body.append(deadline);const join=document.createElement('button');join.className='admin-action';join.textContent=state.joined?'Kamu sudah terdaftar':'Gabung event';join.disabled=state.joined||!!ev.registrationClosed||Date.now()>=Number(state.registrationEndsAt||0);join.onclick=async()=>{try{await featureApi({action:'event-join'});toast('Berhasil bergabung. Tunggu admin memulai event.');openCurrentEvent();}catch(e){toast(e.message);}};body.append(join);}if(state.status==='active'){if(!state.joined){const closed=document.createElement('p');closed.className='note';closed.textContent='Pendaftaran sudah ditutup. Kamu bisa mengikuti event berikutnya.';body.append(closed);}else if(state.question){const h=document.createElement('h3');h.textContent=state.question;body.append(h);const score=document.createElement('p');score.className='note';score.textContent='Skor: '+state.score;body.append(score);const input=document.createElement('input');input.placeholder='Jawaban kamu';input.maxLength=120;body.append(input);const send=document.createElement('button');send.className='admin-action';send.textContent='Kirim jawaban';send.onclick=async()=>{if(!input.value.trim())return;try{const r=await featureApi({action:'event-answer',answer:input.value.trim()});toast(r.correct?'Jawaban benar!':'Belum tepat, coba lagi.');openCurrentEvent();}catch(e){toast(e.message);}};body.append(send);}else{const done=document.createElement('p');done.textContent='Semua pertanyaan selesai. Skor: '+state.score;body.append(done);}}if(ev.winners&&Object.keys(ev.winners).length){const rank=document.createElement('div');rank.className='event-card';rank.textContent='Pemenang: '+Object.values(ev.winners).map(x=>'Top '+x.rank+' '+x.name+' ('+x.score+')').join(' · ');body.append(rank);}}
 
 
 /* ---- Panel admin & moderasi ---- */
@@ -1287,9 +1320,9 @@ async function moderationApi(payload){
 }
 async function featureApi(payload){if(!auth.currentUser)throw new Error('Sesi login tidak ditemukan.');const token=await auth.currentUser.getIdToken();const response=await fetch('/api/events',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify(payload)});const data=await response.json().catch(()=>({}));if(!response.ok)throw new Error(data.error||'Permintaan gagal.');return data;}
 $('btnAdmin').onclick=async()=>{
- if(!isAdmin) return;
+ if(!isAdmin&&!isMod) return;
  $('vAdmin').classList.remove('hidden');
- let users={},emails={},banned={},jail={},modUsers={},logs={},presence={}; let settingsD={},reportsD={},queueD={},annD=null; let tab='stats'; let purgeVal='30', purgeUnit='1', musicTitleVal='', musicUrlVal='', annVal='', badVal='', badTouched=false;
+ let users={},emails={},banned={},jail={},modUsers={},logs={},presence={}; let settingsD={},reportsD={},queueD={},annD=null; let tab=isAdmin?'stats':'users'; let purgeVal='30', purgeUnit='1', musicTitleVal='', musicUrlVal='', annVal='', badVal='', badTouched=false;
  const esc=s=>String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
  const act=async(action,uid,extra={})=>{try{await moderationApi({action,uid,...extra});toast('Tindakan berhasil.');}catch(e){toast(e.message||'Gagal.');}};
  const makeRow=uid=>{
@@ -1303,13 +1336,14 @@ $('btnAdmin').onclick=async()=>{
   if(uid!==me.uid){
    if(ban){ const ub=document.createElement('button'); ub.textContent='Buka ban'; ub.onclick=()=>act('unban',uid); row.append(ub); }
    else{
-    const jb=document.createElement('button'); jb.textContent=j?'Lepas Jail':'Atur Jail'; jb.onclick=async()=>{if(j)return act('unjail',uid);const mins=await appDialog({title:'Durasi Jail',message:'Masukkan durasi dalam menit (1–10080).',placeholder:'Menit',value:'10',confirmText:'Jail',inputType:'number'});if(mins) {const reason=await appDialog({title:'Alasan Jail',message:'Alasan ditampilkan pada status moderasi.',placeholder:'Alasan tindakan',confirmText:'Simpan'});if(reason)act('jail',uid,{minutes:Number(mins),reason});}}; row.append(jb);
-    const bb=document.createElement('button'); bb.className='danger'; bb.textContent='Atur Ban'; bb.onclick=async()=>{const hours=await appDialog({title:'Durasi Ban',message:'Masukkan durasi dalam jam (1–720).',placeholder:'Jam',value:'24',confirmText:'Lanjut',inputType:'number'});if(!hours)return;const reason=await appDialog({title:'Alasan Ban',message:'Masukkan alasan pemblokiran.',placeholder:'Alasan ban',confirmText:'Ban',danger:true});if(reason)act('ban',uid,{hours:Number(hours),reason});}; row.append(bb);
+    const jb=document.createElement('button'); jb.textContent=j?'Lepas Jail':'Atur Jail'; jb.onclick=()=>{if(j)return act('unjail',uid);askJail(uid);}; row.append(jb);
+    const bb=document.createElement('button'); bb.className='danger'; bb.textContent='Atur Ban'; bb.onclick=()=>askBan(uid); row.append(bb);
    }
   }
   return row;
  };
  const draw=()=>{
+  if(!isAdmin&&!['users','banned','jail','reports'].includes(tab)) tab='users';
   if(document.activeElement&&['purgeVal','musicTitleIn','musicUrlIn','annIn','badIn'].includes(document.activeElement.id)) return;
   const b=$('admBody'); const ids=Object.keys(users); const banIds=Object.keys(banned); const jailIds=Object.keys(jail);
   b.innerHTML=`<nav class="admin-section" style="display:flex;gap:8px;flex-wrap:wrap"><button class="admin-action ${tab==='stats'?'':'secondary'}" data-tab="stats">Statistik</button><button class="admin-action ${tab==='users'?'':'secondary'}" data-tab="users">Pengguna</button><button class="admin-action ${tab==='banned'?'':'secondary'}" data-tab="banned">Akun diblokir (${banIds.length})</button><button class="admin-action ${tab==='jail'?'':'secondary'}" data-tab="jail">Jail (${jailIds.length})</button><button class="admin-action ${tab==='ann'?'':'secondary'}" data-tab="ann">Pengumuman</button><button class="admin-action ${tab==='reports'?'':'secondary'}" data-tab="reports">Laporan (${Object.keys(reportsD).length})</button><button class="admin-action ${tab==='settings'?'':'secondary'}" data-tab="settings">Pengaturan</button><button class="admin-action ${tab==='music'?'':'secondary'}" data-tab="music">Musik</button><button class="admin-action ${tab==='titles'?'':'secondary'}" data-tab="titles">Title</button><button class="admin-action ${tab==='polls'?'':'secondary'}" data-tab="polls">Polling</button><button class="admin-action ${tab==='events'?'':'secondary'}" data-tab="events">Games / Event</button><button class="admin-action ${tab==='logs'?'':'secondary'}" data-tab="logs">Riwayat bot</button></nav>`;
@@ -1326,7 +1360,7 @@ $('btnAdmin').onclick=async()=>{
    b.querySelector('#purgeGo').onclick=async()=>{
     const sec=Math.floor(Number(pv.value)*Number(pu.value));
     if(!(sec>=5)){ toast('Minimal 5 detik.'); return; }
-    if(await appDialog({title:'Mulai penghapusan?',message:'Semua pesan akan dihapus setelah hitung mundur '+fmtCount(sec)+'.',confirmText:'Mulai',danger:true})==null) return;
+    if(await appDialog({kind:'danger',title:'Mulai penghapusan?',message:'Semua pesan akan dihapus setelah hitung mundur '+fmtCount(sec)+'.',confirmText:'Mulai',danger:true})==null) return;
     try{ await set(ref(db,'broadcast/purge'),{endAt:Date.now()+srvOff+sec*1000,by:me.uid,seconds:sec}); toast('Timer dimulai.'); }
     catch(e){ toast('Gagal memulai. Cek Rules database.'); }
    };
@@ -1338,7 +1372,7 @@ $('btnAdmin').onclick=async()=>{
    const list=b.querySelector('#moderationUsers');
    if(!selected.length){list.innerHTML='<div class="note">Belum ada data.</div>';}
    selected.forEach(uid=>{const u=users[uid]||{}, ban=banned[uid], j=jail[uid]; const row=document.createElement('div');row.className='row admin-account';const info=document.createElement('div');info.className='info';const name=document.createElement('div');name.className='n';name.textContent=u.name||'Pengguna';const email=document.createElement('div');email.className='e';email.textContent=(emails[uid]||{}).email||'';const status=document.createElement('div');status.className='e';status.textContent=ban?'Diblokir · '+(ban.reason||''):j?'Jail · '+(j.reason||''):'Aktif';info.append(name,email,status);row.append(info);
-    if(uid!==me.uid){const btn=document.createElement('button');btn.textContent=ban?'Buka ban':j?'Lepas Jail':'Atur Jail';btn.onclick=async()=>{if(ban)return act('unban',uid);if(j)return act('unjail',uid);const minutes=await appDialog({title:'Durasi Jail',message:'Durasi dalam menit (1–10080).',placeholder:'Menit',value:'10',inputType:'number',confirmText:'Lanjut'});if(!minutes)return;const reason=await appDialog({title:'Alasan Jail',message:'Masukkan alasan moderasi.',placeholder:'Alasan',confirmText:'Jail'});if(reason)act('jail',uid,{minutes:Number(minutes),reason});};row.append(btn);const banBtn=document.createElement('button');banBtn.className='danger';banBtn.textContent=ban?'':'Atur Ban';if(!ban)banBtn.onclick=async()=>{const hours=await appDialog({title:'Durasi Ban',message:'Durasi dalam jam (1–720).',placeholder:'Jam',value:'24',inputType:'number',confirmText:'Lanjut'});if(!hours)return;const reason=await appDialog({title:'Alasan Ban',message:'Masukkan alasan pemblokiran.',placeholder:'Alasan',confirmText:'Ban',danger:true});if(reason)act('ban',uid,{hours:Number(hours),reason});};row.append(banBtn);}
+    if(uid!==me.uid){const btn=document.createElement('button');btn.textContent=ban?'Buka ban':j?'Lepas Jail':'Atur Jail';btn.onclick=()=>{if(ban)return act('unban',uid);if(j)return act('unjail',uid);askJail(uid);};row.append(btn);const banBtn=document.createElement('button');banBtn.className='danger';banBtn.textContent=ban?'':'Atur Ban';if(!ban)banBtn.onclick=()=>askBan(uid);row.append(banBtn);}
     list.append(row);});
   }
   if(tab==='ann'){
@@ -1419,6 +1453,7 @@ $('btnAdmin').onclick=async()=>{
    get(ref(db,'events/current')).then(snap=>{const ev=snap.val();b.querySelector('#eventAdminStatus').textContent=ev?`${ev.name} · ${ev.status} · peserta ${Object.keys(ev.players||{}).length}${ev.status==='waiting'?' · pendaftaran ditutup '+new Date(ev.registrationEndsAt).toLocaleString('id-ID'):ev.status==='active'?' · berakhir '+new Date(ev.endsAt).toLocaleString('id-ID'):''}`:'Belum ada event.';});
   }
   if(tab==='logs'){b.innerHTML+=`<section class="admin-section"><h3>Riwayat moderasi terbaru</h3><div id="moderationLogs"></div></section>`;const list=b.querySelector('#moderationLogs');const entries=Object.entries(logs).sort((a,b)=>(b[1].createdAt||b[1].lastAt||0)-(a[1].createdAt||a[1].lastAt||0)).slice(0,80);list.innerHTML=entries.length?'':'<div class="note">Belum ada riwayat moderasi.</div>';entries.forEach(([key,v])=>{const item=document.createElement('div');item.className='admin-account';item.textContent=`${users[v.uid]?.name||v.uid} · ${v.action||'catatan'} · ${v.reason||''} · ${new Date(v.createdAt||v.lastAt||Date.now()).toLocaleString('id-ID')}`;list.append(item);});}
+  if(!isAdmin) b.querySelectorAll('[data-tab]').forEach(x=>{ if(!['users','banned','jail','reports'].includes(x.dataset.tab)) x.remove(); });
   b.querySelectorAll('[data-tab]').forEach(btn=>btn.onclick=()=>{tab=btn.dataset.tab;draw();});
  };
  admUnsub.forEach(f=>f()); admUnsub=[onValue(ref(db,'users'),s=>{users=s.val()||{};draw();}),onValue(ref(db,'private'),s=>{emails=s.val()||{};draw();}),onValue(ref(db,'banned'),s=>{banned=s.val()||{};draw();}),onValue(ref(db,'jail'),s=>{jail=s.val()||{};draw();}),onValue(ref(db,'moderation/users'),s=>{modUsers=s.val()||{};draw();}),onValue(ref(db,'moderation/logs'),s=>{logs=s.val()||{};draw();}),onValue(ref(db,'presence'),s=>{presence=s.val()||{};draw();}),onValue(ref(db,'settings'),s=>{settingsD=s.val()||{}; if(!badTouched) badVal=String(settingsD.badwords||''); draw();}),onValue(ref(db,'reports'),s=>{reportsD=s.val()||{};draw();}),onValue(ref(db,'broadcast/queue'),s=>{queueD=s.val()||{};draw();}),onValue(ref(db,'broadcast/announce'),s=>{annD=s.val();draw();})];
