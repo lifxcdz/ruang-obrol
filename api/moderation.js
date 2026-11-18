@@ -1,185 +1,166 @@
 
-const { getAdminServices, verifyUser, isAdmin } = require('../lib/firebase-admin');
+const { getAdminServices } = require('../lib/firebase-admin');
 
 const DAY = 86400000;
 const EDIT_WINDOW = 15 * 60 * 1000;
 const MAX_DATA_CHARS = 1000000;
 const MAX_FILE_BYTES = 750000;
 
-const send = (res, status, data) => res.status(status).json(data);
+const ADMIN_EMAILS = (process.env.ADMIN_EMAILS || 'lifxcdz@gmail.com')
+  .split(',')
+  .map(x => x.trim().toLowerCase())
+  .filter(Boolean);
 
-const clean = (v, max = 2000) =>
-  String(v ?? '')
-    .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g, '')
-    .trim()
-    .slice(0, max);
+const TITLE_KEYS = [
+  'member',
+  'moderator',
+  'developer',
+  'founder',
+  'verified',
+  'helper',
+  'support',
+  'designer',
+  'contributor',
+  'eventhost',
+  'vip'
+];
 
-const validId = v => /^[-\w]{8,40}$/.test(String(v || ''));
+function send(res, status, data) {
+  return res.status(status).json(data);
+}
 
-function scan(text, words = []) {
-  const normalized = String(text || '').toLowerCase().normalize('NFKC');
+function clean(value, max = 2000) {
+  return String(value ?? '').trim().slice(0, max);
+}
 
-  const defaults = [
-    'kontol', 'memek', 'ngentot', 'jancuk', 'anjing',
-    'bangsat', 'bajingan', 'goblok', 'tolol', 'asu'
-  ];
+function validId(value) {
+  return /^[A-Za-z0-9_-]{1,128}$/.test(String(value || ''));
+}
 
-  const all = [...defaults, ...words]
-    .map(x => String(x).toLowerCase())
+function scan(value, depth = 0) {
+  if (depth > 8) return 0;
+
+  if (typeof value === 'string') {
+    return value.length;
+  }
+
+  if (Array.isArray(value)) {
+    return value.reduce((n, item) => n + scan(item, depth + 1), 0);
+  }
+
+  if (value && typeof value === 'object') {
+    return Object.entries(value).reduce(
+      (n, [key, item]) => n + key.length + scan(item, depth + 1),
+      0
+    );
+  }
+
+  return 0;
+}
+
+function extraWords(text) {
+  return String(text || '')
+    .toLowerCase()
+    .replace(/[^a-z0-9\s]/g, ' ')
+    .split(/\s+/)
     .filter(Boolean);
-
-  const found = all.some(word => {
-    const escaped = word
-      .replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-      .replace(/\s+/g, '\\s*');
-
-    return new RegExp(
-      '(^|[^a-z0-9])' + escaped + '($|[^a-z0-9])',
-      'i'
-    ).test(normalized);
-  });
-
-  const threat =
-    /\b(mati(kan)? kamu|bunuh kamu|akan membunuh|ancam(an)? bunuh)\b/i.test(normalized);
-
-  const spam = /(.)\1{9,}/.test(normalized);
-
-  return {
-    blocked: found || threat || spam,
-    reason: threat
-      ? 'Ancaman terhadap pengguna'
-      : spam
-        ? 'Spam karakter berulang'
-        : 'Bahasa kasar atau kata terlarang',
-    score: threat ? 3 : (found || spam ? 1 : 0)
-  };
 }
 
-async function extraWords(db) {
-  const s = await db.ref('settings/badwords').get();
-
-  return String(s.val() || '')
-    .split(',')
-    .map(x => x.trim())
-    .filter(Boolean)
-    .slice(0, 200);
-}
-
-async function restrictions(db, uid, now, admin) {
-  if (admin) return;
-
-  const [b, j, lock] = await Promise.all([
-    db.ref('banned/' + uid).get(),
-    db.ref('jail/' + uid).get(),
-    db.ref('settings/locked').get()
-  ]);
-
-  const ban = b.val();
-  const jail = j.val();
+function restrictions(user, ban, jail) {
+  const now = Date.now();
 
   if (ban && (!ban.expiresAt || Number(ban.expiresAt) > now)) {
-    const e = new Error('Akun sedang diblokir.');
-    e.status = 403;
-    throw e;
+    return {
+      type: 'ban',
+      reason: ban.reason || 'Akun diblokir oleh admin.',
+      expiresAt: ban.expiresAt || null
+    };
   }
 
   if (jail && Number(jail.until) > now) {
-    const e = new Error('Akun sedang dalam Jail.');
-    e.status = 403;
-    throw e;
+    return {
+      type: 'jail',
+      reason: jail.reason || 'Akun sedang dalam Jail.',
+      until: jail.until
+    };
   }
 
-  if (lock.val() === true) {
-    const e = new Error('Chat sedang dikunci admin.');
-    e.status = 403;
-    throw e;
-  }
+  return null;
 }
 
-async function recordViolation(db, uid, reason, score, now) {
-  const ref = db.ref('moderation/users/' + uid);
+async function recordViolation(db, uid, reason, now) {
+  const ref = db.ref('moderation/warnings/' + uid);
   const snap = await ref.get();
+  const old = snap.val() || {};
 
-  const warnings =
-    (Number((snap.val() || {}).warnings) || 0) + 1;
+  const count = Number(old.count || 0) + 1;
 
-  let action = 'warning';
-  let until = null;
-
-  const record = {
-    uid,
-    reason,
-    score,
-    warnings,
-    createdAt: now,
-    source: 'bot'
+  const data = {
+    count,
+    reason: clean(reason || 'Pelanggaran aturan', 200),
+    updatedAt: now
   };
 
-  if (score >= 3 || warnings >= 3) {
-    action = score >= 3 ? 'jail' : 'ban';
+  await ref.set(data);
 
-    until = now + (
-      action === 'jail'
-        ? 10 * 60000
-        : DAY
-    );
-
-    if (action === 'jail') {
-      await db.ref('jail/' + uid).set({
-        ...record,
-        until
-      });
-    } else {
-      await db.ref('banned/' + uid).set({
-        ...record,
-        expiresAt: until,
-        type: 'temporary'
-      });
-    }
-  } else if (warnings >= 2) {
-    action = 'jail';
-    until = now + 5 * 60000;
-
-    await db.ref('jail/' + uid).set({
-      ...record,
-      until
-    });
-  }
-
-  await ref.update({
-    warnings,
-    lastAction: action,
-    lastAt: now
-  });
-
-  await db.ref('moderation/logs').push({
-    ...record,
-    action,
-    until
-  });
-
-  return { action, reason, until };
+  return data;
 }
 
-module.exports = async function (req, res) {
+function getDurationMinutes(value, fallback = 10) {
+  const number = Number(value);
+
+  if (!Number.isFinite(number)) return fallback;
+
+  return Math.max(1, Math.min(43200, Math.floor(number)));
+}
+
+module.exports = async function handler(req, res) {
   if (req.method !== 'POST') {
-    return send(res, 405, { error: 'Gunakan POST.' });
+    res.setHeader('Allow', 'POST');
+    return send(res, 405, { error: 'Method tidak diizinkan.' });
   }
 
   try {
-    const { auth, db } = getAdminServices();
+    const services = getAdminServices();
+    const db = services.db;
+    const adminAuth = services.auth;
 
-    const user = await verifyUser(req, auth, true);
+    if (!db || !adminAuth) {
+      return send(res, 500, {
+        error: 'Firebase Admin belum siap.'
+      });
+    }
+
+    const authorization = req.headers.authorization || '';
+    const token = authorization.startsWith('Bearer ')
+      ? authorization.slice(7)
+      : '';
+
+    if (!token) {
+      return send(res, 401, { error: 'Token login tidak ditemukan.' });
+    }
+
+    let user;
+
+    try {
+      user = await adminAuth.verifyIdToken(token);
+    } catch (error) {
+      return send(res, 401, { error: 'Sesi login tidak valid.' });
+    }
+
     const uid = user.uid;
-    const admin = isAdmin(user);
+    const email = String(user.email || '').toLowerCase();
+    const emailVerified = user.email_verified === true;
 
-    const body =
-      req.body && typeof req.body === 'object'
-        ? req.body
-        : {};
+    const isAdmin = emailVerified && ADMIN_EMAILS.includes(email);
 
-    const action = String(body.action || 'send');
+    const body = req.body || {};
+    const action = clean(body.action, 60).toLowerCase();
     const now = Date.now();
+
+    if (!action) {
+      return send(res, 400, { error: 'Action tidak ditemukan.' });
+    }
 
     const adminOnly = [
       'purge',
@@ -193,137 +174,129 @@ module.exports = async function (req, res) {
       'set-title'
     ];
 
-    if (adminOnly.includes(action) && !admin) {
-      return send(res, 403, {
-        error: 'Akses admin diperlukan.'
-      });
+    if (adminOnly.includes(action) && !isAdmin) {
+      return send(res, 403, { error: 'Khusus admin utama.' });
     }
 
-    // KIRIM PESAN
+    const target = clean(body.uid, 128);
+
+    if (
+      [
+        'ban',
+        'unban',
+        'jail',
+        'unjail',
+        'reset-warnings',
+        'set-title'
+      ].includes(action)
+    ) {
+      if (!validId(target)) {
+        return send(res, 400, { error: 'UID pengguna tidak valid.' });
+      }
+
+      if (target === uid) {
+        return send(res, 400, {
+          error: 'Kamu tidak dapat melakukan tindakan ini pada akun sendiri.'
+        });
+      }
+    }
+
+    // Kirim pesan
     if (action === 'send') {
-      await restrictions(db, uid, now, admin);
-
-      const type = ['text', 'image', 'file'].includes(body.type)
-        ? body.type
-        : 'text';
-
       const text = clean(body.text, 2000);
-      const data = typeof body.data === 'string' ? body.data : '';
+      const type = clean(body.type || 'text', 30);
 
-      const fname = clean(body.fname, 120)
-        .replace(/[\\/]/g, '_');
+      const allowedTypes = [
+        'text',
+        'image',
+        'file',
+        'audio',
+        'video'
+      ];
 
-      const size = Math.max(0, Number(body.size) || 0);
-      const mime = clean(body.mime, 120);
-
-      if (type === 'text' && !text) {
-        return send(res, 400, { error: 'Pesan kosong.' });
+      if (!allowedTypes.includes(type)) {
+        return send(res, 400, { error: 'Jenis pesan tidak valid.' });
       }
 
-      if ((type === 'image' || type === 'file') && !data) {
-        return send(res, 400, {
-          error: 'Lampiran tidak ditemukan.'
-        });
+      if (scan(body) > MAX_DATA_CHARS) {
+        return send(res, 413, { error: 'Data pesan terlalu besar.' });
       }
 
-      if (data.length > MAX_DATA_CHARS) {
-        return send(res, 413, {
-          error: 'Lampiran terlalu besar.'
-        });
+      if (!text && !body.data) {
+        return send(res, 400, { error: 'Pesan tidak boleh kosong.' });
       }
 
-      if (
-        type === 'image' &&
-        !/^data:image\/(jpeg|png|webp);base64,/i.test(data)
-      ) {
-        return send(res, 400, {
-          error: 'Format gambar tidak didukung.'
-        });
+      if (body.data && String(body.data).length > MAX_FILE_BYTES * 2) {
+        return send(res, 413, { error: 'File terlalu besar.' });
       }
 
-      if (
-        type === 'file' &&
-        (
-          size > MAX_FILE_BYTES ||
-          !/^data:[\w.+-]+\/[\w.+-]+;base64,/i.test(data)
-        )
-      ) {
-        return send(res, 413, {
-          error: 'File terlalu besar atau format tidak valid.'
-        });
-      }
+      const [userSnap, banSnap, jailSnap] = await Promise.all([
+        db.ref('users/' + uid).get(),
+        db.ref('banned/' + uid).get(),
+        db.ref('jail/' + uid).get()
+      ]);
 
-      if (!admin && text) {
-        const result = scan(text, await extraWords(db));
+      const profile = userSnap.val() || {};
+      const restriction = restrictions(
+        user,
+        banSnap.val(),
+        jailSnap.val()
+      );
 
-        if (result.blocked) {
-          const moderation = await recordViolation(
-            db,
-            uid,
-            result.reason,
-            result.score || 1,
-            now
-          );
-
-          return send(res, 422, {
-            error: 'Pesan tidak dikirim karena mengandung kata yang tidak diizinkan. Silakan ubah pesanmu.',
-            moderation
-          });
-        }
-      }
-
-      const profile =
-        (await db.ref('users/' + uid).get()).val() || {};
-
-      if (
-        profile.managed === true &&
-        profile.expiresAt &&
-        Number(profile.expiresAt) <= now
-      ) {
+      if (restriction) {
         return send(res, 403, {
-          error: 'Masa berlaku akun sudah habis.'
+          error: restriction.reason,
+          moderation: restriction
         });
       }
 
-      let quote = null;
-
-      if (validId(body.replyTo)) {
-        const rs = await db.ref('messages/' + body.replyTo).get();
-
-        if (rs.exists()) {
-          const m = rs.val();
-
-          quote = {
-            id: body.replyTo,
-            name: clean(m.name || 'Pengguna', 24),
-            text: clean(
-              m.text || (m.type === 'image' ? 'Foto' : 'Lampiran'),
-              80
-            )
-          };
-        }
-      }
-
-      const payload = {
+      const message = {
         uid,
-        name: clean(
-          profile.name ||
-          user.name ||
-          (user.email || 'pengguna').split('@')[0],
-          24
-        ),
-        ts: now,
+        name: clean(profile.name || user.name || 'Pengguna', 60),
         type,
-        ...(text ? { text } : {}),
-        ...(data ? { data } : {}),
-        ...(type === 'file' ? { fname, size, mime } : {}),
-        ...(admin ? { admin: true } : {}),
-        ...(quote ? { reply: quote } : {})
+        text,
+        ts: now
       };
 
-      const messageRef = db.ref('messages').push();
+      if (body.data) message.data = body.data;
+      if (body.fname) message.fname = clean(body.fname, 180);
+      if (body.size) message.size = Math.max(0, Number(body.size) || 0);
 
-      await messageRef.set(payload);
+      if (body.replyTo && validId(body.replyTo)) {
+        message.reply = body.replyTo;
+      }
+
+      const badSnap = await db.ref('settings/badwords').get();
+      const badWords = String(badSnap.val() || '')
+        .split(',')
+        .map(x => x.trim().toLowerCase())
+        .filter(Boolean);
+
+      const words = extraWords(text);
+      const foundBadWord = words.some(word =>
+        badWords.includes(word)
+      );
+
+      if (foundBadWord) {
+        const warning = await recordViolation(
+          db,
+          uid,
+          'Menggunakan kata yang masuk filter.',
+          now
+        );
+
+        return send(res, 400, {
+          error: 'Pesan mengandung kata yang tidak diperbolehkan.',
+          moderation: {
+            type: 'warning',
+            count: warning.count,
+            reason: warning.reason
+          }
+        });
+      }
+
+      const messageRef = db.ref('messages').push();
+      await messageRef.set(message);
 
       return send(res, 200, {
         success: true,
@@ -331,63 +304,38 @@ module.exports = async function (req, res) {
       });
     }
 
-    // EDIT DAN HAPUS PESAN
-    if (action === 'edit' || action === 'delete') {
-      const id = String(body.id || '');
-
-      if (!validId(id)) {
-        return send(res, 400, {
-          error: 'ID pesan tidak valid.'
-        });
-      }
-
-      const ref = db.ref('messages/' + id);
-      const snap = await ref.get();
-
-      if (!snap.exists()) {
-        return send(res, 404, {
-          error: 'Pesan tidak ditemukan.'
-        });
-      }
-
-      const msg = snap.val();
-
-      if (msg.uid !== uid && !admin) {
-        return send(res, 403, {
-          error: 'Tidak boleh mengubah pesan ini.'
-        });
-      }
-
-      if (action === 'delete') {
-        await ref.remove();
-
-        return send(res, 200, { success: true });
-      }
-
+    // Edit pesan
+    if (action === 'edit') {
+      const id = clean(body.id, 128);
       const text = clean(body.text, 2000);
 
-      if (!text) {
-        return send(res, 400, { error: 'Pesan kosong.' });
+      if (!validId(id) || !text) {
+        return send(res, 400, { error: 'Data pesan tidak valid.' });
+      }
+
+      const messageRef = db.ref('messages/' + id);
+      const snap = await messageRef.get();
+
+      if (!snap.exists()) {
+        return send(res, 404, { error: 'Pesan tidak ditemukan.' });
+      }
+
+      const message = snap.val() || {};
+
+      if (message.uid !== uid && !isAdmin) {
+        return send(res, 403, { error: 'Tidak memiliki izin mengedit.' });
       }
 
       if (
-        !admin &&
-        now - Number(msg.ts || 0) > EDIT_WINDOW
+        !isAdmin &&
+        now - Number(message.ts || 0) > EDIT_WINDOW
       ) {
         return send(res, 403, {
-          error: 'Waktu mengedit sudah lewat (15 menit).'
+          error: 'Waktu untuk mengedit pesan sudah habis.'
         });
       }
 
-      await restrictions(db, uid, now, admin);
-
-      if (!admin && scan(text, await extraWords(db)).blocked) {
-        return send(res, 422, {
-          error: 'Pesan mengandung kata yang tidak diizinkan.'
-        });
-      }
-
-      await ref.update({
+      await messageRef.update({
         text,
         edited: true,
         editedAt: now
@@ -396,236 +344,346 @@ module.exports = async function (req, res) {
       return send(res, 200, { success: true });
     }
 
-    // LAPORAN
+    // Hapus pesan
+    if (action === 'delete') {
+      const id = clean(body.id, 128);
+
+      if (!validId(id)) {
+        return send(res, 400, { error: 'ID pesan tidak valid.' });
+      }
+
+      const messageRef = db.ref('messages/' + id);
+      const snap = await messageRef.get();
+
+      if (!snap.exists()) {
+        return send(res, 404, { error: 'Pesan tidak ditemukan.' });
+      }
+
+      const message = snap.val() || {};
+
+      if (message.uid !== uid && !isAdmin) {
+        return send(res, 403, { error: 'Tidak memiliki izin menghapus.' });
+      }
+
+      await messageRef.remove();
+
+      return send(res, 200, { success: true });
+    }
+
+    // Laporkan pesan
     if (action === 'report') {
-      const id = String(body.id || '');
+      const id = clean(body.id, 128);
       const reason = clean(body.reason, 120);
 
       if (!validId(id) || !reason) {
+        return send(res, 400, { error: 'Laporan tidak lengkap.' });
+      }
+
+      const messageSnap = await db.ref('messages/' + id).get();
+
+      if (!messageSnap.exists()) {
+        return send(res, 404, { error: 'Pesan tidak ditemukan.' });
+      }
+
+      const message = messageSnap.val() || {};
+
+      if (message.uid === uid) {
         return send(res, 400, {
-          error: 'ID pesan dan alasan laporan wajib diisi.'
+          error: 'Kamu tidak dapat melaporkan pesan sendiri.'
         });
       }
 
-      const snap = await db.ref('messages/' + id).get();
+      const duplicate = await db.ref('reports')
+        .orderByChild('by')
+        .equalTo(uid)
+        .get();
 
-      if (!snap.exists()) {
-        return send(res, 404, {
-          error: 'Pesan tidak ditemukan.'
+      let alreadyReported = false;
+
+      duplicate.forEach(item => {
+        const report = item.val() || {};
+        if (report.msgId === id) alreadyReported = true;
+      });
+
+      if (alreadyReported) {
+        return send(res, 409, {
+          error: 'Pesan ini sudah pernah kamu laporkan.'
         });
       }
 
-      const m = snap.val();
+      const reportRef = db.ref('reports').push();
 
-      if (m.uid === uid) {
-        return send(res, 400, {
-          error: 'Kamu tidak bisa melaporkan pesan sendiri.'
-        });
-      }
-
-      await db.ref('reports').push({
+      await reportRef.set({
         msgId: id,
-        msgUid: m.uid,
-        msgName: clean(m.name, 24),
-        msgText: clean(
-          m.text || (m.type === 'image' ? 'Foto' : 'Lampiran'),
-          120
-        ),
+        msgUid: message.uid || '',
+        msgName: clean(message.name || 'Pengguna', 60),
+        msgText: clean(message.text || '', 500),
         by: uid,
-        byName: clean(
-          user.name || (user.email || '').split('@')[0],
-          24
-        ),
+        byName: clean(user.name || email || 'Pengguna', 60),
         reason,
         ts: now
       });
 
-      return send(res, 200, { success: true });
+      return send(res, 200, {
+        success: true,
+        reportId: reportRef.key
+      });
     }
 
-    // HAPUS SEMUA PESAN
+    // Hapus semua pesan
     if (action === 'purge') {
-      await db.ref('messages').remove();
-      await db.ref('broadcast/purge').remove();
+      const messagesRef = db.ref('messages');
+      const snap = await messagesRef.get();
+
+      if (!snap.exists()) {
+        return send(res, 200, {
+          success: true,
+          deleted: 0
+        });
+      }
+
+      const data = snap.val() || {};
+      const updates = {};
+      let deleted = 0;
+
+      Object.keys(data).forEach(id => {
+        updates[id] = null;
+        deleted++;
+      });
+
+      await messagesRef.update(updates);
 
       await db.ref('moderation/logs').push({
-        uid,
-        action,
-        source: 'admin',
+        action: 'purge',
+        adminUid: uid,
+        deleted,
+        createdAt: now
+      });
+
+      return send(res, 200, {
+        success: true,
+        deleted
+      });
+    }
+
+    // Abaikan laporan
+    if (action === 'dismiss-report') {
+      const reportId = clean(body.reportId, 128);
+
+      if (!validId(reportId)) {
+        return send(res, 400, { error: 'ID laporan tidak valid.' });
+      }
+
+      await db.ref('reports/' + reportId).remove();
+
+      await db.ref('moderation/logs').push({
+        action: 'dismiss-report',
+        reportId,
+        adminUid: uid,
         createdAt: now
       });
 
       return send(res, 200, { success: true });
     }
 
-    // MODERASI LAPORAN
-    if (
-      action === 'dismiss-report' ||
-      action === 'delete-report-message'
-    ) {
-      const id = String(body.reportId || '');
+    // Hapus pesan melalui laporan
+    if (action === 'delete-report-message') {
+      const reportId = clean(body.reportId, 128);
 
-      if (!validId(id)) {
-        return send(res, 400, {
-          error: 'ID laporan tidak valid.'
-        });
+      if (!validId(reportId)) {
+        return send(res, 400, { error: 'ID laporan tidak valid.' });
       }
 
-      const ref = db.ref('reports/' + id);
-      const snap = await ref.get();
+      const reportRef = db.ref('reports/' + reportId);
+      const reportSnap = await reportRef.get();
 
-      if (!snap.exists()) {
-        return send(res, 404, {
-          error: 'Laporan tidak ditemukan.'
-        });
+      if (!reportSnap.exists()) {
+        return send(res, 404, { error: 'Laporan tidak ditemukan.' });
       }
 
-      const report = snap.val();
+      const report = reportSnap.val() || {};
 
-      if (
-        action === 'delete-report-message' &&
-        validId(report.msgId)
-      ) {
+      if (validId(report.msgId)) {
         await db.ref('messages/' + report.msgId).remove();
       }
 
-      await ref.remove();
+      await reportRef.remove();
 
       await db.ref('moderation/logs').push({
-        uid: report.msgUid || '',
-        action,
-        reason: clean(report.reason, 120),
-        source: 'admin',
+        action: 'delete-report-message',
+        reportId,
+        messageId: report.msgId || null,
+        adminUid: uid,
         createdAt: now
       });
 
       return send(res, 200, { success: true });
     }
 
-    // VALIDASI TARGET
-    const target = String(body.uid || '');
+    // Ban akun
+    if (action === 'ban') {
+      const minutes = getDurationMinutes(body.minutes, 1440);
+      const reason = clean(body.reason || 'Pelanggaran aturan', 200);
+      const expiresAt = body.permanent === true
+        ? null
+        : now + minutes * 60000;
 
-    if (!/^[A-Za-z0-9_-]{1,128}$/.test(target)) {
-      return send(res, 400, {
-        error: 'ID pengguna tidak valid.'
-      });
-    }
+      const banData = {
+        reason,
+        by: uid,
+        createdAt: now,
+        expiresAt
+      };
 
-    if (target === uid) {
-      return send(res, 400, {
-        error: 'Admin tidak dapat memoderasi akunnya sendiri.'
-      });
-    }
-
-    const reason = clean(body.reason || 'Tindakan admin', 240);
-
-    // FITUR TITLE ADMIN
-    if (action === 'set-title') {
-      const title = clean(body.title, 40);
-
-      const userRef = db.ref('users/' + target);
-      const userSnap = await userRef.get();
-
-      if (!userSnap.exists()) {
-        return send(res, 404, {
-          error: 'Pengguna tidak ditemukan.'
-        });
-      }
-
-      await userRef.update({
-        title: title || null,
-        titleUpdatedAt: now,
-        titleUpdatedBy: uid
-      });
+      await db.ref('banned/' + target).set(banData);
 
       await db.ref('moderation/logs').push({
+        action: 'ban',
         uid: target,
-        action: 'set-title',
-        title: title || 'Member',
-        source: 'admin',
+        reason,
+        expiresAt,
         adminUid: uid,
         createdAt: now
       });
 
       return send(res, 200, {
         success: true,
-        title: title || 'Member'
+        expiresAt
       });
     }
 
-    // BAN
-    if (action === 'ban') {
-      const permanent = body.permanent === true;
-
-      const hours = Math.min(
-        720,
-        Math.max(1, Number(body.hours) || 24)
-      );
-
-      await db.ref('banned/' + target).set({
-        source: 'admin',
-        reason,
-        createdAt: now,
-        expiresAt: permanent ? null : now + hours * 3600000,
-        type: permanent ? 'permanent' : 'temporary'
-      });
-    }
-
-    // UNBAN
-    else if (action === 'unban') {
+    // Buka ban
+    if (action === 'unban') {
       await db.ref('banned/' + target).remove();
+
+      await db.ref('moderation/logs').push({
+        action: 'unban',
+        uid: target,
+        adminUid: uid,
+        createdAt: now
+      });
+
+      return send(res, 200, { success: true });
     }
 
-    // JAIL
-    else if (action === 'jail') {
-      const minutes = Math.min(
-        10080,
-        Math.max(1, Number(body.minutes) || 10)
-      );
+    // Jail akun
+    if (action === 'jail') {
+      const minutes = getDurationMinutes(body.minutes, 10);
+      const reason = clean(body.reason || 'Pelanggaran aturan', 200);
+      const until = now + minutes * 60000;
 
       await db.ref('jail/' + target).set({
-        source: 'admin',
         reason,
+        by: uid,
         createdAt: now,
-        until: now + minutes * 60000
+        until
+      });
+
+      await db.ref('moderation/logs').push({
+        action: 'jail',
+        uid: target,
+        reason,
+        until,
+        adminUid: uid,
+        createdAt: now
+      });
+
+      return send(res, 200, {
+        success: true,
+        until
       });
     }
 
-    // UNJAIL
-    else if (action === 'unjail') {
+    // Lepas Jail
+    if (action === 'unjail') {
       await db.ref('jail/' + target).remove();
+
+      await db.ref('moderation/logs').push({
+        action: 'unjail',
+        uid: target,
+        adminUid: uid,
+        createdAt: now
+      });
+
+      return send(res, 200, { success: true });
     }
 
-    // RESET WARNING
-    else if (action === 'reset-warnings') {
-      await db.ref('moderation/users/' + target).update({
-        warnings: 0,
-        lastAction: 'reset',
-        lastAt: now
+    // Reset peringatan
+    if (action === 'reset-warnings') {
+      await db.ref('moderation/warnings/' + target).remove();
+
+      await db.ref('moderation/logs').push({
+        action: 'reset-warnings',
+        uid: target,
+        adminUid: uid,
+        createdAt: now
+      });
+
+      return send(res, 200, { success: true });
+    }
+
+    // Tambah atau cabut title
+    if (action === 'set-title') {
+      const title = clean(body.title, 40).toLowerCase();
+
+      if (!TITLE_KEYS.includes(title)) {
+        return send(res, 400, { error: 'Title tidak valid.' });
+      }
+
+      const userRef = db.ref('users/' + target);
+      const userSnap = await userRef.get();
+
+      if (!userSnap.exists()) {
+        return send(res, 404, { error: 'Pengguna tidak ditemukan.' });
+      }
+
+      const profile = userSnap.val() || {};
+      const titles = {
+        ...(profile.titles || {})
+      };
+
+      // Migrasikan title lama ke struktur titles.
+      if (profile.title && profile.title !== 'member') {
+        titles[profile.title] = true;
+      }
+
+      if (body.revoke === true) {
+        delete titles[title];
+      } else if (title !== 'member') {
+        titles[title] = true;
+      }
+
+      await userRef.update({
+        title: null,
+        titles: Object.keys(titles).length ? titles : null,
+        titleUpdatedAt: now,
+        titleUpdatedBy: uid
+      });
+
+      await db.ref('moderation/logs').push({
+        uid: target,
+        action: body.revoke === true ? 'revoke-title' : 'set-title',
+        title,
+        adminUid: uid,
+        createdAt: now
+      });
+
+      return send(res, 200, {
+        success: true,
+        revoked: body.revoke === true,
+        title
       });
     }
 
-    else {
-      return send(res, 400, {
-        error: 'Aksi tidak dikenal.'
-      });
-    }
-
-    await db.ref('moderation/logs').push({
-      uid: target,
-      action,
-      reason,
-      source: 'admin',
-      createdAt: now
+    return send(res, 400, {
+      error: 'Action tidak dikenal: ' + action
     });
 
-    return send(res, 200, { success: true });
-
   } catch (error) {
-    console.error('moderation API:', error);
+    console.error('[moderation]', error);
 
-    return send(res, error.status || 500, {
-      error: error.message || 'Server gagal memproses moderasi.'
+    return send(res, 500, {
+      error: 'Terjadi kesalahan pada server moderasi.'
     });
   }
 };
