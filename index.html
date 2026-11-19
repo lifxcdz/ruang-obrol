@@ -1505,7 +1505,7 @@ function appDialog({title='Konfirmasi',message='',placeholder='',value='',multil
   const root=$('dialogRoot'); root.innerHTML=''; const wrap=document.createElement('div'); wrap.className='dialog-wrap';
   const card=document.createElement('div'); card.className='dialog-card';if(kind)card.classList.add('k-'+kind);
   const h=document.createElement('h3');h.textContent=title; const p=document.createElement('p');p.textContent=message;card.append(h,p);
-  let field=null;if(placeholder||requiredText){field=document.createElement(multiline?'textarea':'input');field.placeholder=placeholder;field.value=value;field.type=inputType;if(multiline)field.rows=3;card.append(field);}
+  let field=null;if(placeholder||requiredText||value!==''||multiline||inputType!=='text'){field=document.createElement(multiline?'textarea':'input');field.placeholder=placeholder;field.value=value;field.type=inputType;if(multiline)field.rows=3;card.append(field);}
   const actions=document.createElement('div');actions.className='dialog-actions';
   const cancel=document.createElement('button');cancel.type='button';cancel.textContent='Batal';
   const ok=document.createElement('button');ok.type='button';ok.textContent=confirmText;ok.className='primary';if(danger)ok.classList.add('dg');
