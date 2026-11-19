@@ -450,6 +450,28 @@ footer textarea:focus,.searchrow input:focus,.dm-comp textarea:focus{border-colo
 #vLand .btn{background:#070f35;color:#fff;border-radius:16px;padding:16px;font-weight:700;font-size:16px;box-shadow:none}
 #vLand .link{color:#2f4300;text-decoration:none;margin-top:6px}
 #vLand .link b{color:#070f35;text-decoration:underline}
+
+/* ===== Link, ikon title, layar ban ===== */
+.msg-link{color:#c8f21a;text-decoration:underline;text-underline-offset:2px;text-decoration-thickness:1.5px;word-break:break-all}
+.msg-link:hover{color:#e2ff5a}
+:root[data-theme=light] .msg-link{color:#4f7300}
+.m.me .msg-link{color:#d9ff4d}
+.title-chip.ico{display:inline-flex;align-items:center;justify-content:center;width:26px;height:20px;padding:0;border-radius:8px;cursor:pointer;flex:none}
+.title-chip.ico .tl{display:flex;align-items:center;justify-content:center;line-height:0}
+.title-chip.ico svg{width:14px;height:14px;display:block;overflow:visible}
+.title-chip.ico[data-fx=admin]{width:30px}
+.title-chip.ico[data-fx=admin] svg{width:17px;height:17px}
+#uName,.pnameline{flex-wrap:wrap}
+#vBan{position:fixed;inset:0;z-index:200;background:radial-gradient(circle at 50% 0,#2a0d12 0,#0a0d18 60%);display:flex;align-items:center;justify-content:center;padding:22px;overflow:auto}
+#vBan .bcard{width:100%;max-width:400px;background:rgba(255,255,255,.04);border:1px solid rgba(255,90,90,.35);border-radius:22px;padding:26px 22px;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.5)}
+#vBan .bic{width:64px;height:64px;margin:0 auto 12px;border-radius:50%;background:rgba(255,90,90,.14);display:flex;align-items:center;justify-content:center;color:#ff6b6b}
+#vBan h2{font-size:22px;margin-bottom:6px}
+#vBan .bsub{color:var(--muted);font-size:14px;line-height:1.5;margin-bottom:14px}
+#vBan dl{text-align:left;display:grid;grid-template-columns:auto 1fr;gap:8px 14px;font-size:14px;margin:0 0 16px;padding:14px;border-radius:14px;background:rgba(0,0,0,.25)}
+#vBan dt{color:var(--muted)}
+#vBan dd{margin:0;word-break:break-word}
+#vBan .bleft{font-size:26px;font-weight:700;letter-spacing:-.02em;color:#ffb3b3;margin:0 0 14px;font-variant-numeric:tabular-nums}
+#vBan button{width:100%;margin-top:8px}
 </style>
 </head>
 <body>
@@ -597,6 +619,15 @@ footer textarea:focus,.searchrow input:focus,.dm-comp textarea:focus{border-colo
 <!-- Pratinjau foto -->
 <section id="vUser" class="overlay hidden"><div class="top"><h2>Profil pengguna</h2><button id="userClose" type="button">Tutup</button></div><div class="body"><div class="card" style="margin:0 auto"><div class="avatar" id="uAvatar"></div><div class="brand" id="uName" style="font-size:22px;text-align:center"></div><dl class="pinfo" id="uInfo"></dl><div class="uactions" id="uActions"></div></div></div></section>
 
+<section id="vBan" class="hidden" role="alertdialog" aria-labelledby="banTitle"><div class="bcard">
+  <div class="bic"><svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9.5"/><path d="M5.3 5.3l13.4 13.4"/></svg></div>
+  <h2 id="banTitle">Akunmu diblokir</h2>
+  <p class="bsub">Kamu dikeluarkan dari semua menu: chat, pesan pribadi, grup, dan lainnya, selama blokir berlaku.</p>
+  <div class="bleft" id="banLeft"></div>
+  <dl id="banInfo"></dl>
+  <button class="btn" id="banRefresh" type="button">Muat ulang status</button>
+  <button class="link" id="banOut" type="button">Keluar dari akun</button>
+</div></section>
 <div id="dialogRoot"></div>
 <div id="actWrap" class="actwrap hidden"><div class="actsheet" id="actSheet"></div></div>
 
@@ -760,7 +791,7 @@ $('verifyOut').onclick=()=>signOut(auth);
 $('btnOut').onclick=async()=>{ await dropPresence(); signOut(auth); };
 
 /* ---- Sesi ---- */
-let me=null, isAdmin=false, unsubs=[], entered=false; const names={};
+let me=null, isAdmin=false, isOwner=false, unsubs=[], entered=false; const names={};
 let myPres=null, srvOff=0, purgeTimer=null, purging=false;
 const usersData={};
 let musicEl=null, musicCur=null, musicMuted=false, ytPlayer=null, ytTimer=null, ytChecked=false, ytLoading=null;
@@ -904,7 +935,7 @@ onAuthStateChanged(auth,async u=>{
   enter(u);
 });
 
-function cleanup(){ unsubs.forEach(f=>f()); unsubs=[]; ['vRules','vGroups','vGroup','vGroupInfo'].forEach(i=>{const e=$(i); if(e) e.classList.add('hidden');}); entered=false; stBanned=stJail=stLock=false; replyTo=null; $('replyBar').classList.add('hidden'); $('typingLine').classList.add('hidden'); $('pinBar').classList.add('hidden'); $('annBar').classList.add('hidden'); $('vDmList').classList.add('hidden'); closeActs(); clearInterval(purgeTimer); purgeTimer=null; $('purgeBar').classList.add('hidden'); stopMusicLocal(); musicCur=null; $('vUser').classList.add('hidden'); $('vProfile').classList.add('hidden'); $('vAdmin').classList.add('hidden'); $('list').innerHTML='<div class="empty" id="empty">Belum ada pesan. Mulai obrolan.</div>'; }
+function cleanup(){ unsubs.forEach(f=>f()); unsubs=[]; ['vRules','vGroups','vGroup','vGroupInfo'].forEach(i=>{const e=$(i); if(e) e.classList.add('hidden');}); entered=false; stBanned=stJail=stLock=false; showBan(null); replyTo=null; $('replyBar').classList.add('hidden'); $('typingLine').classList.add('hidden'); $('pinBar').classList.add('hidden'); $('annBar').classList.add('hidden'); $('vDmList').classList.add('hidden'); closeActs(); clearInterval(purgeTimer); purgeTimer=null; $('purgeBar').classList.add('hidden'); stopMusicLocal(); musicCur=null; $('vUser').classList.add('hidden'); $('vProfile').classList.add('hidden'); $('vAdmin').classList.add('hidden'); $('list').innerHTML='<div class="empty" id="empty">Belum ada pesan. Mulai obrolan.</div>'; }
 
 async function enter(u){
   if(entered) return;
@@ -920,7 +951,7 @@ async function enter(u){
     console.warn('Pemeriksaan masa berlaku akun gagal:',error);
   }
   entered=true; try{ localStorage.setItem('ro_seen','1'); }catch(e){}
-  me=u; isAdmin=ADMIN_EMAILS.map(e=>e.toLowerCase()).includes((u.email||'').toLowerCase());
+  me=u; isOwner=isAdmin=ADMIN_EMAILS.map(e=>e.toLowerCase()).includes((u.email||'').toLowerCase());
   $('whoName').textContent=u.displayName||u.email;
   $('btnAdmin').classList.toggle('hidden',!isAdmin);
   show('vChat');
@@ -941,10 +972,10 @@ async function enter(u){
   unsubs.push(onValue(ref(db,'broadcast/music'),s=>handleMusic(s.val())));
 
   unsubs.push(onValue(ref(db,'banned/'+u.uid),s=>{
-    const v=s.val(); stBanned=!!(v&&(!v.expiresAt||Number(v.expiresAt)>Date.now())); updateComposer();
+    const v=s.val(); stBanned=!!(v&&(!v.expiresAt||Number(v.expiresAt)>Date.now())); updateComposer(); showBan(stBanned?v:null);
   }));
   unsubs.push(onValue(ref(db,'jail/'+u.uid),s=>{
-    const j=s.val(); stJail=!!(j&&Number(j.until)>Date.now());
+    const j=s.val(); stJail=!!(j&&Number(j.until)>Date.now()); jailInfo=stJail?j:null;
     $('jailBar').textContent=stJail?'Akun dalam Jail sampai '+new Date(j.until).toLocaleString('id-ID')+'. Alasan: '+(j.reason||'Pelanggaran aturan'):'';
     updateComposer();
   }));
@@ -966,7 +997,7 @@ async function enter(u){
   unsubs.push(onValue(ref(db,'events/current'),s=>{const ev=s.val();if(!ev||ev.status==='ended'){$('eventBanner').classList.add('hidden');return;} $('eventBanner').classList.remove('hidden');$('eventBannerText').textContent=(ev.name||'Event baru')+(ev.status==='waiting'?' · pendaftaran':' · sedang berlangsung');if(ev.id&&ev.id!==sessionStorage.getItem('ro_event_seen')){sessionStorage.setItem('ro_event_seen',ev.id);appDialog({kind:'event',title:'Event baru!',message:(ev.name||'Tebak-tebakan')+'\nKetuk Masuk untuk bergabung sebelum pendaftaran ditutup.',confirmText:'Masuk'}).then(v=>{ if(v) openCurrentEvent(); });}}));
   unsubs.push(onValue(ref(db,'users'),s=>{
     const v=s.val()||{}; for(const k in v) names[k]=v[k].name;
-    Object.keys(usersData).forEach(k=>delete usersData[k]); Object.assign(usersData,v); isMod=!isAdmin&&!!me&&hasTitle(me.uid,'moderator'); $('btnAdmin').classList.toggle('hidden',!(isAdmin||isMod)); updateHeaderPhoto();
+    Object.keys(usersData).forEach(k=>delete usersData[k]); Object.assign(usersData,v); isAdmin=isOwner||(!!me&&hasTitle(me.uid,'admin')); isMod=!isAdmin&&!!me&&hasTitle(me.uid,'moderator'); $('btnAdmin').classList.toggle('hidden',!(isAdmin||isMod)); updateHeaderPhoto();
     document.querySelectorAll('.nm').forEach(el=>{ if(me&&el.dataset.uid!==me.uid&&names[el.dataset.uid]) el.textContent=names[el.dataset.uid]; });
   }));
   const q=query(ref(db,'messages'),limitToLast(LOAD_LAST));
@@ -979,16 +1010,22 @@ async function enter(u){
 const live={on:false}, msgData={}, rxUnsubs={};
 const EMOJIS=['👍','❤️','😂','😮','😢','🙏'];
 let searchQ='', replyTo=null, readsData={}, typingData={}, typingLast=0, typingIdle=null, readTimer=null, lastRead=0;
-let stBanned=false, stJail=false, stLock=false, annCur=null;
+let stBanned=false, stJail=false, stLock=false, annCur=null, jailInfo=null;
 const snippet=(m,n=80)=>m.type==='image'?'Foto':m.type==='file'?'File: '+(m.fname||''):String(m.text||'').slice(0,n);
 const myTag=()=>String((me&&me.displayName)||'').trim().split(/\s+/)[0].toLowerCase();
 const mentionsMe=t=>{ const n=myTag(); return !!n&&String(t||'').toLowerCase().includes('@'+n); };
 function renderText(el,text){
   el.textContent=''; text=censor(text);
-  const re=/@([^\s@]{1,24})/g; let last=0, mm;
+  const re=/(https?:\/\/[^\s<>"']+|www\.[^\s<>"']+)|@([^\s@]{1,24})/gi; let last=0, mm;
   while((mm=re.exec(text))){
     el.append(text.slice(last,mm.index));
-    const s=document.createElement('span'); s.className='mention'+(mm[1].toLowerCase()===myTag()?' me':''); s.textContent=mm[0]; el.append(s);
+    if(mm[1]){
+      let u=mm[1], tail=''; const t=u.match(/[.,;:!?)\]}]+$/); if(t){ tail=t[0]; u=u.slice(0,-tail.length); }
+      const a=document.createElement('a'); a.className='msg-link'; a.href=/^www\./i.test(u)?'https://'+u:u; a.target='_blank'; a.rel='noopener noreferrer nofollow'; a.textContent=u;
+      a.addEventListener('click',e=>e.stopPropagation()); el.append(a); if(tail) el.append(tail);
+    }else{
+      const sp=document.createElement('span'); sp.className='mention'+(mm[2].toLowerCase()===myTag()?' me':''); sp.textContent=mm[0]; el.append(sp);
+    }
     last=mm.index+mm[0].length;
   }
   el.append(text.slice(last));
@@ -1138,7 +1175,7 @@ $('who').onclick=()=>{
   $('profJoined').textContent=fmtDate(Date.parse((me.metadata||{}).creationTime));
   $('profLast').textContent=(me.metadata||{}).lastSignInTime?new Date(me.metadata.lastSignInTime).toLocaleString('id-ID'):'-';
   $('profMsg').textContent=''; $('pwMsg').textContent=''; $('iOldPw').value=''; $('iNewPw').value='';
-  { const nl=$('pNameLine'); nl.textContent=me.displayName||''; if(isVerified(me.uid)) nl.append(verifiedSvg()); }
+  { const nl=$('pNameLine'); nl.textContent=me.displayName||''; if(isVerified(me.uid)) nl.append(verifiedSvg()); appendTitles(nl,me.uid,isAdmin); }
   mountPwCf();
   drawBlockedList(); $('vProfile').classList.remove('hidden');
 };
@@ -1150,7 +1187,7 @@ $('profClose').onclick=()=>$('vProfile').classList.add('hidden');
 $('btnOut').onclick=async()=>{const v=await appDialog({kind:'logout',title:'Keluar akun',message:'Untuk mengakhiri sesi, ketik KELUAR pada kolom berikut.',placeholder:'Ketik KELUAR',requiredText:'KELUAR',confirmText:'Keluar',danger:true});if(v){await dropPresence();await signOut(auth);$('vProfile').classList.add('hidden');}};
 function openUser(uid){
   const p=usersData[uid]; if(!p) return;
-  paintAvatar($('uAvatar'),p.name,p.color,p.photo); $('uName').textContent=p.name||'Pengguna'; if(isVerified(uid)) $('uName').append(verifiedSvg());
+  paintAvatar($('uAvatar'),p.name,p.color,p.photo); $('uName').textContent=p.name||'Pengguna'; if(isVerified(uid)) $('uName').append(verifiedSvg()); appendTitles($('uName'),uid,uid===me.uid&&isAdmin);
   const rows=[['Title',titleLabels(uid,uid===me.uid&&isAdmin)],['Bio',p.bio],['Status',p.status],['Kota',p.city],['Hobi',p.hobby],['Instagram',p.ig?'@'+p.ig:''],['Bergabung',p.joinedAt?fmtDate(p.joinedAt):'']].filter(r=>r[1]);
   const dl=$('uInfo'); dl.innerHTML='';
   if(!rows.length){ const d=document.createElement('dd'); d.style.gridColumn='1 / -1'; d.style.color='var(--muted)'; d.textContent='Belum ada data profil.'; dl.append(d); }
@@ -1513,7 +1550,7 @@ function appDialog({title='Konfirmasi',message='',placeholder='',value='',multil
   if(!noCancel)actions.append(cancel);actions.append(ok);card.append(actions);wrap.append(card);wrap.addEventListener('click',e=>{if(e.target===wrap)finish(null);});root.append(wrap);if(field)field.focus();
  });
 }
-function titleInfo(key){const map={admin:['ADMIN','#b3ee05'],moderator:['MODERATOR','#b49aff'],developer:['DEVELOPER','#f0b45b'],founder:['FOUNDER','#f4cf70'],verified:['VERIFIED','#49a6ff'],helper:['HELPER','#48c9a5'],support:['SUPPORT','#59c7d8'],designer:['DESIGNER','#d78cff'],contributor:['CONTRIBUTOR','#7bd49b'],eventhost:['EVENT HOST','#ff9f70'],vip:['VIP','#e7c66d'],event1:['TOP 1','#f2c45c'],event2:['TOP 2','#b8c4d8'],event3:['TOP 3','#d99a70'],member:['MEMBER','#8493ad']};return map[key]||['MEMBER','#8493ad'];}
+function titleInfo(key){const map={admin:['ADMIN','#fdb544'],moderator:['MODERATOR','#b49aff'],developer:['DEVELOPER','#f0b45b'],founder:['FOUNDER','#f4cf70'],verified:['VERIFIED','#49a6ff'],helper:['HELPER','#48c9a5'],support:['SUPPORT','#59c7d8'],designer:['DESIGNER','#d78cff'],contributor:['CONTRIBUTOR','#7bd49b'],eventhost:['EVENT HOST','#ff9f70'],vip:['VIP','#e7c66d'],event1:['TOP 1','#f2c45c'],event2:['TOP 2','#b8c4d8'],event3:['TOP 3','#d99a70'],member:['MEMBER','#8493ad']};return map[key]||['MEMBER','#8493ad'];}
 const TOPKEYS=['event1','event2','event3'];
 function userTitleKeys(uid,adminFlag){
  const u=usersData[uid]||{}; const out=[];
@@ -1526,7 +1563,31 @@ function userTitleKeys(uid,adminFlag){
  return seen.length>1?seen.filter(k=>!(k==='member'&&seen.some(x=>!['verified',...TOPKEYS].includes(x)&&x!=='member'))):seen;
 }
 function verifiedSvg(){const e=document.createElement('span');e.className='vbadge';e.title='Verified';e.innerHTML='<svg viewBox="0 0 24 24" width="16" height="16" aria-label="Verified"><path fill="#1d9bf0" d="M12 1.8l2.4 1.7 2.9-.2 1.1 2.7 2.5 1.5-.6 2.9 1.2 2.7-1.8 2.3.1 2.9-2.8.9-1.6 2.5-2.8-.8-2.8.8-1.6-2.5-2.8-.9.1-2.9L1.6 13.4l1.2-2.7-.6-2.9 2.5-1.5 1.1-2.7 2.9.2z"/><path d="M7.6 12.4l3 3 5.8-6" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>';return e;}
-function appendTitle(meta,key){if(!key)return;if(key==='verified'){meta.append(verifiedSvg());return;}const [label,color]=titleInfo(key);const b=document.createElement('span');b.className='title-chip';b.dataset.fx=key;const t=document.createElement('span');t.className='tl';t.textContent=label;b.append(t);for(let i=1;i<=5;i++){const pt=document.createElement('i');pt.className='pt p'+i;b.append(pt);}b.style.color=color;b.style.setProperty('--c',color);b.style.background='color-mix(in srgb, '+color+' 14%, transparent)';meta.append(b);}
+const TITLE_INK='#0b1020';
+const TITLE_SVG={
+ admin:'<svg viewBox="0 0 512 512" aria-hidden="true"><path fill="currentColor" d="M45 335L16 148c-3-20 18-27 34-16l80 64c17 13 33 12 33-3L240 80c9-13 23-13 30 0l77 113c10 15 25 16 33 3l96-65c16-11 37-4 34 16l-26 187z"/><path fill="currentColor" d="M45 370h422v48c0 13-10 22-22 22H67c-12 0-22-9-22-22z"/></svg>',
+ moderator:'<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 2l8 3v6c0 5-3.4 9.3-8 11-4.6-1.7-8-6-8-11V5z"/><path d="M8.3 12l2.6 2.6 4.8-5.2" fill="none" stroke="'+TITLE_INK+'" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+ developer:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 7l-5 5 5 5M16 7l5 5-5 5M13.5 5l-3 14" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+ founder:'<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 2.5l2.9 6.1 6.6.8-4.9 4.6 1.3 6.6L12 17.3l-5.9 3.3 1.3-6.6-4.9-4.6 6.6-.8z"/></svg>',
+ helper:'<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 21s-7.5-4.6-9.3-9.3C1.5 8.3 3.4 5 6.6 5c2 0 3.5 1.1 5.4 3 1.9-1.9 3.4-3 5.4-3 3.2 0 5.1 3.3 3.9 6.7C19.5 16.4 12 21 12 21z"/></svg>',
+ support:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 14v-2a7.5 7.5 0 0115 0v2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><rect x="3" y="13" width="4.2" height="7" rx="1.8" fill="currentColor"/><rect x="16.8" y="13" width="4.2" height="7" rx="1.8" fill="currentColor"/><path d="M19 20c0 1.6-2 2-5 2" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>',
+ designer:'<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M4 20l1-4.5L16.2 4.3a2 2 0 012.8 0l.7.7a2 2 0 010 2.8L8.5 19z"/><path d="M14.5 6l3.5 3.5" stroke="'+TITLE_INK+'" stroke-width="1.6" stroke-linecap="round"/></svg>',
+ contributor:'<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9.5" fill="currentColor"/><path d="M12 7.5v9M7.5 12h9" stroke="'+TITLE_INK+'" stroke-width="2.4" stroke-linecap="round"/></svg>',
+ eventhost:'<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M3 10v4a1 1 0 001 1h2.5l5.5 4V5L6.5 9H4a1 1 0 00-1 1z"/><path d="M15.5 8.5a5 5 0 010 7M18.2 6a8.5 8.5 0 010 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>',
+ vip:'<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M6.5 3h11l4 5.5L12 21 2.5 8.5z"/><path d="M2.5 8.5h19M9.5 3L7.5 8.5 12 21l4.5-12.5L14.5 3" fill="none" stroke="'+TITLE_INK+'" stroke-opacity=".38" stroke-width="1.2" stroke-linejoin="round"/></svg>',
+ member:'<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4.2" fill="currentColor"/><path fill="currentColor" d="M3.8 21c0-4.5 3.7-7 8.2-7s8.2 2.5 8.2 7z"/></svg>'
+};
+['event1','event2','event3'].forEach((k,i)=>{ TITLE_SVG[k]='<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" fill-opacity=".7" d="M7.2 2h3.3l1.5 5.2L13.5 2h3.3l-3.4 8h-3.2z"/><circle cx="12" cy="15" r="6.6" fill="currentColor"/><text x="12" y="18.2" text-anchor="middle" font-size="9" font-weight="800" font-family="Inter,Arial,sans-serif" fill="'+TITLE_INK+'">'+(i+1)+'</text></svg>'; });
+function appendTitle(meta,key){
+  if(!key) return; if(key==='verified'){ meta.append(verifiedSvg()); return; }
+  const [label,color]=titleInfo(key); const b=document.createElement('span');
+  b.className='title-chip ico'; b.dataset.fx=key; b.title=label; b.setAttribute('role','img'); b.setAttribute('aria-label',label);
+  const t=document.createElement('span'); t.className='tl'; t.innerHTML=TITLE_SVG[key]||TITLE_SVG.member; b.append(t);
+  for(let i=1;i<=5;i++){ const pt=document.createElement('i'); pt.className='pt p'+i; b.append(pt); }
+  b.style.color=color; b.style.setProperty('--c',color); b.style.background='color-mix(in srgb, '+color+' 14%, transparent)';
+  b.addEventListener('click',e=>{ e.stopPropagation(); toast(label+': '+titleDescription(key)); });
+  meta.append(b);
+}
 function appendTitles(meta,uid,adminFlag){userTitleKeys(uid,adminFlag).filter(k=>k!=='verified').forEach(k=>appendTitle(meta,k));}
 function isVerified(uid){return userTitleKeys(uid,false).includes('verified');}
 function titleLabels(uid,adminFlag){return userTitleKeys(uid,adminFlag).map(k=>titleInfo(k)[0]).join(', ');}
@@ -1551,6 +1612,15 @@ $('btnAdmin').onclick=async()=>{
  $('vAdmin').classList.remove('hidden');
  let users={},emails={},banned={},jail={},modUsers={},logs={},presence={}; let settingsD={},reportsD={},queueD={},annD=null; let tab=isAdmin?'stats':'users'; let purgeVal='30', purgeUnit='1', musicTitleVal='', musicUrlVal='', annVal='', badVal='', badTouched=false;
  const esc=s=>String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+ const ownerMail=e=>ADMIN_EMAILS.map(x=>x.toLowerCase()).includes(String(e||'').toLowerCase());
+ const ownerTarget=uid=>ownerMail((emails[uid]||{}).email);
+ const targetAdmin=uid=>hasTitle(uid,'admin')||ownerTarget(uid);
+ const canModerate=uid=>uid!==me.uid&&!ownerTarget(uid)&&(isOwner||!targetAdmin(uid));
+ const titleAllowed=(target,title)=>{
+  if(title==='admin'&&!isOwner){ toast('Hanya admin utama yang bisa mengatur title Admin.'); return false; }
+  if(target!==me.uid&&!isOwner&&targetAdmin(target)){ toast('Title admin lain tidak bisa diubah.'); return false; }
+  return true;
+ };
  const act=async(action,uid,extra={})=>{try{await moderationApi({action,uid,...extra});toast('Tindakan berhasil.');}catch(e){toast(e.message||'Gagal.');}};
  const makeRow=uid=>{
   const u=users[uid]||{}, ban=banned[uid], j=jail[uid];
@@ -1558,9 +1628,9 @@ $('btnAdmin').onclick=async()=>{
   const info=document.createElement('div'); info.className='info';
   const n=document.createElement('div'); n.className='n'; n.textContent=u.name||'Pengguna';
   const e=document.createElement('div'); e.className='e'; e.textContent=(emails[uid]||{}).email||'';
-  const st=document.createElement('div'); st.className='e'; st.textContent=ban?'Diblokir · '+(ban.reason||''):j?'Jail · '+(j.reason||''):'Aktif';
+  const st=document.createElement('div'); st.className='e'; st.textContent=modStatus(ban,j)+(targetAdmin(uid)?' · Admin':'');
   info.append(n,e,st); row.append(info);
-  if(uid!==me.uid){
+  if(canModerate(uid)){
    if(ban){ const ub=document.createElement('button'); ub.textContent='Buka ban'; ub.onclick=()=>act('unban',uid); row.append(ub); }
    else{
     const jb=document.createElement('button'); jb.textContent=j?'Lepas Jail':'Atur Jail'; jb.onclick=()=>{if(j)return act('unjail',uid);askJail(uid);}; row.append(jb);
@@ -1598,8 +1668,8 @@ $('btnAdmin').onclick=async()=>{
    b.innerHTML+=`<section class="admin-section"><h3>${tab==='users'?'Daftar pengguna':tab==='banned'?'Akun diblokir':'Pengguna dalam Jail'}</h3><div id="moderationUsers"></div></section>`;
    const list=b.querySelector('#moderationUsers');
    if(!selected.length){list.innerHTML='<div class="note">Belum ada data.</div>';}
-   selected.forEach(uid=>{const u=users[uid]||{}, ban=banned[uid], j=jail[uid]; const row=document.createElement('div');row.className='row admin-account';const info=document.createElement('div');info.className='info';const name=document.createElement('div');name.className='n';name.textContent=u.name||'Pengguna';const email=document.createElement('div');email.className='e';email.textContent=(emails[uid]||{}).email||'';const status=document.createElement('div');status.className='e';status.textContent=ban?'Diblokir · '+(ban.reason||''):j?'Jail · '+(j.reason||''):'Aktif';info.append(name,email,status);row.append(info);
-    if(uid!==me.uid){const btn=document.createElement('button');btn.textContent=ban?'Buka ban':j?'Lepas Jail':'Atur Jail';btn.onclick=()=>{if(ban)return act('unban',uid);if(j)return act('unjail',uid);askJail(uid);};row.append(btn);const banBtn=document.createElement('button');banBtn.className='danger';banBtn.textContent=ban?'':'Atur Ban';if(!ban)banBtn.onclick=()=>askBan(uid);row.append(banBtn);}
+   selected.forEach(uid=>{const u=users[uid]||{}, ban=banned[uid], j=jail[uid]; const row=document.createElement('div');row.className='row admin-account';const info=document.createElement('div');info.className='info';const name=document.createElement('div');name.className='n';name.textContent=u.name||'Pengguna';const email=document.createElement('div');email.className='e';email.textContent=(emails[uid]||{}).email||'';const status=document.createElement('div');status.className='e';status.textContent=modStatus(ban,j)+(targetAdmin(uid)?' · Admin':'');info.append(name,email,status);row.append(info);
+    if(canModerate(uid)){const btn=document.createElement('button');btn.textContent=ban?'Buka ban':j?'Lepas Jail':'Atur Jail';btn.onclick=()=>{if(ban)return act('unban',uid);if(j)return act('unjail',uid);askJail(uid);};row.append(btn);const banBtn=document.createElement('button');banBtn.className='danger';banBtn.textContent=ban?'':'Atur Ban';if(!ban)banBtn.onclick=()=>askBan(uid);row.append(banBtn);}
     list.append(row);});
   }
   if(tab==='ann'){
@@ -1664,9 +1734,9 @@ $('btnAdmin').onclick=async()=>{
    });
   }
   if(tab==='titles'){
-   b.innerHTML+=`<section class="admin-section"><h3>Kelola title khusus</h3><div class="hint">Title hanya dapat diberikan admin. Title baru ditambahkan di samping title lain, tidak menggantikan. Member otomatis mendapat title MEMBER.</div><div class="field"><label>ID pengguna</label><input id="titleUid" placeholder="UID akun"></div><div class="field"><label>Title</label><select id="titleKey"><option value="member">Member</option><option value="moderator">Moderator</option><option value="developer">Developer</option><option value="founder">Founder</option><option value="verified">Verified</option><option value="helper">Helper</option><option value="support">Support</option><option value="designer">Designer</option><option value="contributor">Contributor</option><option value="eventhost">Event Host</option><option value="vip">VIP</option></select><div class="hint" id="titleDescription">Anggota komunitas dengan akses obrolan biasa.</div></div><button class="admin-action" id="titleSave">Tambah title</button><button class="admin-action secondary" id="titleRevoke">Cabut title</button><div class="note">Admin utama tetap ditentukan oleh server dan tidak dapat dicabut dari panel ini.</div></section><section class="admin-section"><h3>Akun dan title</h3><div id="titleUsers"></div></section>`;
-   b.querySelector('#titleKey').onchange=()=>{b.querySelector('#titleDescription').textContent=titleDescription(b.querySelector('#titleKey').value);};b.querySelector('#titleSave').onclick=async()=>{const target=b.querySelector('#titleUid').value.trim(),title=b.querySelector('#titleKey').value;if(!target){toast('Masukkan UID pengguna.');return;}try{await update(ref(db,'users/'+target+'/titles'),{[title]:true});toast('Title ditambahkan di samping title lain.');}catch(e){try{await featureApi({action:'set-title',uid:target,title});toast('Title diperbarui.');}catch(e2){toast(e2.message);}}};
-   b.querySelector('#titleRevoke').onclick=async()=>{const target=b.querySelector('#titleUid').value.trim(),title=b.querySelector('#titleKey').value;if(!target){toast('Masukkan UID pengguna.');return;}try{await remove(ref(db,'users/'+target+'/titles/'+title));toast('Title dicabut.');}catch(e){toast('Gagal mencabut. Cek Rules database.');}};
+   b.innerHTML+=`<section class="admin-section"><h3>Kelola title khusus</h3><div class="hint">Title hanya dapat diberikan admin. Title baru ditambahkan di samping title lain, tidak menggantikan. Member otomatis mendapat title MEMBER.</div><div class="field"><label>ID pengguna</label><input id="titleUid" placeholder="UID akun"></div><div class="field"><label>Title</label><select id="titleKey"><option value="member">Member</option>${isOwner?'<option value="admin">Admin (mahkota)</option>':''}<option value="moderator">Moderator</option><option value="developer">Developer</option><option value="founder">Founder</option><option value="verified">Verified</option><option value="helper">Helper</option><option value="support">Support</option><option value="designer">Designer</option><option value="contributor">Contributor</option><option value="eventhost">Event Host</option><option value="vip">VIP</option></select><div class="hint" id="titleDescription">Anggota komunitas dengan akses obrolan biasa.</div></div><button class="admin-action" id="titleSave">Tambah title</button><button class="admin-action secondary" id="titleRevoke">Cabut title</button><div class="note">Admin utama tetap ditentukan oleh server. Hanya admin utama yang bisa menambah atau mencabut title Admin. Admin lain hanya bisa mengubah title sendiri dan anggota biasa.</div></section><section class="admin-section"><h3>Akun dan title</h3><div id="titleUsers"></div></section>`;
+   b.querySelector('#titleKey').onchange=()=>{b.querySelector('#titleDescription').textContent=titleDescription(b.querySelector('#titleKey').value);};b.querySelector('#titleSave').onclick=async()=>{const target=b.querySelector('#titleUid').value.trim(),title=b.querySelector('#titleKey').value;if(!target){toast('Masukkan UID pengguna.');return;}if(!titleAllowed(target,title))return;try{await update(ref(db,'users/'+target+'/titles'),{[title]:true});toast('Title ditambahkan di samping title lain.');}catch(e){try{await featureApi({action:'set-title',uid:target,title});toast('Title diperbarui.');}catch(e2){toast(e2.message);}}};
+   b.querySelector('#titleRevoke').onclick=async()=>{const target=b.querySelector('#titleUid').value.trim(),title=b.querySelector('#titleKey').value;if(!target){toast('Masukkan UID pengguna.');return;}if(!titleAllowed(target,title))return;try{await remove(ref(db,'users/'+target+'/titles/'+title));toast('Title dicabut.');}catch(e){toast('Gagal mencabut. Cek Rules database.');}};
    const list=b.querySelector('#titleUsers');Object.keys(users).forEach(uid=>{const row=document.createElement('div');row.className='row';const n=document.createElement('span');n.textContent=(users[uid].name||uid)+' · '+titleLabels(uid,false);const b1=document.createElement('button');b1.textContent='Pilih';b1.onclick=()=>{b.querySelector('#titleUid').value=uid;};row.append(n,b1);list.append(row);});
   }
   if(tab==='polls'){
@@ -1730,6 +1800,42 @@ addEventListener('popstate',()=>{
   if(p==='/chat') closeAllOv(); else deepLink();
 });
 
+
+/* ---- Layar ban ---- */
+const fmtDT=t=>new Date(Number(t)).toLocaleString('id-ID',{day:'numeric',month:'long',year:'numeric',hour:'2-digit',minute:'2-digit'});
+function modStatus(ban,j){
+  if(ban) return 'Diblokir · '+(ban.reason||'Pelanggaran aturan')+' · '+(ban.expiresAt?'sampai '+fmtDT(ban.expiresAt):'permanen');
+  if(j) return 'Jail · '+(j.reason||'Pelanggaran aturan')+' · sampai '+fmtDT(j.until);
+  return 'Aktif';
+}
+let banTimer=null, banRec=null;
+function fmtLeft(ms){ if(ms<=0) return '00:00:00'; const t=Math.floor(ms/1000), d=Math.floor(t/86400), h=Math.floor(t%86400/3600), m=Math.floor(t%3600/60), x=t%60, p=n=>String(n).padStart(2,'0'); return (d?d+' hari ':'')+p(h)+':'+p(m)+':'+p(x); }
+function showBan(v){
+  clearInterval(banTimer); banTimer=null; banRec=v;
+  const box=$('vBan');
+  if(!v){ box.classList.add('hidden'); return; }
+  try{ closeAllOv(); closeGroup(); }catch(e){}
+  ['vGroups','vRules','vAdmin','vProfile','vUser','vDm','vDmList','vEvent'].forEach(i=>{ const e=$(i); if(e) e.classList.add('hidden'); });
+  const info=$('banInfo'); info.innerHTML='';
+  const add=(k,val)=>{ if(!val) return; const dt=document.createElement('dt'); dt.textContent=k; const dd=document.createElement('dd'); dd.textContent=val; info.append(dt,dd); };
+  add('Alasan',v.reason||'Pelanggaran aturan');
+  const since=v.createdAt||v.ts||v.at||v.bannedAt; if(since) add('Mulai',fmtDT(since));
+  add('Berakhir',v.expiresAt?fmtDT(v.expiresAt):'Permanen');
+  if(v.byName) add('Oleh',v.byName);
+  const left=$('banLeft');
+  const tick=()=>{
+    if(!v.expiresAt){ left.textContent='Blokir permanen'; return; }
+    const ms=Number(v.expiresAt)-Date.now();
+    if(ms<=0){ clearInterval(banTimer); stBanned=false; updateComposer(); box.classList.add('hidden'); toast('Blokirmu sudah berakhir.'); return; }
+    left.textContent='Sisa '+fmtLeft(ms);
+  };
+  tick(); if(v.expiresAt) banTimer=setInterval(tick,1000);
+  box.classList.remove('hidden');
+}
+$('banOut').onclick=()=>signOut(auth).catch(()=>{});
+$('banRefresh').onclick=async()=>{
+  try{ const sn=await get(ref(db,'banned/'+me.uid)); const v=sn.val(); stBanned=!!(v&&(!v.expiresAt||Number(v.expiresAt)>Date.now())); updateComposer(); showBan(stBanned?v:null); toast(stBanned?'Blokir masih berlaku.':'Blokir sudah berakhir.'); }catch(e){ toast('Gagal memuat status.'); }
+};
 /* ================= Pembaruan: landing, aturan, pemberitahuan, Turnstile ganti password, grup ================= */
 function shouldLand(){
   let seen=false; try{ seen=localStorage.getItem('ro_seen')==='1'; }catch(e){}
@@ -1913,7 +2019,7 @@ function addGroupMsg(gid,id,m){
 }
 async function sendGroup(){
   const t=$('grpTxt').value.trim(); if(!t||!grpCur) return;
-  if(stBanned||stJail){ toast('Akunmu sedang dibatasi.'); return; }
+  if(stBanned||stJail){ toast(stJail&&jailInfo?'Akunmu di Jail sampai '+fmtDT(jailInfo.until)+'. Alasan: '+(jailInfo.reason||'Pelanggaran aturan'):'Akunmu sedang dibatasi.'); return; }
   const gid=grpCur, ts=Date.now()+srvOff; $('grpTxt').value='';
   try{
     await set(push(ref(db,'groupMsgs/'+gid)),{uid:me.uid,ts,text:t.slice(0,1000)});
