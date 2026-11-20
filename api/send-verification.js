@@ -1,78 +1,52 @@
-// Vercel serverless: kirim email verifikasi dengan TOMBOL lewat Gmail SMTP (tanpa domain sendiri).
-// Env di Vercel:
-//   FIREBASE_SERVICE_ACCOUNT = isi JSON service account Firebase (satu baris)
-//   GMAIL_USER               = alamat Gmail pengirim, contoh lifxcdz@gmail.com
-//   GMAIL_APP_PASSWORD       = App Password Gmail 16 karakter (bukan password biasa)
-//   SITE_URL (opsional)      = alamat web, default https://ruang-obrol.vercel.app
-// Paket: npm i firebase-admin nodemailer
+// Vercel Serverless: kirim email verifikasi bertema (bukan template bawaan Firebase)
+// Env: FIREBASE_SERVICE_ACCOUNT (JSON), SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, MAIL_FROM_NAME (opsional)
 const admin = require('firebase-admin');
 const nodemailer = require('nodemailer');
 
-function init() {
-  if (!admin.apps.length) {
-    const raw = process.env.FIREBASE_SERVICE_ACCOUNT || '';
-    const sa = JSON.parse(raw.trim());
-    if (sa.private_key) sa.private_key = sa.private_key.replace(/\\n/g, '\n');
-    admin.initializeApp({ credential: admin.credential.cert(sa) });
-  }
+if (!admin.apps.length) {
+  admin.initializeApp({ credential: admin.credential.cert(JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT)) });
 }
-function mailer() {
-  return nodemailer.createTransport({
-    service: 'gmail',
-    auth: { user: process.env.GMAIL_USER, pass: (process.env.GMAIL_APP_PASSWORD || '').replace(/\s+/g, '') }
-  });
-}
-const esc = s => String(s || '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
-module.exports = async function handler(req, res) {
-  if (req.method !== 'POST') {
-    // Cek status env dari browser (hanya true/false, tanpa nilai rahasia)
-    return res.status(405).json({
-      error: 'Method not allowed',
-      env: {
-        FIREBASE_SERVICE_ACCOUNT: !!process.env.FIREBASE_SERVICE_ACCOUNT,
-        GMAIL_USER: !!process.env.GMAIL_USER,
-        GMAIL_APP_PASSWORD: !!process.env.GMAIL_APP_PASSWORD
-      }
-    });
-  }
+const esc = s => String(s || '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+
+function html(name, link) {
+  return `<!doctype html><html><body style="margin:0;background:#070f35;padding:24px 12px;font-family:Arial,Helvetica,sans-serif">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td align="center">
+<table role="presentation" width="100%" style="max-width:460px;background:#fff;border-radius:18px;overflow:hidden">
+<tr><td style="background:#070f35;padding:26px;text-align:center;color:#9bd000;font-size:22px;font-weight:800;letter-spacing:.5px">Ruang Obrol</td></tr>
+<tr><td style="padding:28px 26px;color:#070f35;text-align:center">
+<h2 style="margin:0 0 10px;font-size:20px">Verifikasi email kamu</h2>
+<p style="margin:0 0 22px;color:#4b5a7a;font-size:15px;line-height:1.5">Halo ${esc(name) || 'teman'}, ketuk tombol di bawah untuk mengaktifkan akun Ruang Obrol kamu.</p>
+<a href="${link}" style="display:inline-block;background:#9bd000;color:#070f35;text-decoration:none;font-weight:800;font-size:16px;padding:14px 34px;border-radius:12px">Verifikasi</a>
+<p style="margin:22px 0 0;color:#8a96b0;font-size:12px;line-height:1.5">Jika kamu tidak mendaftar di Ruang Obrol, abaikan saja email ini.</p>
+</td></tr></table></td></tr></table></body></html>`;
+}
+
+module.exports = async (req, res) => {
+  if (req.method !== 'POST') return res.status(405).json({ error: 'Method tidak diizinkan.' });
   try {
-    init();
-    const token = (req.headers.authorization || '').replace(/^Bearer\s+/i, '');
-    const decoded = await admin.auth().verifyIdToken(token);
-    const user = await admin.auth().getUser(decoded.uid);
+    const token = (req.headers.authorization || '').replace(/^Bearer /, '');
+    const dec = await admin.auth().verifyIdToken(token);
+    const user = await admin.auth().getUser(dec.uid);
     if (!user.email) return res.status(400).json({ error: 'Akun tidak punya email.' });
-    if (user.emailVerified) return res.json({ ok: true, already: true });
+    if (user.emailVerified) return res.status(200).json({ ok: true });
 
     const link = await admin.auth().generateEmailVerificationLink(user.email);
-    const name = esc(user.displayName || '');
-    const site = (process.env.SITE_URL || 'https://ruang-obrol.vercel.app').replace(/\/+$/, '');
-    const logo = site + '/icon-192.png';
-
-    const html = `<!DOCTYPE html><html><body style="margin:0;padding:0;background:#f3f6fc">
-<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#f3f6fc;padding:28px 12px">
-<tr><td align="center">
-<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:440px;background:#ffffff;border-radius:20px;padding:32px 26px;font-family:Arial,Helvetica,sans-serif;text-align:center">
-<tr><td align="center" style="padding-bottom:14px"><img src="${logo}" width="72" height="72" alt="Ruang Obrol" style="display:block;border:0;border-radius:18px"></td></tr>
-<tr><td style="font-size:24px;font-weight:700;color:#142038;padding-bottom:6px">Ruang Obrol</td></tr>
-<tr><td style="font-size:16px;color:#142038;padding-bottom:8px">Halo${name ? ', ' + name : ''}!</td></tr>
-<tr><td style="font-size:14px;line-height:1.6;color:#5b6b88;padding-bottom:24px">Ketuk tombol di bawah untuk memverifikasi email dan mengaktifkan akunmu.</td></tr>
-<tr><td align="center" style="padding-bottom:24px">
-<a href="${link}" style="display:inline-block;background:#2868e8;color:#ffffff;text-decoration:none;font-weight:700;font-size:16px;padding:15px 38px;border-radius:13px">Verifikasi Email</a>
-</td></tr>
-<tr><td style="font-size:12px;line-height:1.6;color:#8a97b0">Kalau bukan kamu yang mendaftar, abaikan email ini.</td></tr>
-</table></td></tr></table></body></html>`;
-
-    await mailer().sendMail({
-      from: `"Ruang Obrol" <${process.env.GMAIL_USER}>`,
+    const tr = nodemailer.createTransport({
+      host: process.env.SMTP_HOST, port: Number(process.env.SMTP_PORT || 465),
+      secure: Number(process.env.SMTP_PORT || 465) === 465,
+      auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS }
+    });
+    await tr.sendMail({
+      from: `"${process.env.MAIL_FROM_NAME || 'Ruang Obrol'}" <${process.env.SMTP_USER}>`,
       to: user.email,
       subject: 'Verifikasi akun Ruang Obrol',
-      html,
-      text: 'Verifikasi akun Ruang Obrol: ' + link
+      text: `Halo ${user.displayName || ''}, verifikasi akun kamu di sini: ${link}`,
+      html: html(user.displayName, link)
     });
-    res.json({ ok: true });
+    res.status(200).json({ ok: true });
   } catch (e) {
-    console.error('send-verification gagal:', e && e.message);
-    res.status(400).json({ error: 'Gagal mengirim email verifikasi.' });
+    console.error('send-verification', e);
+    res.status(500).json({ error: 'Email verifikasi gagal dikirim.' });
   }
-}
+};
