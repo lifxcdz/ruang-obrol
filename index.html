@@ -1615,9 +1615,14 @@ $('admClose').onclick=()=>{$('vAdmin').classList.add('hidden');admUnsub.forEach(
 /* ---- Grup privat ---- */
 async function groupApi(p){ const t=await auth.currentUser.getIdToken(); const r=await fetch('/api/groups',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+t},body:JSON.stringify(p)}); const d=await r.json().catch(()=>({})); if(!r.ok) throw new Error(d.error||'Permintaan gagal.'); return d; }
 const gcache={}; let gCur=null, gUnsub=[], myGroups={};
-const linkOf=c=>location.origin+'/chat/grup?join='+c;
-const codeFrom=v=>{ v=String(v||'').trim(); const m=v.match(/[?&]join=([A-Za-z0-9]+)/); return (m?m[1]:v).replace(/[^A-Za-z0-9]/g,''); };
-async function loadGroup(gid){ const sn=await get(ref(db,'groups/'+gid)); gcache[gid]=sn.val(); return gcache[gid]; }
+const linkOf=g=>location.origin+'/chat/grup?join='+g.gid+'.'+g.code;
+const codeFrom=v=>{ v=String(v||'').trim(); const m=v.match(/[?&]join=([^&\s#]+)/); return (m?m[1]:v).replace(/\s+/g,''); };
+async function loadGroup(gid){
+  const inf=(await get(ref(db,'groups/'+gid+'/info'))).val(); if(!inf){ gcache[gid]=null; return null; }
+  const mem=await get(ref(db,'groups/'+gid+'/members')).then(x=>x.val()).catch(()=>null);
+  const code=await get(ref(db,'groupCodes/'+gid+'/code')).then(x=>x.val()).catch(()=>null);
+  gcache[gid]={gid,name:inf.name,owner:inf.owner,max:inf.max,code:code||'',members:mem||{}}; return gcache[gid];
+}
 async function drawGroups(){
   const box=$('gList'); box.innerHTML=''; const ids=Object.keys(myGroups);
   if(!ids.length){ box.innerHTML='<div class="note">Belum ada grup. Buat grup atau gabung lewat link undangan.</div>'; return; }
@@ -1666,9 +1671,9 @@ async function openGroupInfo(){
   const sec=(h)=>{ const d=document.createElement('section'); d.className='admin-section'; const t=document.createElement('h3'); t.textContent=h; d.append(t); body.append(d); return d; };
   const btn=(p,label,fn,cls)=>{ const b=document.createElement('button'); b.type='button'; b.className='admin-action'+(cls?' '+cls:''); b.textContent=label; b.onclick=fn; p.append(b); return b; };
   const s1=sec(g.name); const h=document.createElement('div'); h.className='hint'; h.textContent=ids.length+' dari '+g.max+' anggota. Siapa pun yang punya link bisa bergabung selama masih ada tempat.'; s1.append(h);
-  const lk=document.createElement('div'); lk.className='credential-output'; lk.textContent=linkOf(g.code); s1.append(lk);
-  btn(s1,'Salin link undangan',()=>{ navigator.clipboard&&navigator.clipboard.writeText(linkOf(g.code)).then(()=>toast('Link disalin.')).catch(()=>toast('Tidak bisa menyalin.')); });
-  if(navigator.share) btn(s1,'Bagikan link',()=>navigator.share({title:g.name,text:'Gabung grup "'+g.name+'" di Ruang Obrol',url:linkOf(g.code)}).catch(()=>{}),'secondary');
+  const lk=document.createElement('div'); lk.className='credential-output'; lk.textContent=linkOf(g); s1.append(lk);
+  btn(s1,'Salin link undangan',()=>{ navigator.clipboard&&navigator.clipboard.writeText(linkOf(g)).then(()=>toast('Link disalin.')).catch(()=>toast('Tidak bisa menyalin.')); });
+  if(navigator.share) btn(s1,'Bagikan link',()=>navigator.share({title:g.name,text:'Gabung grup "'+g.name+'" di Ruang Obrol',url:linkOf(g)}).catch(()=>{}),'secondary');
   if(owner){
     btn(s1,'Buat link baru',async()=>{ if(await appDialog({kind:'danger',title:'Buat link baru?',message:'Link lama berhenti berfungsi.',confirmText:'Buat',danger:true})==null) return; try{ await groupApi({action:'rotate',gid}); toast('Link baru dibuat.'); openGroupInfo(); }catch(e){ toast(e.message); } },'secondary');
     btn(s1,'Ubah batas anggota',async()=>{ const v=await appDialog({kind:'edit',title:'Batas anggota',message:'Masukkan angka 2 sampai 200 (tidak boleh di bawah jumlah anggota sekarang).',placeholder:'Maksimal',value:String(g.max),inputType:'number',confirmText:'Simpan'}); if(!v) return; try{ await groupApi({action:'setmax',gid,max:Number(v)}); toast('Batas diperbarui.'); openGroupInfo(); }catch(e){ toast(e.message); } },'secondary');
