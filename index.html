@@ -6,11 +6,10 @@
 <meta name="theme-color" content="#070b16">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="google-site-verification" content="yjuoegep5eHFGvYub_s-EzIscOoLKpsOoIHQdKIoxOQ" />
 <link rel="manifest" href="/manifest.webmanifest">
 <link rel="apple-touch-icon" href="/icon-192.png">
 <title>Ruang Obrol</title>
-<script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" async defer></script>
+<script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" async defer data-cfasync="false"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,500;12..96,700&display=swap" rel="stylesheet">
@@ -329,8 +328,9 @@ footer textarea:focus,.searchrow input:focus,.dm-comp textarea:focus{border-colo
 :root[data-theme=light] .admin-action.secondary{background:rgba(30,50,90,.06)}
 :root[data-theme=light] .m .more,:root[data-theme=light] .m .del{color:var(--muted)}
 /* Jarak Turnstile: tidak ada celah sebelum muncul */
-#cfBox{display:flex;justify-content:center;margin:12px 0 4px}
-#cfBox:empty{display:none}
+#cfBox{display:flex;justify-content:center;margin:12px 0 4px;min-height:65px}
+.cf-hint{text-align:center;font-size:13px;line-height:1.45;margin:4px 0 8px}
+.cf-hint:empty{display:none}
 #authErr:empty{display:none}
 #authErr{margin:8px 0}
 .or-line{display:flex;align-items:center;gap:10px;margin:16px 0 12px;color:var(--muted);font-size:13px}
@@ -425,8 +425,7 @@ footer textarea:focus,.searchrow input:focus,.dm-comp textarea:focus{border-colo
 .admin-section{box-shadow:0 8px 24px rgba(0,0,0,.12)}
 .admin-section textarea{width:100%}
 .rules-text{white-space:pre-wrap;word-break:break-word;font-size:15px;line-height:1.65}
-#pwCf{display:flex;justify-content:center;margin:10px 0 4px}
-#pwCf:empty{display:none}
+#pwCf{display:flex;justify-content:center;margin:10px 0 4px;min-height:65px}
 
 /* Halaman menu utama */
 #vLand{position:relative;overflow:auto;justify-content:flex-start;align-items:center;padding:0;background:#b3ee05;color:#070f35;min-height:100%}
@@ -621,7 +620,7 @@ img{-webkit-user-drag:none}
     <div class="field hidden" id="fName"><label for="iName">Nama</label><input id="iName" autocomplete="nickname" maxlength="24" placeholder="Nama kamu"></div>
     <div class="field"><label for="iEmail">Email</label><input id="iEmail" type="text" autocomplete="username" inputmode="email" placeholder="Email atau username"></div>
     <div class="field"><label for="iPass">Password</label><input id="iPass" type="password" autocomplete="current-password" placeholder="Password"></div>
-    <div id="cfBox"></div>
+    <div id="cfBox"></div><div id="cfHint" class="msg-err cf-hint" role="alert"></div>
     <div id="authErr" class="msg-err"></div>
     <div class="social-row">
       <button class="soc fb" type="button" data-soon="Facebook"><span class="soc-i"><svg viewBox="0 0 24 24"><path fill="#1877F2" d="M13.5 22v-8h2.6l.5-3.2h-3.1V8.7c0-.9.4-1.7 1.8-1.7h1.4V4.2c-.3 0-1.2-.2-2.2-.2-2.3 0-3.9 1.4-3.9 4v2.1H7.9V14h2.7v8z"/></svg></span>Facebook</button>
@@ -720,7 +719,7 @@ img{-webkit-user-drag:none}
     <div class="psec">Keamanan</div>
     <div class="field"><label for="iOldPw">Password saat ini</label><input id="iOldPw" type="password" autocomplete="current-password"></div>
     <div class="field"><label for="iNewPw">Password baru (minimal 6 karakter, wajib verifikasi Cloudflare)</label><input id="iNewPw" type="password" autocomplete="new-password"></div>
-    <div id="pwCf"></div><div id="pwMsg" class="msg-err"></div>
+    <div id="pwCf"></div><div id="pwCfHint" class="msg-err cf-hint" role="alert"></div><div id="pwMsg" class="msg-err"></div>
     <button id="pwSave" class="btn ghost" type="button">Ganti password</button>
     <button id="btnOut" class="btn ghost" type="button">Keluar akun</button>
     <button id="delAcc" class="btn ghost" type="button" style="color:#ff9292;border-color:rgba(255,107,107,.35)">Hapus akun</button>
@@ -769,7 +768,7 @@ const firebaseConfig = {
   appId: "1:630514464050:web:3a6b445d79ff97a6c1932b",
 };
 // Site key Cloudflare Turnstile (publik, dari dashboard Cloudflare)
-const TURNSTILE_SITE_KEY = "0x4AAAAAAGT4D8W7-yxLA33x";
+const TURNSTILE_SITE_KEY = "0x4AAAAAAGAjoHwEjnf2nYUB";
 // Email yang otomatis jadi admin (harus sama dengan email di Rules database)
 const ADMIN_EMAILS = ["lifxcdz@gmail.com"];
 /* ============================ */
@@ -839,10 +838,26 @@ $('tabIn').onclick=()=>setMode('in'); $('tabUp').onclick=()=>setMode('up'); $('s
 
 /* ---- Cloudflare Turnstile ---- */
 let cfWidget=null, cfToken=null;
+function cfErrMsg(code){
+  code=String(code||'');
+  if(/^(110100|110110|400020)/.test(code)) return 'Site key Turnstile tidak valid (kode '+code+'). Periksa site key di Cloudflare.';
+  if(/^110200/.test(code)) return 'Domain "'+location.hostname+'" belum diizinkan di widget Turnstile (kode '+code+'). Tambahkan di Hostname Management Cloudflare.';
+  if(/^(300|600)/.test(code)) return 'Tantangan Cloudflare ditolak (kode '+code+'). Matikan VPN, pemblokir iklan, atau DNS pribadi, pastikan tanggal dan jam otomatis, lalu coba lagi.';
+  if(/^(106|110[56])/.test(code)) return 'Verifikasi kedaluwarsa atau tidak valid (kode '+code+'). Muat ulang halaman.';
+  return 'Verifikasi Cloudflare gagal'+(code?' (kode '+code+')':'')+'. Coba muat ulang atau pakai jaringan lain.';
+}
+function cfOpts(hintId,setTok){
+  return {sitekey:TURNSTILE_SITE_KEY,theme:'auto',retry:'auto','retry-interval':5000,'refresh-expired':'auto',
+    callback:t=>{ setTok(t); const h=$(hintId); if(h) h.textContent=''; },
+    'expired-callback':()=>setTok(null),
+    'timeout-callback':()=>setTok(null),
+    'error-callback':c=>{ setTok(null); const h=$(hintId); if(h) h.textContent=cfErrMsg(c); return true; },
+    'unsupported-callback':()=>{ const h=$(hintId); if(h) h.textContent='Browser ini tidak didukung Cloudflare. Perbarui browser atau coba Chrome.'; }};
+}
 function mountTurnstile(){
   if(cfWidget!==null||!window.turnstile||TURNSTILE_SITE_KEY.startsWith('ISI_')) return;
-  cfWidget=window.turnstile.render('#cfBox',{sitekey:TURNSTILE_SITE_KEY,theme:'light',
-    callback:t=>{cfToken=t;}, 'expired-callback':()=>{cfToken=null;}, 'error-callback':()=>{cfToken=null;}});
+  if($('vAuth').classList.contains('hidden')) return;
+  cfWidget=window.turnstile.render('#cfBox',cfOpts('cfHint',t=>{cfToken=t;}));
 }
 const cfPoll=setInterval(()=>{ mountTurnstile(); if(cfWidget!==null) clearInterval(cfPoll); },300);
 function resetTurnstile(){ cfToken=null; try{ if(cfWidget!==null) window.turnstile.reset(cfWidget); }catch(e){} }
@@ -1292,8 +1307,7 @@ $('who').onclick=()=>{
   $('profMsg').textContent=''; $('pwMsg').textContent=''; $('iOldPw').value=''; $('iNewPw').value='';
   { const nl=$('pNameLine'); nl.textContent=me.displayName||''; if(isVerified(me.uid)) nl.append(verifiedSvg()); appendTitles(nl,me.uid,isAdmin); }
   attachDot($('pAvatar'),me.uid); { const pv=usersData[me.uid]||{}; paintAvatar($('pAvatar'),pv.name||me.displayName,pv.color,pv.photo); }
-  mountPwCf();
-  drawBlockedList(); $('vProfile').classList.remove('hidden');
+  drawBlockedList(); $('vProfile').classList.remove('hidden'); setTimeout(mountPwCf,80);
 };
 $('photoPick').onclick=()=>$('fPhoto').click();
 $('photoDel').onclick=()=>{ pPhoto=''; paintAvatar($('pAvatar'),$('iProfName').value||me.displayName,pColor,''); toast('Foto dihapus. Tekan Simpan profil.'); };
@@ -2079,8 +2093,7 @@ let pwCfWidget=null, pwCfToken=null;
 function mountPwCf(){
   if(TURNSTILE_SITE_KEY.startsWith('ISI_')||!window.turnstile) return;
   if(pwCfWidget!==null){ resetPwCf(); return; }
-  pwCfWidget=window.turnstile.render('#pwCf',{sitekey:TURNSTILE_SITE_KEY,theme:'auto',
-    callback:t=>{pwCfToken=t;}, 'expired-callback':()=>{pwCfToken=null;}, 'error-callback':()=>{pwCfToken=null;}});
+  pwCfWidget=window.turnstile.render('#pwCf',cfOpts('pwCfHint',t=>{pwCfToken=t;}));
 }
 function resetPwCf(){ pwCfToken=null; try{ if(pwCfWidget!==null) window.turnstile.reset(pwCfWidget); }catch(e){} }
 
@@ -2118,7 +2131,7 @@ const randCode=()=>{ const a=new Uint8Array(9); crypto.getRandomValues(a); retur
 const grpLink=(gid,code)=>location.origin+'/?join='+gid+'.'+code;
 
 function initExtras(u){
-  unsubs.push(onValue(ref(db,'presence'),s=>{ const v=s.val()||{}; onlineSet=new Set(Object.keys(v).filter(k=>v[k]&&Object.keys(v[k]).length)); refreshDots(); },()=>{}));
+  unsubs.push(onValue(ref(db,'presence'),s=>{ const v=s.val()||{}; onlineSet=new Set(Object.keys(v).filter(k=>v[k]&&Object.keys(v[k]).length)); refreshDots(); },()=>{ if(isAdmin) toast('Status online ditolak Rules database. Pasang rules-lengkap.json (bagian presence).'); }));
   unsubs.push(()=>{ onlineSet=new Set(); const st=$('onlineStrip'); if(st){ st.innerHTML=''; st.classList.add('hidden'); } });
   unsubs.push(onValue(ref(db,'settings/rules'),s=>{ rulesLive=String(s.val()||''); if(!$('vRules').classList.contains('hidden')) drawRules(); },()=>{}));
   unsubs.push(onValue(ref(db,'broadcast/update'),s=>handleUpdate(s.val()),()=>{}));
