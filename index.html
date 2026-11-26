@@ -1021,7 +1021,16 @@ $('musicMute').onclick=e=>{
   $('musicMute').textContent=musicMuted?'Bunyikan':'Bisukan';
 };
 const fmtCount=s=>{ const h=Math.floor(s/3600), m=Math.floor(s%3600/60), x=s%60, p=n=>String(n).padStart(2,'0'); return h?h+':'+p(m)+':'+p(x):p(m)+':'+p(x); };
-async function dropPresence(){ if(myPres){ const r=myPres; myPres=null; try{ await remove(r); }catch(e){} } }
+/* Status online mengikuti tab: tab disembunyikan/ditutup = abu-abu, dibuka lagi = hijau */
+let presOffTimer=null;
+function presOn(){ clearTimeout(presOffTimer); if(!myPres||!navigator.onLine) return; onDisconnect(myPres).remove().catch(()=>{}); set(myPres,true).catch(()=>{}); }
+function presOff(){ if(myPres) remove(myPres).catch(()=>{}); }
+document.addEventListener('visibilitychange',()=>{ clearTimeout(presOffTimer); if(document.hidden) presOffTimer=setTimeout(presOff,12000); else presOn(); });
+window.addEventListener('pagehide',()=>{ presOff(); });
+window.addEventListener('pageshow',e=>{ if(e.persisted&&!document.hidden) presOn(); });
+window.addEventListener('online',()=>{ if(!document.hidden) presOn(); });
+window.addEventListener('offline',()=>{ presOff(); });
+async function dropPresence(){ clearTimeout(presOffTimer); if(myPres){ const r=myPres; myPres=null; try{ await remove(r); }catch(e){} } }
 async function runPurge(){
   if(purging||!isAdmin) return;
   purging=true;
@@ -1092,7 +1101,7 @@ async function enter(u){
   // Status online
   myPres=push(ref(db,'presence/'+u.uid));
   unsubs.push(onValue(ref(db,'.info/connected'),s=>{
-    if(s.val()&&myPres){ onDisconnect(myPres).remove().catch(()=>{}); set(myPres,true).catch(()=>{}); }
+    if(s.val()&&myPres&&!document.hidden){ onDisconnect(myPres).remove().catch(()=>{}); set(myPres,true).catch(()=>{}); }
   }));
   // Timer hapus semua pesan
   unsubs.push(onValue(ref(db,'.info/serverTimeOffset'),s=>{ srvOff=Number(s.val())||0; }));
