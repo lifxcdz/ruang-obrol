@@ -1,6 +1,6 @@
 // Simpan sebagai: api/auth.js  (ganti file lama sepenuhnya)
-// Memverifikasi Cloudflare Turnstile di server, membatasi percobaan, lalu masuk/daftar.
-// Env yang dibutuhkan di Vercel: TURNSTILE_SECRET_KEY (wajib), FIREBASE_API_KEY (opsional)
+// Memverifikasi Google reCAPTCHA (v2) di server, membatasi percobaan, lalu masuk/daftar.
+// Env yang dibutuhkan di Vercel: RECAPTCHA_SECRET_KEY (wajib), FIREBASE_API_KEY (opsional)
 const { getAdminServices } = require('../lib/firebase-admin');
 
 const FIREBASE_API_KEY = process.env.FIREBASE_API_KEY || 'AIzaSyB7J4HeunqD28G_GdvIGgKdVIxniP48K08';
@@ -10,13 +10,14 @@ const COMMON_PW = ['password','password1','password123','12345678','123456789','
 
 function reply(res, status, data) { return res.status(status).json(data); }
 
-async function verifyTurnstile(token, ip) {
-  const secret = process.env.TURNSTILE_SECRET_KEY;
-  if (!secret) throw new Error('TURNSTILE_SECRET_KEY belum diisi.');
+async function verifyRecaptcha(token, ip) {
+  const secret = process.env.RECAPTCHA_SECRET_KEY;
+  if (!secret) throw new Error('RECAPTCHA_SECRET_KEY belum diisi.');
   const body = new URLSearchParams({ secret, response: token });
-  if (ip) body.set('remoteip', ip);
-  const r = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', { method: 'POST', body });
+  if (ip && ip !== 'unknown') body.set('remoteip', ip);
+  const r = await fetch('https://www.google.com/recaptcha/api/siteverify', { method: 'POST', body });
   const d = await r.json().catch(() => ({}));
+  if (!d.success) console.warn('reCAPTCHA ditolak:', d['error-codes']);
   return !!d.success;
 }
 
@@ -63,15 +64,15 @@ module.exports = async function (req, res) {
 
     const { auth, db } = getAdminServices();
 
-    // 1) Batas percobaan per IP (sebelum memanggil Cloudflare)
+    // 1) Batas percobaan per IP (sebelum memanggil Google)
     if (!(await rateLimit(db, 'auth-ip:' + ip, 20))) {
       return reply(res, 429, { error: 'Terlalu banyak percobaan. Coba lagi beberapa menit lagi.' });
     }
 
-    // 2) Verifikasi Cloudflare Turnstile
-    if (!cf) return reply(res, 400, { error: 'Selesaikan verifikasi Cloudflare dulu.' });
-    const human = await verifyTurnstile(cf, ip);
-    if (!human) return reply(res, 403, { error: 'Verifikasi Cloudflare gagal. Coba lagi.' });
+    // 2) Verifikasi Google reCAPTCHA
+    if (!cf) return reply(res, 400, { error: 'Centang reCAPTCHA dulu.' });
+    const human = await verifyRecaptcha(cf, ip);
+    if (!human) return reply(res, 403, { error: 'Verifikasi reCAPTCHA gagal. Coba lagi.' });
 
     if (!email || !password) return reply(res, 400, { error: 'Isi email dan password.' });
     if (password.length > 128) return reply(res, 400, { error: 'Password terlalu panjang.' });
@@ -127,7 +128,7 @@ module.exports = async function (req, res) {
   } catch (e) {
     console.error('auth api:', e);
     const m = String((e && e.message) || '');
-    if (m.includes('TURNSTILE_SECRET_KEY')) return reply(res, 500, { error: 'Server belum dikonfigurasi: TURNSTILE_SECRET_KEY kosong.' });
+    if (m.includes('RECAPTCHA_SECRET_KEY')) return reply(res, 500, { error: 'Server belum dikonfigurasi: RECAPTCHA_SECRET_KEY kosong.' });
     if (m.includes('Cannot find module')) return reply(res, 500, { error: 'Server belum lengkap: file lib/firebase-admin tidak ditemukan.' });
     if (String((e && e.code) || '').includes('auth/') || m.includes('createCustomToken') || m.includes('signBlob') || m.includes('iam')) {
       return reply(res, 500, { error: 'Server tidak punya izin membuat token login (cek service account Firebase).' });
